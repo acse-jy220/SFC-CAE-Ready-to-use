@@ -13,7 +13,7 @@ for ir in required:
     else:
         reqs += [ir]
 
-os.system('bash get_scripts_data.sh')
+os.system('bash get_scripts.sh')
 
 setup(name='SFC-CAE',
       version="Version: 0.01",
