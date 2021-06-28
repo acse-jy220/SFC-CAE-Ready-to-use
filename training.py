@@ -1,3 +1,7 @@
+import torch  # Pytorch
+import torch.nn as nn  # Neural network module
+import torch.nn.functional as fn  # Function module
+from torchvision import transforms  # Transforms from torchvision
 from torchvision import datasets  # Datasets from torchvision
 from torchvision import transforms  # Transforms from torchvision
 from torch.utils.data import DataLoader
