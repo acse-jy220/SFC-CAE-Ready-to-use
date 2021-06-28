@@ -9,7 +9,8 @@ import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
 from torchvision import transforms  # Transforms from torchvision
-import util
+from util import *
+
 def loadsimulation(simulaion_steps, simulaion_num, reshape = False):
     for i in range(simulaion_steps + 1):
         iter_data = np.loadtxt(F'{DATADIR}_%d/step_%d.txt'% (simulaion_num, i))
@@ -150,9 +151,9 @@ class SFC_CAE_structured_Encoder(nn.Module):
     for i in range(self.sfc_nums):
           self.orderings.append(space_filling_orderings[i])
           if nearest_neighbouring:
-             self.sfc_plus.append(util.find_plus_neigh(space_filling_orderings[i]))
-             self.sfc_minus.append(util.find_minus_neigh(space_filling_orderings[i]))
-             self.sps.append(util.NearestNeighbouring(size = input_size, initial_weight= 1/3))
+             self.sfc_plus.append(find_plus_neigh(space_filling_orderings[i]))
+             self.sfc_minus.append(find_minus_neigh(space_filling_orderings[i]))
+             self.sps.append(NearestNeighbouring(size = input_size, initial_weight= 1/3))
              self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
              self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)
 
@@ -176,13 +177,13 @@ class SFC_CAE_structured_Encoder(nn.Module):
 
   def get_concat_list(self, x, num_sfc):
       if x.is_cuda:
-         return torch.cat((util.ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1).to(device), 
-                           util.ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
-                           util.ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1).to(device)), -1)
+         return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1).to(device), 
+                           ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
+                           ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1).to(device)), -1)
       else:
-         return torch.cat((util.ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
-                           util.ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
-                           util.ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)), -1)
+         return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
+                           ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
+                           ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)), -1)
 
 
   def forward(self, x):  # Custom pytorch modules should follow this structure 
@@ -229,14 +230,14 @@ class SFC_CAE_structured_Decoder(nn.Module):
     self.sfc_minus = []
     self.sps = []
     self.sfc_nums = len(invert_space_filling_orderings)
-    self.sp_final = util.NearestNeighbouring(size = self.input_size, initial_weight= 1/self.sfc_nums, num_neigh= self.sfc_nums)
+    self.sp_final = NearestNeighbouring(size = self.input_size, initial_weight= 1/self.sfc_nums, num_neigh= self.sfc_nums)
     # inverting fcs
     for i in range(self.sfc_nums):
           self.orderings.append(invert_space_filling_orderings[i])
           if self.NN:
-             self.sfc_plus.append(util.find_plus_neigh(invert_space_filling_orderings[i]))
-             self.sfc_minus.append(util.find_minus_neigh(invert_space_filling_orderings[i]))
-             self.sps.append(util.NearestNeighbouring(size = self.input_size, initial_weight= 1/3))  
+             self.sfc_plus.append(find_plus_neigh(invert_space_filling_orderings[i]))
+             self.sfc_minus.append(find_minus_neigh(invert_space_filling_orderings[i]))
+             self.sps.append(NearestNeighbouring(size = self.input_size, initial_weight= 1/3))  
              self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
              self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)
     self.fcs = []
@@ -258,13 +259,13 @@ class SFC_CAE_structured_Decoder(nn.Module):
 
   def get_concat_list(self, x, num_sfc):
       if x.is_cuda:
-         return torch.cat((util.ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1).to(device), 
-                           util.ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
-                           util.ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1).to(device)), -1)
+         return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1).to(device), 
+                           ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
+                           ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1).to(device)), -1)
       else:
-         return torch.cat((util.ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
-                           util.ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
-                           util.ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)), -1)
+         return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
+                           ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
+                           ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)), -1)
 
   def forward(self, z):
     '''
@@ -287,7 +288,7 @@ class SFC_CAE_structured_Decoder(nn.Module):
         if self.NN:
            tensor_list = self.get_concat_list(zs[i], i)
            zs[i] = self.activate(self.sps[i](tensor_list))
-        else: zs[i] = util.ordering_tensor(x, self.orderings[num_sfc])
+        else: zs[i] = ordering_tensor(x, self.orderings[num_sfc])
         if self.sfc_nums > 1: zs[i] = zs[i].unsqueeze(-1)
     if self.sfc_nums > 1: 
         z = torch.cat(zs, -1)
