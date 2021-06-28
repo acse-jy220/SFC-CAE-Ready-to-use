@@ -131,7 +131,7 @@ def get_MFT_RNN_curves_structured(size, num):
 
 
 class SFC_CAE_structured_Encoder(nn.Module): 
-  def __init__(self, input_size = 128**2, nearest_neighbouring = True, dims_latent = 16, space_filling_orderings = [Hilbert_index], activaton = nn.ReLU()):
+  def __init__(self, input_size = 128**2, nearest_neighbouring = True, dims_latent = 16, space_filling_orderings = None, activaton = nn.ReLU()):
     '''
     Class contains the Encoder (snapshot -> latent).
     '''
@@ -213,7 +213,7 @@ class SFC_CAE_structured_Encoder(nn.Module):
     return x
 
 class SFC_CAE_structured_Decoder(nn.Module):
-  def __init__(self, Encoder, invert_space_filling_orderings = [invert_Hilbert_index]):
+  def __init__(self, Encoder, invert_space_filling_orderings = None):
     '''
     Class contains the Decoder (latent -> snapshot).
     '''
@@ -299,8 +299,8 @@ class SFC_CAE_structured_Autoencoder(nn.Module):
                size = 128 ** 2, 
                dims_latent = 16, 
                nearest_neighbouring = True,
-               space_filling_orderings = [Hilbert_index, Hilbert_index_2], 
-               invert_space_filling_orderings = [invert_Hilbert_index, invert_Hilbert_index_2],
+               space_filling_orderings = None, 
+               invert_space_filling_orderings = None,
                activation = nn.ReLU()):
     '''
     Class combines the Encoder and the Decoder with an Autoencoder latent space.
