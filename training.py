@@ -25,6 +25,8 @@ def set_seed(seed):
 
     return True
 
+device = 'cuda'  # Set out device to GPU
+
 def relative_MSE(x, y, epsilon = 0):
     '''
     Compute relative MSE
