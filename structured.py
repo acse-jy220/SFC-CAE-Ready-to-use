@@ -105,31 +105,31 @@ def get_MFT_RNN_curves_structured(size, num):
 
     return curve_lists, inv_lists
 
-# def find_plus_neigh(ordering):
-#     plus_neigh = np.zeros_like(ordering)
-#     plus_neigh[:-1] = ordering[1:]
-#     plus_neigh[-1] = ordering[-1]
-#     return plus_neigh
+def find_plus_neigh(ordering):
+    plus_neigh = np.zeros_like(ordering)
+    plus_neigh[:-1] = ordering[1:]
+    plus_neigh[-1] = ordering[-1]
+    return plus_neigh
 
-# def find_minus_neigh(ordering):
-#     minus_neigh = np.zeros_like(ordering)
-#     minus_neigh[1:] = ordering[:-1]
-#     minus_neigh[0] = ordering[0]
-#     return minus_neigh
+def find_minus_neigh(ordering):
+    minus_neigh = np.zeros_like(ordering)
+    minus_neigh[1:] = ordering[:-1]
+    minus_neigh[0] = ordering[0]
+    return minus_neigh
 
-# def ordering_tensor(tensor, ordering):
-#     return tensor[:, ordering]
+def ordering_tensor(tensor, ordering):
+    return tensor[:, ordering]
 
-# class NearestNeighbouring(nn.Module):
-#     def __init__(self, size, initial_weight, num_neigh = 3):
-#         super(NearestNeighbouring, self).__init__()
-#         self.size = size
-#         self.num_neigh = num_neigh
-#         self.weights = nn.Parameter(torch.ones(size, num_neigh) * initial_weight)
-#         self.bias = nn.Parameter(torch.zeros(size))
+class NearestNeighbouring(nn.Module):
+    def __init__(self, size, initial_weight, num_neigh = 3):
+        super(NearestNeighbouring, self).__init__()
+        self.size = size
+        self.num_neigh = num_neigh
+        self.weights = nn.Parameter(torch.ones(size, num_neigh) * initial_weight)
+        self.bias = nn.Parameter(torch.zeros(size))
 
-#     def forward(self, tensor_list):
-#         return torch.mul(tensor_list, self.weights).sum(-1) + self.bias
+    def forward(self, tensor_list):
+        return torch.mul(tensor_list, self.weights).sum(-1) + self.bias
 
 
 class SFC_CAE_structured_Encoder(nn.Module): 
