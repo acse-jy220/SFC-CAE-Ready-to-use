@@ -7,6 +7,7 @@ from torchvision import transforms  # Transforms from torchvision
 from torch.utils.data import DataLoader
 from livelossplot import PlotLosses
 from util import *
+import util
 
 def relative_MSE(x, y, epsilon = 0):
     '''
