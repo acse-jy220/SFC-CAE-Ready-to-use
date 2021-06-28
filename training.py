@@ -6,6 +6,8 @@ from torchvision import datasets  # Datasets from torchvision
 from torchvision import transforms  # Transforms from torchvision
 from torch.utils.data import DataLoader
 from livelossplot import PlotLosses
+import random 
+import numpy as np
 from util import *
 import util
 
