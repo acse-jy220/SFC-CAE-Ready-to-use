@@ -11,6 +11,8 @@ import torch.nn.functional as fn  # Function module
 from torchvision import transforms  # Transforms from torchvision
 from util import *
 
+device = 'cuda'  # Set out device to GPU
+
 def loadsimulation(simulaion_steps, simulaion_num, reshape = False):
     for i in range(simulaion_steps + 1):
         iter_data = np.loadtxt(F'{DATADIR}_%d/step_%d.txt'% (simulaion_num, i))
