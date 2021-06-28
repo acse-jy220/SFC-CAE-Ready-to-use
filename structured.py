@@ -1,5 +1,5 @@
-# from simple_hilbert import *
-# from advection_block_analytical import *
+from simple_hilbert import *
+from advection_block_analytical import *
 import space_filling_decomp_new as sfc
 import numpy as np  # Numpy
 import scipy.sparse.linalg as spl
