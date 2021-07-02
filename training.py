@@ -74,14 +74,18 @@ def train_model(autoencoder,
                 n_epochs = 100, 
                 lr = 1e-4, 
                 weight_decay = 0, 
-                criterion = nn.MSELoss(), 
+                criterion_type = 'MSE', 
                 visualize=True, 
                 seed = 41):
   set_seed(seed)
   autoencoder = autoencoder.to(device)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  if criterion == nn.MSELoss(): other_metric = relative_MSE
-  elif criterion == relative_MSE: other_metric = nn.MSELoss()
+  if criterion_type == 'MSE': 
+      criterion = nn.MSELoss()
+      other_metric = relative_MSE
+  elif criterion_type == 'relative_MSE': 
+      other_metric = nn.MSELoss()
+      criterion = relative_MSE
   
   # do livelossplot if visualize turned-on
   if visualize:
