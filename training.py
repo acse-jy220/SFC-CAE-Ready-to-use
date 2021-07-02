@@ -64,13 +64,13 @@ def validate(autoencoder, optimizer, criterion, dataloader):
     return validation_loss / data_length   # Return MSE  
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
-def train_model(autoencoder, train_set, valid_set, batch_size=64, n_epochs = 10, lr = 5e-5, weight_decay = 0, criterion = nn.MSELoss(), visualize=True, seed = 41):
+def train_model(autoencoder, train_loader, valid_loader, batch_size=64, n_epochs = 10, lr = 1e-4, weight_decay = 0, criterion = nn.MSELoss(), visualize=True, seed = 41):
   set_seed(seed)
   autoencoder = autoencoder.to(device)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr)
 
-  train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0)
-  valid_loader = DataLoader(valid_set, batch_size=valid_set.shape[0], shuffle=True, num_workers=0)
+  train_loader = train_loader
+  valid_loader = valid_loader
   
   # do livelossplot if visualize turned-on
   if visualize:
