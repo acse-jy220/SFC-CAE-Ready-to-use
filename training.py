@@ -37,7 +37,7 @@ def relative_MSE(x, y, epsilon = 0):
     assert x.shape == y.shape, 'the input tensors should have the same shape!'
     return nn.MSELoss()(x, y) / (y ** 2).sum()     
 
-def train(autoencoder, optimizer, criterion, dataloader):
+def train(autoencoder, optimizer, criterion, other_metric, dataloader):
   autoencoder.train()
   train_loss, data_length = 0, len(dataloader.dataset)
   for batch in dataloader:
@@ -45,13 +45,15 @@ def train(autoencoder, optimizer, criterion, dataloader):
       optimizer.zero_grad()  # Set optimiser grad to 0
       x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
       MSE = criterion(batch, x_hat)  # Calculate MSE loss
+      other_MSE = other_metric(batch, x_hat) # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
       optimizer.step()  # Step the optimiser
       train_loss += MSE * batch.size(0)
+      train_loss_other += other_MSE * batch.size(0)
 
-  return train_loss / data_length  # Return MSE
+  return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
-def validate(autoencoder, optimizer, criterion, dataloader):
+def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
     autoencoder.eval()
     validation_loss, data_length = 0, len(dataloader.dataset)
     for batch in dataloader:
@@ -59,39 +61,65 @@ def validate(autoencoder, optimizer, criterion, dataloader):
             batch = batch.to(device)  # Send batch of images to the GPU
             x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
             MSE = criterion(batch, x_hat)  # Calculate MSE loss
+            other_MSE = other_metric(batch, x_hat)
             validation_loss += MSE * batch.size(0)
+            valid_loss_other += other_MSE * batch.size(0)
 
-    return validation_loss / data_length   # Return MSE  
+    return validation_loss / data_length, valid_loss_other / data_length   # Return MSE  
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
-def train_model(autoencoder, train_loader, valid_loader, batch_size=64, n_epochs = 10, lr = 1e-4, weight_decay = 0, criterion = nn.MSELoss(), visualize=True, seed = 41):
+def train_model(autoencoder, 
+                train_loader, 
+                valid_loader, 
+                n_epochs = 100, 
+                lr = 1e-4, 
+                weight_decay = 0, 
+                criterion = nn.MSELoss(), 
+                visualize=True, 
+                seed = 41):
   set_seed(seed)
   autoencoder = autoencoder.to(device)
-  optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr)
-
-  train_loader = train_loader
-  valid_loader = valid_loader
+  optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  if criterion == nn.MSELoss(): other_metric = relative_MSE
+  elif criterion == relative_MSE: other_metric = nn.MSELoss()
   
   # do livelossplot if visualize turned-on
   if visualize:
       liveloss = PlotLosses()
 
   for epoch in range(n_epochs):
-    train_MSE = train(autoencoder, optimizer, criterion, train_loader)
-    validation_MSE = validate(autoencoder, optimizer, criterion, valid_loader)
+    time_start = time.time()
+    train_loss, train_loss_other = train(autoencoder, optimizer, criterion, other_metric, train_loader)
+    valid_loss, valid_loss_other = validate(autoencoder, optimizer, criterion, other_metric, valid_loader)
     print("eppoch %d starting......"%(epoch))
     
     # do livelossplot if visualize turned-on 
     if visualize: 
       logs = {}
+      
+      if criterion == nn.MSELoss():
+         train_MSE_re = train_loss_other.item()
+         valid_MSE_re = valid_loss_other.item()
+         train_MSE = train_loss.item()
+         valid_MSE = valid_loss.item()
+      elif criterion == relative_MSE:
+         train_MSE = train_loss_other.item()
+         valid_MSE = valid_loss_other.item()
+         train_MSE_re = train_loss.item()
+         valid_MSE_re = valid_loss.item()
+                 
+      logs['' + 'log loss'] = train_MSE
+      logs['val_' + 'log loss'] = valid_MSE
 
-      logs['' + 'log loss'] = train_MSE.cpu().data.numpy()
-      logs['val_' + 'log loss'] = validation_MSE.cpu().data.numpy()
-
+      logs['' + 'log loss (relative)'] = train_MSE_re
+      logs['val_' + 'log loss (relative)'] = valid_MSE_re          
+      
       liveloss.update(logs)
       liveloss.draw()
 
-      print('Epoch: ', epoch, '| train loss: %e' % train_MSE.cpu().data.numpy(), '| valid loss: %e' % validation_MSE.cpu().data.numpy())
-
+    time_end = time.time()
+    print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
+          '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
+          '\nEpoch %d use: %.2f second.' % (epoch, time_end - time_start))
       
   return autoencoder
