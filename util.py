@@ -78,12 +78,20 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
         return torch.cat(data, -1)
 
 def normalize_tensor(tensor):
-    t_mean = torch.mean(tensor)
-    t_std = torch.std(tensor)
-    return (tensor - t_mean) / t_std, t_mean, t_std
+    t_mean = torch.zeros(tensor.shape[-1])
+    t_std = torch.zeros(tensor.shape[-1])
+    t_mean[:] = torch.mean(tensor[...,:])
+    t_std[:] = torch.std(tensor[...,:])
+    for i in range(tensor.shape[-1]):
+        tensor[...,i] -= t_mean[i]
+        tensor[...,i] /= t_std[i]
+    return tensor, t_mean, t_std
 
 def denormalize_tensor(normalized_tensor, t_mean, t_std):
-    return normalized_tensor * t_std + t_mean
+    for i in range(tensor.shape[-1]):
+        tensor[...,i] *= t_std[i]
+        tensor[...,i] += t_mean[i]
+    return tensor, t_mean, t_std
 
 def get_sfc_curves_from_coords(coords, num):
     findm, colm, ncolm = sfc.form_spare_matric_from_pts(coords, coords.shape[0])
