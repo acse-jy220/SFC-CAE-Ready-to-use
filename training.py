@@ -39,7 +39,7 @@ def relative_MSE(x, y, epsilon = 0):
 
 def train(autoencoder, optimizer, criterion, other_metric, dataloader):
   autoencoder.train()
-  train_loss, data_length = 0, len(dataloader.dataset)
+  train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
   for batch in dataloader:
       batch = batch.to(device)  # Send batch of images to the GPU
       optimizer.zero_grad()  # Set optimiser grad to 0
@@ -55,7 +55,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
 
 def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
     autoencoder.eval()
-    validation_loss, data_length = 0, len(dataloader.dataset)
+    validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
     for batch in dataloader:
         with torch.no_grad():
             batch = batch.to(device)  # Send batch of images to the GPU
