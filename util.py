@@ -41,7 +41,13 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
         bar.start()
         data = []
         coords = None
-        for i in range(num_data):
+        start = 0
+        while(True):
+            if not os.path.exists(F'{file_prefix}%d{file_format}' % i):
+                print(F'{file_prefix}%d{file_format}' % i not exist, starting_num switch to F'{file_prefix}%d{file_format}' % (i+1))
+                start += 1
+            else: break
+        for i in range(start, num_data + start):
             # vtu_file = vtktools.vtu(F'{file_prefix}%d{file_format}' % i)
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
             if not (coords == vtu_file.points).all():
