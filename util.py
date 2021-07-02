@@ -43,8 +43,8 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
         coords = None
         start = 0
         while(True):
-            if not os.path.exists(F'{file_prefix}%d{file_format}' % i):
-                print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (i, i+1))
+            if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+                print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
                 start += 1
             else: break
         for i in range(start, num_data + start):
