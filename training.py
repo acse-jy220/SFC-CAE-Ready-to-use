@@ -35,7 +35,7 @@ def relative_MSE(x, y, epsilon = 0):
     '''
 
     assert x.shape == y.shape, 'the input tensors should have the same shape!'
-    return ((x - y) ** 2 / y ** 2).sum()     
+    return ((x - y) ** 2).sum() / (y ** 2).sum()     
 
 def train(autoencoder, optimizer, criterion, other_metric, dataloader):
   autoencoder.train()
