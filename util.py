@@ -56,7 +56,7 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
         whole_data = np.array(data)
         if whole_data[..., whole_data.ndim - 1].max() - whole_data[..., whole_data.ndim - 1].min() < 1e-6: 
             whole_data = whole_data[..., :whole_data.ndim - 1]
-        if coords[..., -1].max() - coords[..., -1].min() < 1e-6: coords = coords[..., :-1]
+        # if coords[..., -1].max() - coords[..., -1].min() < 1e-6: coords = coords[..., :-1]
         # print(F'{vtu_field} has %d dimensions.'% whole_data.ndim)
         return whole_data, coords      
 
