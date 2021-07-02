@@ -101,12 +101,12 @@ def train_model(autoencoder,
     if visualize: 
       logs = {}
       
-      if criterion == nn.MSELoss():
+      if criterion_type == 'MSE':
          train_MSE_re = train_loss_other.item()
          valid_MSE_re = valid_loss_other.item()
          train_MSE = train_loss.item()
          valid_MSE = valid_loss.item()
-      elif criterion == relative_MSE:
+      elif criterion_type == 'relative_MSE':
          train_MSE = train_loss_other.item()
          valid_MSE = valid_loss_other.item()
          train_MSE_re = train_loss.item()
