@@ -50,14 +50,6 @@ def index_split(train_ratio, valid_ratio, test_ratio, total_num = 500):
     train_index, valid_index, test_index = np.split(total_index, [knot_1, knot_2])
     return train_index, valid_index, test_index
 
-def normalize_tensor(tensor):
-    t_mean = torch.mean(tensor)
-    t_std = torch.std(tensor)
-    return (tensor - t_mean) / t_std, t_mean, t_std
-
-def denormalize_tensor(normalized_tensor, t_mean, t_std):
-    return normalized_tensor * t_std + t_mean
-
 def sparse_square_grid(N):
     n = N ** 2
     

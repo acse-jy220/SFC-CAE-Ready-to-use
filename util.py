@@ -71,6 +71,29 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
         bar.finish()
         return torch.cat(data, -1)
 
+def normalize_tensor(tensor):
+    t_mean = torch.mean(tensor)
+    t_std = torch.std(tensor)
+    return (tensor - t_mean) / t_std, t_mean, t_std
+
+def denormalize_tensor(normalized_tensor, t_mean, t_std):
+    return normalized_tensor * t_std + t_mean
+
+def get_sfc_curves_from_coords(coords, num):
+    findm, colm, ncolm = sfc.form_spare_matric_from_pts(coords, coords.shape[0])
+    colm = colm[:ncolm]
+    curve_lists = []
+    inv_lists = []
+    ncurve = num
+    graph_trim = -10  # has always been set at -10
+    starting_node = 0 # =0 do not specifiy a starting node, otherwise, specify the starting node
+    whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurve, size**2, ncolm)
+    for i in range(space_filling_curve_numbering.shape[-1]):
+        curve_lists.append(np.argsort(space_filling_curve_numbering[:,i]))
+        inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))
+
+    return curve_lists, inv_lists
+
 def plot_trace_vtu_2D(coords, levels):
     x_left = coords[:, 0].min()
     x_right = coords[:, 0].max()
@@ -178,5 +201,36 @@ class NearestNeighbouring(nn.Module):
 
     def forward(self, tensor_list):
         return torch.mul(tensor_list, self.weights).sum(-1) + self.bias
+
+def expend_SFC_NUM(sfc_ordering, partitions):
+    size = len(sfc_ordering)
+    sfc_ext = np.zeros(size * partitions, dtype = 'int')
+    for i in range(partitions):
+        sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
+    return sfc_ext
+
+def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
+       channels = [input_channel]
+       output_paddings = [size % stride]
+       while size * num_final_channels  > 1200:
+          size = size // stride + 1
+          if num_final_channels >= input_channel * increase_multi: 
+              input_channel *= increase_multi
+              output_paddings.append(size % stride)
+              channels.append(input_channel)
+          else: 
+              channels.append(num_final_channels)
+              output_paddings.append(size % stride)
+    
+       inv_conv_start = size
+       size *= sfc_nums * num_final_channels
+       size_fc = [size]
+       while size // (stride ** 1.5) > dims_latent: 
+          size //= stride
+          size_fc.append(size)
+       size_fc.append(dims_latent)
+
+       return len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
+
 
 
