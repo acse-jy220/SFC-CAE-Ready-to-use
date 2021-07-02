@@ -87,7 +87,7 @@ def get_sfc_curves_from_coords(coords, num):
     ncurve = num
     graph_trim = -10  # has always been set at -10
     starting_node = 0 # =0 do not specifiy a starting node, otherwise, specify the starting node
-    whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurve, size**2, ncolm)
+    whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurve, coords.shape[0], ncolm)
     for i in range(space_filling_curve_numbering.shape[-1]):
         curve_lists.append(np.argsort(space_filling_curve_numbering[:,i]))
         inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))

@@ -258,7 +258,7 @@ class SFC_CAE_Decoder(nn.Module):
     else: return z
 
 
-class SFC_CAE_Autoencoder(nn.Module):
+class SFC_CAE(nn.Module):
   def __init__(self,
                size,
                dimension,
@@ -275,7 +275,7 @@ class SFC_CAE_Autoencoder(nn.Module):
     dims_latent: [int] the dimension of (number of nodes in) the mean-field gaussian latent variable
     '''
 
-    super(SFC_CAE_Autoencoder, self).__init__()
+    super(SFC_CAE, self).__init__()
     self.encoder = SFC_CAE_Encoder(size,
                           dimension,
                           components,
