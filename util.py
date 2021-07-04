@@ -24,7 +24,7 @@ import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
 from torchvision import transforms  # Transforms from torchvision
 
-def read_in_files(data_path, file_format='vtu', vtu_field=None):
+def read_in_files(data_path, file_format='vtu', vtu_fields=None):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -49,19 +49,29 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
             else: break
         for i in range(start, num_data + start):
             # vtu_file = vtktools.vtu(F'{file_prefix}%d{file_format}' % i)
+            data.append([])
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
             if not (coords == vtu_file.points).all():
                coords = vtu_file.points
                print('mesh adapted at snapshot %d' % i)
-            if not vtu_field in vtu_file.point_data.keys():
-               raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
-            data.append(vtu_file.point_data[vtu_field])
+            for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
+                if not vtu_field in vtu_file.point_data.keys():
+                   raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
+                field = vtu_file.point_data[vtu_field]
+                if j == 0:
+                   if field.ndim == 1: field = field.reshape(field.shape[0], 1)
+                   data[i].append(field)
+                else:
+                   if field.ndim == 1: field = field.reshape(field.shape[0], 1)
+                   data[i] = np.hstack((data[i], field))
+            print(data[i].shape)
             cnt_progress +=1
             bar.update(cnt_progress)
         bar.finish()
-        whole_data = np.array(data)
-        if whole_data[..., whole_data.ndim - 1].max() - whole_data[..., whole_data.ndim - 1].min() < 1e-6: 
-            whole_data = whole_data[..., :whole_data.ndim - 1]
+        whole_data = torch.from_numpy(np.array(data)).float()
+        # if whole_data[..., whole_data.ndim - 1].max() - whole_data[..., whole_data.ndim - 1].min() < 1e-6: 
+        #     whole_data = whole_data[..., :whole_data.ndim - 1]
         # if coords[..., -1].max() - coords[..., -1].min() < 1e-6: coords = coords[..., :-1]
         # print(F'{vtu_field} has %d dimensions.'% whole_data.ndim)
         return whole_data, coords      
@@ -71,7 +81,7 @@ def read_in_files(data_path, file_format='vtu', vtu_field=None):
         bar=progressbar.ProgressBar(maxval=num_data)
         data = []
         for i in range(num_data):
-            data[i] = torch.from_numpy(np.loadtxt('{file_prefix} %d {file_format}' % i))
+            data[i] = torch.from_numpy(np.loadtxt('{file_prefix} %d {file_format}' % i)).float()
             cnt_progress +=1
             bar.update(cnt_progress)
         bar.finish()
