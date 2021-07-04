@@ -61,11 +61,11 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 field = vtu_file.point_data[vtu_field]
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
-                   data[i].append(field)
+                   data[i - start].append(field)
                 else:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
-                   data[i] = np.hstack((data[i], field))
-            print(data[i].shape)
+                   data[i - start] = np.hstack((data[i - start], field))
+            print(data[i - start].shape)
             cnt_progress +=1
             bar.update(cnt_progress)
         bar.finish()
