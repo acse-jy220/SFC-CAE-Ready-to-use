@@ -103,7 +103,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
 #         t_std = torch.std(tensor)
 #         return (tensor - t_mean)/t_std, t_mean, t_std
 
-def normalize_tensor(tensor, lower = -1, upper = 1):
+def normalize_tensor(tensor, lower = 0, upper = 1):
     if tensor.ndim > 2:
        tk = torch.zeros(tensor.shape[-1])
        tb = torch.zeros(tensor.shape[-1])
@@ -261,12 +261,12 @@ class NearestNeighbouring(nn.Module):
     def forward(self, tensor_list):
         return torch.mul(tensor_list, self.weights).sum(-1) + self.bias
 
-def expend_SFC_NUM(sfc_ordering, partitions):
-    size = len(sfc_ordering)
-    sfc_ext = np.zeros(size * partitions, dtype = 'int')
-    for i in range(partitions):
-        sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
-    return sfc_ext
+# def expend_SFC_NUM(sfc_ordering, partitions):
+#     size = len(sfc_ordering)
+#     sfc_ext = np.zeros(size * partitions, dtype = 'int')
+#     for i in range(partitions):
+#         sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
+#     return sfc_ext
 
 def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
        channels = [input_channel]
