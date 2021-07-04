@@ -62,6 +62,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start].append(field)
+                   data[i - start] = np.array(data[i - start])
                 else:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start] = np.hstack((data[i - start], field))
