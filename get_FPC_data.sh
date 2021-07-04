@@ -7,6 +7,7 @@ unzip FPC_Re3900_DG_old.zip -d './'
 rm -rf FPC_Re3900_DG_old.zip
 unzip FPC_Re3900_DG_new.zip -d './'
 rm -rf FPC_Re3900_DG_new.zip
+rm -rf './FPC_Re3900_DG_new/copy_over_N_files.py'
 
 mkdir FPC_Re3900_CG_new
 wget https://www.dropbox.com/sh/aid0yv2685nln51/AADmtVChECW_B85M8O2cDmR0a
