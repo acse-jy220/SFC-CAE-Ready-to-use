@@ -81,9 +81,9 @@ def normalize_tensor(tensor):
     if tensor.ndim > 2:
        t_mean = torch.zeros(tensor.shape[-1])
        t_std = torch.zeros(tensor.shape[-1])
-       t_mean[:] = torch.mean(tensor[...,:])
-       t_std[:] = torch.std(tensor[...,:])
        for i in range(tensor.shape[-1]):
+          t_mean[i] = tensor[..., i].mean()
+          t_std[i] = tensor[..., i].std()
           tensor[...,i] -= t_mean[i]
           tensor[...,i] /= t_std[i]
        return tensor, t_mean, t_std
