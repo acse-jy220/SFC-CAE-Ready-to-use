@@ -62,7 +62,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 if field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[..., :-1] # get rid of zero coords
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
-                   data[i - start].append(field)
+                   data[i - start] = field
                 else:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start] = np.hstack((data[i - start], field))
