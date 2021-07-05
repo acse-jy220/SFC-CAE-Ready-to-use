@@ -59,8 +59,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 if not vtu_field in vtu_file.point_data.keys():
                    raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
                 field = vtu_file.point_data[vtu_field]
-                if field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[...,0:-1] # get rid of zero coords
-                print(field.shape)
+                if field.ndim > 1 and field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[...,0:-1] # get rid of zero coords
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start] = field
