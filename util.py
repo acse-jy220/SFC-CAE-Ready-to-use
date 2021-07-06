@@ -118,17 +118,17 @@ def standardlize_tensor(tensor, lower = -1, upper = 1):
         tb = (tensor.max() * lower - tensor.min() * upper) / (tensor.max() - tensor.min())
         return tensor * tk + tb, tk, tb
 
-def denormalize_tensor(normalized_tensor, t_mean, t_std):
+def denormalize_tensor(tensor, t_mean, t_std):
     if tensor.ndim > 2:
        for i in range(tensor.shape[-1]):
            tensor[...,i] *= t_std[i]
            tensor[...,i] += t_mean[i]
-      else:
+       else:
           tensor *= t_std
           tensor += t_mean
     return tensor
 
-def destandardlize_tensor(normalized_tensor, tk, tb):
+def destandardlize_tensor(tensor, tk, tb):
     if tensor.ndim > 2:
        for i in range(tensor.shape[-1]):
            tensor[...,i] -= tb[i]
