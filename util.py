@@ -103,7 +103,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
 #         t_std = torch.std(tensor)
 #         return (tensor - t_mean)/t_std, t_mean, t_std
 
-def normalize_tensor(tensor, lower = 0, upper = 1):
+def normalize_tensor(tensor, lower = -1, upper = 1):
     if tensor.ndim > 2:
        tk = torch.zeros(tensor.shape[-1])
        tb = torch.zeros(tensor.shape[-1])
