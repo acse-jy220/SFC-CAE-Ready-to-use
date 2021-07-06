@@ -88,22 +88,22 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         bar.finish()
         return torch.cat(data, -1)
 
-# def normalize_tensor(tensor):
-#     if tensor.ndim > 2:
-#        t_mean = torch.zeros(tensor.shape[-1])
-#        t_std = torch.zeros(tensor.shape[-1])
-#        for i in range(tensor.shape[-1]):
-#           t_mean[i] = tensor[..., i].mean()
-#           t_std[i] = tensor[..., i].std()
-#           tensor[...,i] -= t_mean[i]
-#           tensor[...,i] /= t_std[i]
-#        return tensor, t_mean, t_std
-#     else:
-#         t_mean = torch.mean(tensor)
-#         t_std = torch.std(tensor)
-#         return (tensor - t_mean)/t_std, t_mean, t_std
+def normalize_tensor(tensor):
+    if tensor.ndim > 2:
+       t_mean = torch.zeros(tensor.shape[-1])
+       t_std = torch.zeros(tensor.shape[-1])
+       for i in range(tensor.shape[-1]):
+          t_mean[i] = tensor[..., i].mean()
+          t_std[i] = tensor[..., i].std()
+          tensor[...,i] -= t_mean[i]
+          tensor[...,i] /= t_std[i]
+       return tensor, t_mean, t_std
+    else:
+        t_mean = torch.mean(tensor)
+        t_std = torch.std(tensor)
+        return (tensor - t_mean)/t_std, t_mean, t_std
 
-def normalize_tensor(tensor, lower = -1, upper = 1):
+def standardlize_tensor(tensor, lower = -1, upper = 1):
     if tensor.ndim > 2:
        tk = torch.zeros(tensor.shape[-1])
        tb = torch.zeros(tensor.shape[-1])
@@ -118,17 +118,17 @@ def normalize_tensor(tensor, lower = -1, upper = 1):
         tb = (tensor.max() * lower - tensor.min() * upper) / (tensor.max() - tensor.min())
         return tensor * tk + tb, tk, tb
 
-# def denormalize_tensor(normalized_tensor, t_mean, t_std):
-#     if tensor.ndim > 2:
-#        for i in range(tensor.shape[-1]):
-#            tensor[...,i] *= t_std[i]
-#            tensor[...,i] += t_mean[i]
-    #   else:
-    #       tensor *= t_std
-    #       tensor += t_mean
-#     return tensor
+def denormalize_tensor(normalized_tensor, t_mean, t_std):
+    if tensor.ndim > 2:
+       for i in range(tensor.shape[-1]):
+           tensor[...,i] *= t_std[i]
+           tensor[...,i] += t_mean[i]
+      else:
+          tensor *= t_std
+          tensor += t_mean
+    return tensor
 
-def denormalize_tensor(normalized_tensor, tk, tb):
+def destandardlize_tensor(normalized_tensor, tk, tb):
     if tensor.ndim > 2:
        for i in range(tensor.shape[-1]):
            tensor[...,i] -= tb[i]
