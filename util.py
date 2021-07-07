@@ -51,7 +51,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         for i in range(start, num_data + start):
             data.append([])
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
-            if not (coords == vtu_file.points).all() or not (cells == vtu_file.cells_dict).all():
+            if not (coords == vtu_file.points).all():
                coords = vtu_file.points
                cells = vtu_file.cells_dict
                print('mesh adapted at snapshot %d' % i)
