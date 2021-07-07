@@ -148,6 +148,7 @@ class SFC_CAE_Decoder(nn.Module):
     self.components = encoder.components
     self.self_concat = encoder.self_concat
     self.num_final_channels = encoder.num_final_channels
+    self.output_linear = output_linear
     self.size_conv = encoder.size_conv
     self.inv_conv_start = encoder.inv_conv_start
     self.input_channel = self.components * self.self_concat
@@ -269,12 +270,12 @@ class SFC_CAE_Decoder(nn.Module):
     for i in range(self.sfc_nums): del zs[0]
     if self.components > 1: 
         z = z.view(-1, self.components, self.input_size).permute(0, -1, -2)
-        if self.out_linear: 
+        if self.output_linear: 
             for i in range(self.components):
                 z[..., i] = self.out_linear(z[..., i])
         return z
     else: 
-        if self.out_linear: z = self.out_linear(z) 
+        if self.output_linear: z = self.out_linear(z) 
         return z
 
 
