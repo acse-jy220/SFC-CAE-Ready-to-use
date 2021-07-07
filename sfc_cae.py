@@ -217,7 +217,7 @@ class SFC_CAE_Decoder(nn.Module):
     # final linear activate
     if output_linear:
        self.out_linear = nn.Linear(self.input_size, self.input_size)
-       self.register_parameter(name='out_linear_weights', param=self.out_linear.weights)
+       self.register_parameter(name='out_linear_weights', param=self.out_linear.weight)
        self.register_parameter(name='out_linear_bias', param=self.out_linear.bias)   
 
   def get_concat_list(self, x, num_sfc):
