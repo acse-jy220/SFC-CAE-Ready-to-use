@@ -279,7 +279,7 @@ class SFC_CAE_Decoder(nn.Module):
             for i in range(self.components):
                 t = z[..., i]
                 t = t * self.out_linear_weights[i] + self.out_linear_bias[i]
-                ts.append(ts.unsqueeze(-1))
+                ts.append(t.unsqueeze(-1))
         return torch.cat(ts, -1)
     else: 
         if self.output_linear:
