@@ -15,7 +15,8 @@ class SFC_CAE_Encoder(nn.Module):
                self_concat,
                nearest_neighbouring, 
                dims_latent, 
-               space_filling_orderings):
+               space_filling_orderings,
+               activation):
     '''
     Class contains the Encoder (snapshot -> latent).
     '''
@@ -55,11 +56,17 @@ class SFC_CAE_Encoder(nn.Module):
 
     self.structured = structured
     if self.structured: 
-        self.increase_multi = 2
-        self.activate = nn.ReLU()
+       self.increase_multi = 2
+       if activation is None:
+          self.activate = nn.ReLU()
+       else:
+          self.activate = activation     
     else: 
-        self.increase_multi = 4
-        self.activate = nn.Tanh()
+       self.increase_multi = 4 
+       if activation is None:
+          self.activate = nn.Tanh()
+       else:
+          self.activate = activation
 
     self.num_final_channels = 16  # default
 
@@ -127,7 +134,7 @@ class SFC_CAE_Encoder(nn.Module):
     return x
 
 class SFC_CAE_Decoder(nn.Module): 
-  def __init__(self, encoder, inv_space_filling_orderings):
+  def __init__(self, encoder, inv_space_filling_orderings, output_linear = False):
     '''
     Class contains the Decoder (snapshot -> latent).
     '''
@@ -206,6 +213,12 @@ class SFC_CAE_Decoder(nn.Module):
     self.register_parameter(name='final_sp_weights', param=self.final_sp.weights)
     self.register_parameter(name='final_sp_bias', param=self.final_sp.bias)   
 
+    # final linear activate
+    if output_linear:
+       self.out_linear = nn.Linear(self.input_size, self.input_size)
+       self.register_parameter(name='out_linear_weights', param=self.out_linear.weights)
+       self.register_parameter(name='out_linear_bias', param=self.out_linear.bias)   
+
   def get_concat_list(self, x, num_sfc):
     if self.self_concat > 1:
        return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).view(-1, self.self_concat, self.input_size * self.components).permute(0, -1, -2), 
@@ -254,8 +267,15 @@ class SFC_CAE_Decoder(nn.Module):
         z = self.activate(self.final_sp(z))
     else: z = zs[0].squeeze(-1)
     for i in range(self.sfc_nums): del zs[0]
-    if self.components > 1: return z.view(-1, self.components, self.input_size).permute(0, -1, -2)
-    else: return z
+    if self.components > 1: 
+        z = z.view(-1, self.components, self.input_size).permute(0, -1, -2)
+        if self.out_linear: 
+            for i in range(self.components):
+                z[..., i] = self.out_linear(z[..., i])
+        return z
+    else: 
+        if self.out_linear: z = self.out_linear(z) 
+        return z
 
 
 class SFC_CAE(nn.Module):
@@ -268,7 +288,9 @@ class SFC_CAE(nn.Module):
                nearest_neighbouring,
                dims_latent,
                space_filling_orderings, 
-               invert_space_filling_orderings):
+               invert_space_filling_orderings,
+               activation = None,
+               output_linear = False):
     '''
     Class combines the Encoder and the Decoder with an Autoencoder latent space.
 
@@ -283,8 +305,9 @@ class SFC_CAE(nn.Module):
                           self_concat,
                           nearest_neighbouring, 
                           dims_latent, 
-                          space_filling_orderings)
-    self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings)
+                          space_filling_orderings,
+                          activation)
+    self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
 
 
   def forward(self, x):
