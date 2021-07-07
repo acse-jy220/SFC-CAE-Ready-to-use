@@ -2,4 +2,4 @@
 A handy tool to utilize SFC-CAE
 ### Run on Colab
 To use this tool on colab, please refer to the instruction Notebook: <br>
-[Colab intro](https://github.com/acse-2020/ACSE-8/blob/main/implementation/practical_0/Getting_Started.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]
+![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)(http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/Colab/Instruction_SFC_CAE.ipynb
