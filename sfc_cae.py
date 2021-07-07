@@ -216,9 +216,13 @@ class SFC_CAE_Decoder(nn.Module):
 
     # final linear activate
     if output_linear:
-       self.out_linear = nn.Linear(self.input_size, self.input_size)
-       self.register_parameter(name='out_linear_weights', param=self.out_linear.weight)
-       self.register_parameter(name='out_linear_bias', param=self.out_linear.bias)   
+      self.out_linear_weights = []
+      self.out_linear_bias = []
+      for i in range(self.components):
+          self.out_linear_weights.append(nn.Parameter(torch.ones(self.input_size)))
+          self.out_linear_bias.append(nn.Parameter(torch.zeros(self.input_size)))
+          self.register_parameter(name='out_linear_weights_%d'%i, param=self.out_linear_weights[i])
+          self.register_parameter(name='out_linear_bias_%d'%i, param=self.out_linear_bias[i])   
 
   def get_concat_list(self, x, num_sfc):
     if self.self_concat > 1:
@@ -271,11 +275,15 @@ class SFC_CAE_Decoder(nn.Module):
     if self.components > 1: 
         z = z.view(-1, self.components, self.input_size).permute(0, -1, -2)
         if self.output_linear: 
+            ts = [] 
             for i in range(self.components):
-                z[..., i] = self.out_linear(z[..., i])
-        return z
+                t = z[..., i]
+                t = t * self.out_linear_weights[i] + self.out_linear_bias[i]
+                ts.append(ts.unsqueeze(-1))
+        return torch.cat(ts, -1)
     else: 
-        if self.output_linear: z = self.out_linear(z) 
+        if self.output_linear:
+            z = self.out_linear_weights[0] * z + self.out_linear_bias[0]
         return z
 
 
