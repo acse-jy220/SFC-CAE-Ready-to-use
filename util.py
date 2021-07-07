@@ -41,6 +41,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         bar.start()
         data = []
         coords = None
+        cells = None
         start = 0
         while(True):
             if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
@@ -48,11 +49,11 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 start += 1
             else: break
         for i in range(start, num_data + start):
-            # vtu_file = vtktools.vtu(F'{file_prefix}%d{file_format}' % i)
             data.append([])
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
-            if not (coords == vtu_file.points).all():
+            if not (coords == vtu_file.points).all() or not (cells == vtu_file.cells_dict).all():
                coords = vtu_file.points
+               cells = vtu_file.cells_dict
                print('mesh adapted at snapshot %d' % i)
             for j in range(len(vtu_fields)):
                 vtu_field = vtu_fields[j]
@@ -75,7 +76,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         #     whole_data = whole_data[..., :whole_data.ndim - 1]
         # if coords[..., -1].max() - coords[..., -1].min() < 1e-6: coords = coords[..., :-1]
         # print(F'{vtu_field} has %d dimensions.'% whole_data.ndim)
-        return whole_data, coords      
+        return whole_data, coords, cells    
 
     elif (file_format == ".txt" or file_format == ".dat"):
         print("Read in txt/dat Data......")
@@ -292,4 +293,36 @@ def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, inp
        return len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
 
 
-
+def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_spliters):
+    data = glob.glob(data_path + "*")
+    num_data = len(data)
+    file_prefix = data[0].split('.')[0].split('_')
+    file_prefix.pop(-1)
+    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
+    else: file_prefix = file_prefix[0] + "_"
+    file_format = '.vtu'
+    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    point_data = {''}
+    cnt_progress = 0
+    print("Write vtu Data......\n")
+    bar=progressbar.ProgressBar(maxval=num_data)
+    bar.start()
+    start = 0
+    while(True):
+        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+            start += 1
+        else: break
+    for i in range(start, num_data + start):
+            point_data = {}
+            filename = F'../reconstructed/reconstructed_%d{file_format}' % i
+            for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
+                field = tensor[i][..., field_spliters[j] : field_spliters[j + 1]].detach().numpy()
+                point_data.update({vtu_field: field})
+            mesh = meshio.Mesh(coords, cells, point_data)
+            mesh.write(filename)
+            cnt_progress +=1
+            bar.update(cnt_progress)
+    bar.finish()
+    print('\n Finished writing vtu files.')
