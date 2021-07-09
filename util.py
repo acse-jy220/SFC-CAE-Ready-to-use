@@ -13,6 +13,7 @@ import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.tri as tri
 import meshio
+import re
 
 # create an animation
 from matplotlib import animation
@@ -22,12 +23,15 @@ import cmocean
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
+from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorDataset, Dataset
+import torchvision.transforms as tt
+from torchvision.transforms import Compose, ToTensor, Normalize
 from torchvision import transforms  # Transforms from torchvision
 
 def read_in_files(data_path, file_format='vtu', vtu_fields=None):
     data = glob.glob(data_path + "*")
     num_data = len(data)
-    file_prefix = data[0].split('.')[0].split('_')
+    file_prefix = data[0].split('.')[-2].split('_')
     file_prefix.pop(-1)
     if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
     else: file_prefix = file_prefix[0] + "_"
@@ -89,6 +93,20 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         bar.finish()
         return torch.cat(data, -1)
 
+def read_parameters(setting_file = 'parameters.ini'):
+    f = open(setting_file, 'r')
+    lines = f.readlines()
+    # create a dicitionary to store the parameters
+    list_p = {}
+ 
+    for line in lines[1:]:
+        line = line.strip('\n')
+        ss = re.split('=', line)
+        list_p[ss[0].strip()] = ss[-1].strip()
+    f.close()
+    
+    return list_p  
+
 def normalize_tensor(tensor):
     if tensor.ndim > 2:
        t_mean = torch.zeros(tensor.shape[-1])
@@ -138,6 +156,67 @@ def destandardlize_tensor(tensor, tk, tb):
         tensor -= tb
         tensor /= tk
     return tensor
+
+def find_min_and_max(data_path):
+    data = glob.glob(data_path + "*")
+    num_data = len(data)
+    file_prefix = data[0].split('.')[-2].split('_')
+    file_prefix.pop(-1)
+    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
+    else: file_prefix = file_prefix[0] + "_"
+    file_format = data[0].split('.')[-1]
+    file_format = '.' + file_format
+    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    cnt_progress = 0
+    print("Compute min and max for Data......\n")
+    bar=progressbar.ProgressBar(maxval=num_data)
+    bar.start()
+    data = []
+    start = 0
+    while(True):
+        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+            start += 1
+        else: break
+    for i in range(start, num_data + start):
+        filename = F'{file_prefix}%d{file_format}' % i
+        tensor = torch.load(filename)
+        if i == start:
+           t_min = tensor.min(0).values.unsqueeze(-1)
+           t_max = tensor.max(0).values.unsqueeze(-1)
+        else:
+           t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
+           t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
+        data.append(file_name)
+        cnt_progress +=1
+        bar.update(cnt_progress)
+    t_min = t_min.min(-1).values
+    t_max = t_max.min(-1).values
+    bar.finish()
+    np.savetxt('./t_max.txt', t_max)
+    np.savetxt('./t_min.txt', t_min)
+    np.savetxt('./path_data.txt', data)
+
+    return data, t_min, t_max 
+
+
+
+
+class MytensorDataset(Dataset):
+      def __init__(self, path_dataset, t_min, t_max, activation):
+          self.dataset = path_dataset
+          self.length = len(path_dataset)
+          tensor_0 = torch.load(path_dataset[0])
+          self.tb = torch.zeros((tensor_0.shape[-1]))
+          self.tk = torch.zeros((tensor_0.shape[-1]))
+          print('Computing coefficients to normalize the dataset.....')
+          bar=progressbar.ProgressBar(maxval=self.length)
+          for i in range(self.length):
+              tensor = torch.load(path_dataset[i])
+              self.tb = 
+
+        
+
 
 def get_sfc_curves_from_coords(coords, num):
     findm, colm, ncolm = sfc.form_spare_matric_from_pts(coords, coords.shape[0])
