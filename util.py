@@ -24,9 +24,6 @@ import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
 from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorDataset, Dataset
-import torchvision.transforms as tt
-from torchvision.transforms import Compose, ToTensor, Normalize
-from torchvision import transforms  # Transforms from torchvision
 
 def read_in_files(data_path, file_format='vtu', vtu_fields=None):
     data = glob.glob(data_path + "*")
