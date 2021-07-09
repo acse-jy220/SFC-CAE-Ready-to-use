@@ -185,9 +185,9 @@ def find_min_and_max(data_path, only_get_names = False):
            else:
               t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
               t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
+        data.append(filename)
         cnt_progress +=1
         bar.update(cnt_progress)
-    data.append(filename)
     bar.finish()
     if not only_get_names:
         t_min = t_min.min(-1).values
