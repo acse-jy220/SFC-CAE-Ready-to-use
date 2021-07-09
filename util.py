@@ -157,7 +157,7 @@ def destandardlize_tensor(tensor, tk, tb):
 def find_min_and_max(data_path):
     data = glob.glob(data_path + "*")
     num_data = len(data)
-    file_prefix = data[0].split('.')[-2].split('_')
+    file_prefix = data[0].split('.')[0].split('_')
     file_prefix.pop(-1)
     if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
     else: file_prefix = file_prefix[0] + "_"
@@ -184,7 +184,7 @@ def find_min_and_max(data_path):
         else:
            t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
            t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
-        data.append(file_name)
+        data.append(filename)
         cnt_progress +=1
         bar.update(cnt_progress)
     t_min = t_min.min(-1).values
