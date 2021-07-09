@@ -92,8 +92,6 @@ class SFC_CAE_Encoder(nn.Module):
        self.register_parameter(name='fc%d_weights'%(i + 1), param=self.fcs[i].weight)
        self.register_parameter(name='fc%d_bias'%(i + 1), param=self.fcs[i].bias)
 
-    self.xs = torch.zeros(self.sfc_nums, self.num_final_channels * self.inv_conv_start)
-
   def get_concat_list(self, x, num_sfc):
     return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
                       ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
@@ -281,6 +279,7 @@ class SFC_CAE_Decoder(nn.Module):
                 t = t * self.out_linear_weights[i] + self.out_linear_bias[i]
                 ts.append(t.unsqueeze(-1))
             z = torch.cat(ts, -1)
+            del ts
         return z
     else: 
         if self.output_linear:
