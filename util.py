@@ -154,7 +154,7 @@ def destandardlize_tensor(tensor, tk, tb):
         tensor /= tk
     return tensor
 
-def find_min_and_max(data_path):
+def find_min_and_max(data_path, only_get_names = False):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -177,24 +177,24 @@ def find_min_and_max(data_path):
         else: break
     for i in range(start, num_data + start):
         filename = F'{file_prefix}%d{file_format}' % i
-        tensor = torch.load(filename)
-        if i == start:
-           t_min = tensor.min(0).values.unsqueeze(-1)
-           t_max = tensor.max(0).values.unsqueeze(-1)
-        else:
-           t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
-           t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
-        data.append(filename)
+        if not only_get_names:
+           tensor = torch.load(filename)
+           if i == start:
+              t_min = tensor.min(0).values.unsqueeze(-1)
+              t_max = tensor.max(0).values.unsqueeze(-1)
+           else:
+              t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
+              t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
         cnt_progress +=1
         bar.update(cnt_progress)
-    t_min = t_min.min(-1).values
-    t_max = t_max.min(-1).values
+    data.append(filename)
     bar.finish()
-    np.savetxt('./t_max.txt', t_max)
-    np.savetxt('./t_min.txt', t_min)
-    np.savetxt('./path_data.txt', data)
-
-    return data, t_min, t_max 
+    if not only_get_names:
+        t_min = t_min.min(-1).values
+        t_max = t_max.max(-1).values        
+        np.savetxt('./t_max.txt', t_max)
+        np.savetxt('./t_min.txt', t_min)
+    return data
 
 
 
