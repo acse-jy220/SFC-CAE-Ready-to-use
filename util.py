@@ -202,18 +202,18 @@ def find_min_and_max(data_path):
 
 
 
-class MytensorDataset(Dataset):
-      def __init__(self, path_dataset, t_min, t_max, activation):
-          self.dataset = path_dataset
-          self.length = len(path_dataset)
-          tensor_0 = torch.load(path_dataset[0])
-          self.tb = torch.zeros((tensor_0.shape[-1]))
-          self.tk = torch.zeros((tensor_0.shape[-1]))
-          print('Computing coefficients to normalize the dataset.....')
-          bar=progressbar.ProgressBar(maxval=self.length)
-          for i in range(self.length):
-              tensor = torch.load(path_dataset[i])
-              self.tb = 
+# class MytensorDataset(Dataset):
+#       def __init__(self, path_dataset, t_min, t_max, activation):
+#           self.dataset = path_dataset
+#           self.length = len(path_dataset)
+#           tensor_0 = torch.load(path_dataset[0])
+#           self.tb = torch.zeros((tensor_0.shape[-1]))
+#           self.tk = torch.zeros((tensor_0.shape[-1]))
+#           print('Computing coefficients to normalize the dataset.....')
+#           bar=progressbar.ProgressBar(maxval=self.length)
+#           for i in range(self.length):
+#               tensor = torch.load(path_dataset[i])
+#               self.tb = 
 
         
 
