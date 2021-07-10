@@ -101,21 +101,21 @@ def train_model(autoencoder,
     time_start = time.time()
     train_loss, train_loss_other = train(autoencoder, optimizer, criterion, other_metric, train_loader)
     valid_loss, valid_loss_other = validate(autoencoder, optimizer, criterion, other_metric, valid_loader)
+
+    if criterion_type == 'MSE':
+        train_MSE_re = train_loss_other.item()
+        valid_MSE_re = valid_loss_other.item()
+        train_MSE = train_loss.item()
+        valid_MSE = valid_loss.item()
+    elif criterion_type == 'relative_MSE':
+        train_MSE = train_loss_other.item()
+        valid_MSE = valid_loss_other.item()
+        train_MSE_re = train_loss.item()
+        valid_MSE_re = valid_loss.item()
     
     # do livelossplot if visualize turned-on 
     if visualize: 
       logs = {}
-      
-      if criterion_type == 'MSE':
-         train_MSE_re = train_loss_other.item()
-         valid_MSE_re = valid_loss_other.item()
-         train_MSE = train_loss.item()
-         valid_MSE = valid_loss.item()
-      elif criterion_type == 'relative_MSE':
-         train_MSE = train_loss_other.item()
-         valid_MSE = valid_loss_other.item()
-         train_MSE_re = train_loss.item()
-         valid_MSE_re = valid_loss.item()
                  
       logs['' + 'log loss'] = train_MSE
       logs['val_' + 'log loss'] = valid_MSE
