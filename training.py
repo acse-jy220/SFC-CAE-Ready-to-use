@@ -87,10 +87,10 @@ def train_model(autoencoder,
       other_metric = nn.MSELoss()
       criterion = relative_MSE
 
-   train_MSEs = []
-   valid_MSEs = []
-   re_train_MSEs = []
-   re_valid_MSEs = []
+  train_MSEs = []
+  valid_MSEs = []
+  re_train_MSEs = []
+  re_valid_MSEs = []
   
   # do livelossplot if visualize turned-on
   if visualize:
