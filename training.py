@@ -86,16 +86,21 @@ def train_model(autoencoder,
   elif criterion_type == 'relative_MSE': 
       other_metric = nn.MSELoss()
       criterion = relative_MSE
+
+   train_MSEs = []
+   valid_MSEs = []
+   re_train_MSEs = []
+   re_valid_MSEs = []
   
   # do livelossplot if visualize turned-on
   if visualize:
       liveloss = PlotLosses()
 
   for epoch in range(n_epochs):
+    print("eppoch %d starting......"%(epoch))
     time_start = time.time()
     train_loss, train_loss_other = train(autoencoder, optimizer, criterion, other_metric, train_loader)
     valid_loss, valid_loss_other = validate(autoencoder, optimizer, criterion, other_metric, valid_loader)
-    print("eppoch %d starting......"%(epoch))
     
     # do livelossplot if visualize turned-on 
     if visualize: 
@@ -122,8 +127,27 @@ def train_model(autoencoder,
       liveloss.draw()
 
     time_end = time.time()
+    train_MSEs.append(train_MSE)
+    valid_MSEs.append(valid_MSE)
+    re_train_MSEs.append(train_MSE_re)
+    re_valid_MSEs.append(valid_MSE_re)
+
     print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
           '\nEpoch %d use: %.2f second.' % (epoch, time_end - time_start))
-      
+
+  MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
+  reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
+  
+  filename = F'MSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}\
+  _lr_{lr}_n_epoches_{n_epochs}.txt'
+  refilename = F'reMSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}\
+  _lr_{lr}_n_epoches_{n_epochs}.txt'
+
+  np.savetxt(filename, MSELoss)
+  np.savetxt(refilename, reMSELoss)
+
+  print('MESLoss saved to ', filename)
+  print('relative MSELoss saved to ', refilename)
+
   return autoencoder
