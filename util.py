@@ -160,7 +160,7 @@ def find_min_and_max(data_path, only_get_names = False):
     file_prefix = data[0].split('.')[:-1]
     file_prefix = ''.join(file_prefix)
     file_prefix = file_prefix.split('_')[:-1]
-    file_prefix = ''.join(file_prefix)
+    file_prefix = ''.join(file_prefix) + '_'
     file_format = data[0].split('.')[-1]
     file_format = '.' + file_format
     print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
