@@ -96,9 +96,9 @@ else:
    print(space_filling_orderings)
    print(invert_space_filling_orderings)
 
-train_ratio = 0.8
+train_ratio = 0.9
 valid_ratio = 0.1
-test_ratio = 0.1
+test_ratio = 0
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
 
 train_index = train_index - 1
