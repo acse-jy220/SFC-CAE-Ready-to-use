@@ -103,8 +103,8 @@ class run_simulation_advection():
         
     def update_grid(self, n_step: int):
         arr = self.full_stage[n_step].reshape((self.n, self.n))
-        vmax = np.max(arr)
-        vmin = np.min(arr)
+        vmax = min(np.max(arr) + 0.001, 1 + 1e-5)
+        vmin = max(np.min(arr) - 0.001, -1e-5)
         self.cax.set_data(arr)
         self.cax.set_clim(vmin, vmax)
         return self.cax,
@@ -129,7 +129,7 @@ class run_simulation_advection():
         ax.xaxis.set_major_formatter(plt.FixedFormatter(x_label))
         ax.yaxis.set_major_locator(plt.FixedLocator(j_loc))
         ax.yaxis.set_major_formatter(plt.FixedFormatter(y_label))
-        self.cax = ax.imshow(self.full_stage[0].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower')
+        self.cax = ax.imshow(self.full_stage[0].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower', vmin = max(np.min(self.full_stage[0]) - 0.001, -1e-5), vmax = min(np.max(self.full_stage[0]) + 0.001, 1 + 1e-5))
         cb = fig.colorbar(self.cax)
         anim = animation.FuncAnimation(fig, self.update_grid, frames = np.arange(1, self.steps + 1))
         return anim
@@ -154,7 +154,7 @@ class run_simulation_advection():
         ax.xaxis.set_major_formatter(plt.FixedFormatter(x_label))
         ax.yaxis.set_major_locator(plt.FixedLocator(j_loc))
         ax.yaxis.set_major_formatter(plt.FixedFormatter(y_label))
-        self.cax = ax.imshow(self.full_stage[step].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower')
+        self.cax = ax.imshow(self.full_stage[step].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower', vmin = max(np.min(self.full_stage[step]) - 0.001, -1e-5), vmax = min(np.max(self.full_stage[step]) + 0.001, 1 + 1e-5))
         cb = fig.colorbar(self.cax)
         plt.show()
     
