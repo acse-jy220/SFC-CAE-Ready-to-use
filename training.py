@@ -94,7 +94,7 @@ def train_model(autoencoder,
       liveloss = PlotLosses()
 
   for epoch in range(n_epochs):
-    print("eppoch %d starting......"%(epoch))
+    print("epoch %d starting......"%(epoch))
     time_start = time.time()
     train_loss, train_loss_other = train(autoencoder, optimizer, criterion, other_metric, train_loader)
     valid_loss, valid_loss_other = validate(autoencoder, optimizer, criterion, other_metric, valid_loader)

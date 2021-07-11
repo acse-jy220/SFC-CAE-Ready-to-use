@@ -223,7 +223,7 @@ class MyTensorDataset(Dataset):
           self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
 
       def __getitem__(self, index):
-          tensor = torch.load(self.dataset[index])
+          tensor = torch.load(self.dataset[index]).float()
           return tensor * self.tk + self.tb
       
       def __len__(self):
