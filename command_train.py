@@ -134,15 +134,15 @@ print('length of train set:', len(train_set), '\n')
 print('length of valid set:',len(valid_set), '\n')
 print('length of test set:',len(test_set), '\n')
 
-
-train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
-valid_loader = DataLoader(dataset=valid_set, batch_size=len(valid_set), shuffle=True)
-
 # training parameters
 batch_size = int(parameters['batch_size'])
 lr = float(parameters['lr'])
 n_epoches = int(parameters['n_epoches'])
 seed = int(parameters['seed'])
+
+
+train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
+valid_loader = DataLoader(dataset=valid_set, batch_size=len(valid_set), shuffle=True)
 
 input_size = space_filling_orderings[0].shape[0]
 
