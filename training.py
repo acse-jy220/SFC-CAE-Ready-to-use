@@ -139,10 +139,8 @@ def train_model(autoencoder,
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
   
-  filename = F'MSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}\
-  _lr_{lr}_n_epoches_{n_epochs}.txt'
-  refilename = F'reMSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}\
-  _lr_{lr}_n_epoches_{n_epochs}.txt'
+  filename = F'MSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
+  refilename = F'reMSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
 
   np.savetxt(filename, MSELoss)
   np.savetxt(refilename, reMSELoss)

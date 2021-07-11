@@ -157,10 +157,10 @@ def destandardlize_tensor(tensor, tk, tb):
 def find_min_and_max(data_path, only_get_names = False):
     data = glob.glob(data_path + "*")
     num_data = len(data)
-    file_prefix = data[0].split('.')[0].split('_')
-    file_prefix.pop(-1)
-    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
-    else: file_prefix = file_prefix[0] + "_"
+    file_prefix = data[0].split('.')[:-1]
+    file_prefix = ''.join(file_prefix)
+    file_prefix = file_prefix.split('_')[:-1]
+    file_prefix = ''.join(file_prefix)
     file_format = data[0].split('.')[-1]
     file_format = '.' + file_format
     print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
@@ -199,18 +199,20 @@ def find_min_and_max(data_path, only_get_names = False):
 
 
 
-# class MytensorDataset(Dataset):
-#       def __init__(self, path_dataset, t_min, t_max, activation):
-#           self.dataset = path_dataset
-#           self.length = len(path_dataset)
-#           tensor_0 = torch.load(path_dataset[0])
-#           self.tb = torch.zeros((tensor_0.shape[-1]))
-#           self.tk = torch.zeros((tensor_0.shape[-1]))
-#           print('Computing coefficients to normalize the dataset.....')
-#           bar=progressbar.ProgressBar(maxval=self.length)
-#           for i in range(self.length):
-#               tensor = torch.load(path_dataset[i])
-#               self.tb = 
+class MyTensorDataset(Dataset):
+      def __init__(self, path_dataset, components, lower, upper):
+          self.dataset = path_dataset
+          self.components = components
+          self.length = len(path_dataset)
+          self.t_max = np.loadtxt('./t_max.txt')
+          self.t_min = np.loadtxt('./t_min.txt')
+          self.tk = (upper - lower) / (self.t_max - self.t_min)
+          self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
+
+      def __getitem__(self, index):
+          tensor = torch.load(self.dataset[index])
+          return tensor * self.tk + self.tb
+          
 
         
 
