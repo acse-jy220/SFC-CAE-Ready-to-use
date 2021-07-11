@@ -1,5 +1,3 @@
-from simple_hilbert import *
-from advection_block_analytical import *
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
@@ -212,7 +210,7 @@ class SFC_CAE_Decoder(nn.Module):
     self.register_parameter(name='final_sp_weights', param=self.final_sp.weights)
     self.register_parameter(name='final_sp_bias', param=self.final_sp.bias)   
 
-    # final linear activate
+    # final linear activate (shut down it if you have standardlized your data first)
     if output_linear:
       self.out_linear_weights = []
       self.out_linear_bias = []
@@ -321,9 +319,9 @@ class SFC_CAE(nn.Module):
 
   def forward(self, x):
     '''
-    x - [float] A batch of images from the data-loader
+    x - [Torch.Tensor.float] A batch of fluid snapshots from the data-loader
     '''
 
-    z = self.encoder(x)
+    z = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}.
     return self.decoder(z)  # Return the output of the decoder (1-D, the predicted image)
 

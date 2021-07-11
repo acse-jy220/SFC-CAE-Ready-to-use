@@ -212,10 +212,10 @@ class MyTensorDataset(Dataset):
       def __getitem__(self, index):
           tensor = torch.load(self.dataset[index])
           return tensor * self.tk + self.tb
+      
+      def __len__(self):
+          return self.length
           
-
-        
-
 
 def get_sfc_curves_from_coords(coords, num):
     findm, colm, ncolm = sfc.form_spare_matric_from_pts(coords, coords.shape[0])
