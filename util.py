@@ -196,6 +196,19 @@ def find_min_and_max(data_path, only_get_names = False):
         np.savetxt('./t_min.txt', t_min)
     return data
 
+def get_path_data(data_path, indexes)
+    data = glob.glob(data_path + "*")
+    num_data = len(data)
+    file_prefix = data[0].split('.')[:-1]
+    file_prefix = ''.join(file_prefix)
+    file_prefix = file_prefix.split('_')[:-1]
+    file_prefix = ''.join(file_prefix) + '_'
+    file_format = data[0].split('.')[-1]
+    file_format = '.' + file_format
+    path_data = []
+    for i in range(len(indexes)):
+        path_data.append(F'{file_prefix}%d{file_format}' % indexes[i])
+    return path_data
 
 
 
