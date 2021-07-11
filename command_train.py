@@ -85,19 +85,23 @@ print('visualize ', visualize, '\n', 'output', output, '\n', 'sample number ', s
 if parameters['sfc_file'] != 'None':
    print('reading sfc nums......')
    space_filling_orderings = list(np.loadtxt(parameters['sfc_file'], delimiter=',').T)
+   print(space_filling_orderings)
    if parameters['inv_sfc_file'] != 'None':
       print('reading inverse sfc nums......')
       invert_space_filling_orderings = list(np.loadtxt(parameters['inv_sfc_file'], delimiter = ',').T)
+      print(invert_space_filling_orderings)
 else:
+   print('generating sfc and inverse nums......')
    space_filling_orderings, invert_space_filling_orderings = get_sfc_curves_from_coords(coords, sfc_nums)
-
-print(space_filling_orderings)
-print(invert_space_filling_orderings)
+   print(space_filling_orderings)
+   print(invert_space_filling_orderings)
 
 train_ratio = 0.8
 valid_ratio = 0.1
 test_ratio = 0.1
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
+
+print(train_index, valid_index, test_index)
 
 
 if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
