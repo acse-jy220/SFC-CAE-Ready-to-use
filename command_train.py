@@ -157,13 +157,13 @@ autoencoder = SFC_CAE(input_size,
                       invert_space_filling_orderings)
 
 
-# autoencoder = train_model(autoencoder, 
-#                           train_loader = train_loader,
-#                           valid_loader = valid_loader,
-#                           n_epochs = n_epoches, 
-#                           lr = lr, 
-#                           seed = seed,
-#                           visualize = visualize)
+autoencoder = train_model(autoencoder, 
+                          train_loader = train_loader,
+                          valid_loader = valid_loader,
+                          n_epochs = n_epoches, 
+                          lr = lr, 
+                          seed = seed,
+                          visualize = visualize)
 
        
 
