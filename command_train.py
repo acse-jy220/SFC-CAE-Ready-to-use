@@ -139,7 +139,7 @@ batch_size = int(parameters['batch_size'])
 lr = float(parameters['lr'])
 n_epoches = int(parameters['n_epoches'])
 seed = int(parameters['seed'])
-
+dimension = int(parameters['dimension'])
 
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=valid_set, batch_size=len(valid_set), shuffle=True)
