@@ -25,6 +25,9 @@ if parameters['coords_file'] != 'None':
 if parameters['cells_file'] != 'None':
    cells = np.load(parameters['cells_file'], allow_pickle= True)
 
+print(coords)
+print(cells)
+
 # other parameters
 if parameters['structured'] == 'True':
    structured = True
@@ -73,6 +76,10 @@ if parameters['data_type'] == 'tensors':
       full_tensor =  MyTensorDataset(path_data, components, -1, 1)
    samples = len(full_tensor)
 
+print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
+print('dims_latent ', dims_latent, '\n', 'components ', components, '\n', 'nearest_neighbouring ', nearest_neighbouring, '\n')
+print('visualize ', visualize, '\n', 'output', output, '\n', 'sample number ', samples, '\n')
+
 # if specifies sfc_file and inv_sfc_file
 if parameters['sfc_file'] != 'None':
    space_filling_orderings = list(np.loadtxt(parameters['sfc_file'], delimiter=',').T)
@@ -81,10 +88,14 @@ if parameters['sfc_file'] != 'None':
 else:
    space_filling_orderings, invert_space_filling_orderings = get_sfc_curves_from_coords(coords, sfc_nums)
 
+print(space_filling_orderings)
+print(invert_space_filling_orderings)
+
 train_ratio = 0.8
 valid_ratio = 0.1
 test_ratio = 0.1
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
+
 
 if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
    train_set = full_tensor[train_index - 1]
@@ -108,6 +119,10 @@ elif parameters['data_type'] == 'tensors':
         train_set = MyTensorDataset(path_data[train_index - 1], components, -1, 1)
         valid_set = MyTensorDataset(path_data[valid_index - 1], components, -1, 1)
         test_set = MyTensorDataset(path_data[test_index - 1], components, -1, 1) 
+
+print('length of train set:', len(train_set), '\n')
+print('length of valid set:',len(valid_set), '\n')
+print('length of test set:',len(test_set), '\n')
 
 
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
