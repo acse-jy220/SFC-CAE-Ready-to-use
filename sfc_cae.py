@@ -1,7 +1,6 @@
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
-from torchvision import transforms  # Transforms from torchvision
 from util import *
 
 class SFC_CAE_Encoder(nn.Module): 
