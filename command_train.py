@@ -9,7 +9,8 @@ parameters = read_parameters()
 # if vtu file folder
 if parameters['data_type'] == 'vtu':
    vtu_fields = list(parameters['vtu_fields'].split(',')
-   for vtu_field in vtu_fields: vtu_field = vtu_field.strip()
+   for i in range(len(vtu_fields)): 
+       vtu_fields[i] = vtu_fields[i].strip()
    full_tensor, coords, cells = read_in_files(parameters['data_dir'], vtu_fields = vtu_fields)
    samples = full_tensor.shape[0]
 
