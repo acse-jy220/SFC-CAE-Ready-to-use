@@ -84,11 +84,11 @@ print('visualize ', visualize, '\n', 'output', output, '\n', 'sample number ', s
 # if specifies sfc_file and inv_sfc_file
 if parameters['sfc_file'] != 'None':
    print('reading sfc nums......')
-   space_filling_orderings = list(np.loadtxt(parameters['sfc_file'], delimiter=',').T)
+   space_filling_orderings = list(torch.load(parameters['sfc_file']).detach().numpy())
    print(space_filling_orderings)
    if parameters['inv_sfc_file'] != 'None':
       print('reading inverse sfc nums......')
-      invert_space_filling_orderings = list(np.loadtxt(parameters['inv_sfc_file'], delimiter = ',').T)
+      invert_space_filling_orderings = list(torch.load(parameters['inv_sfc_file']).detach().numpy())
       print(invert_space_filling_orderings)
 else:
    print('generating sfc and inverse nums......')
