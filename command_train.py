@@ -67,9 +67,9 @@ elif parameters['output_reconstructed'] == 'False':
 # if tensors folder
 if parameters['data_type'] == 'tensors':
    if parameters['got_min_max'] == 'True':
-      path_data = find_min_and_max(parameters['data_dir'], True)
+      path_data = find_min_and_max(parameters['data_dir'], False)
    elif parameters['got_min_max'] == 'False':
-      path_data = find_min_and_max(parameters['data_dir'], False) 
+      path_data = find_min_and_max(parameters['data_dir'], True) 
 
    if parameters['activation'] == 'ReLU':
       full_tensor =  MyTensorDataset(path_data, components, 0, 1)
