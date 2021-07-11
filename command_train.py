@@ -110,9 +110,9 @@ print(train_index, valid_index, test_index)
 
 
 if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
-   train_set = full_tensor[train_index]
-   valid_set = full_tensor[valid_index]
-   test_set = full_tensor[test_index]
+   train_set = full_tensor[train_index].float()
+   valid_set = full_tensor[valid_index].float()
+   test_set = full_tensor[test_index].float()
    # standardlisation
    if parameters['activation'] == 'ReLU':
       train_set, train_k, train_b = standardlize_tensor(train_set, lower = 0, upper = 1)
