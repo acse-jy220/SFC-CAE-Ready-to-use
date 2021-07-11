@@ -85,7 +85,7 @@ print('visualize ', visualize, '\n', 'output', output, '\n', 'sample number ', s
 if parameters['sfc_file'] != 'None':
    space_filling_orderings = list(np.loadtxt(parameters['sfc_file'], delimiter=',').T)
    if parameters['inv_sfc_file'] != 'None':
-      inv_space_filling_orderings = list(np.loadtxt(parameters['inv_sfc_file'], delimiter = '.').T)
+      inv_space_filling_orderings = list(np.loadtxt(parameters['inv_sfc_file'], delimiter = ',').T)
 else:
    space_filling_orderings, invert_space_filling_orderings = get_sfc_curves_from_coords(coords, sfc_nums)
 
