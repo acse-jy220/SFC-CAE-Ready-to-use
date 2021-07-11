@@ -5,6 +5,7 @@ from sfc_cae import *
 
 parameters = read_parameters()
 
+print(parameters)
 
 # if vtu file folder
 if parameters['data_type'] == 'vtu':
