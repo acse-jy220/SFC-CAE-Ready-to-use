@@ -90,6 +90,9 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         bar.finish()
         return torch.cat(data, -1)
 
+def get_simulation_index(num, simulation):
+    return np.arange(num * (simulation.steps + 1), (num + 1) * (simulation.steps + 1))
+
 def read_parameters(setting_file = 'parameters.ini'):
     f = open(setting_file, 'r')
     lines = f.readlines()
