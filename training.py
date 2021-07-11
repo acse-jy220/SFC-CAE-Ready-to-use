@@ -42,7 +42,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       optimizer.zero_grad()  # Set optimiser grad to 0
       x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
       MSE = criterion(batch, x_hat)  # Calculate MSE loss
-      other_MSE = other_metric(batch, x_hat) # Calculate (may be) relative loss
+      with torch.no_grad(): other_MSE = other_metric(batch, x_hat).item() # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
       optimizer.step()  # Step the optimiser
       train_loss += MSE * batch.size(0)
