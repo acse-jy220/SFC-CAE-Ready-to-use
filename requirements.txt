@@ -2,3 +2,5 @@ vtk
 livelossplot
 meshio[all]
 cmocean
+torch
+dash
