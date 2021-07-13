@@ -4,3 +4,6 @@ meshio[all]
 cmocean
 torch
 dash
+torch-scatter
+torch-sparse
+torch-geometric
