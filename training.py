@@ -52,6 +52,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       del x_hat
       del batch
       del MSE
+      del other_MSE
       print(count)
 
   return train_loss / data_length, train_loss_other/ data_length  # Return MSE
@@ -72,6 +73,7 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
             del batch
             del x_hat
             del MSE
+            del other_MSE
             print('valid ', count)
 
     return validation_loss / data_length, valid_loss_other / data_length   # Return MSE  
