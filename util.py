@@ -160,35 +160,34 @@ def destandardlize_tensor(tensor, tk, tb):
 def find_min_and_max(data_path, only_get_names = False):
     data = glob.glob(data_path + "*")
     num_data = len(data)
-    file_prefix = data[0].split('.')[:-1]
-    file_prefix = ''.join(file_prefix)
-    file_prefix = file_prefix.split('_')[:-1]
-    file_prefix = ''.join(file_prefix) + '_'
-    file_format = data[0].split('.')[-1]
-    file_format = '.' + file_format
-    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    print(num_data)
+    # file_prefix = data[0].split('.')[:-1]
+    # file_prefix = ''.join(file_prefix)
+    # file_prefix = file_prefix.split('_')[:-1]
+    # file_prefix = ''.join(file_prefix) + '_'
+    # file_format = data[0].split('.')[-1]
+    # file_format = '.' + file_format
+    # print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
     cnt_progress = 0
-    print("Compute min and max for Data......\n")
+    print("Loading Data......\n")
     bar=progressbar.ProgressBar(maxval=num_data)
     bar.start()
-    data = []
-    start = 0
-    while(True):
-        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
-            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
-            start += 1
-        else: break
-    for i in range(start, num_data + start):
-        filename = F'{file_prefix}%d{file_format}' % i
+    # while(True):
+    #     if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+    #         print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+    #         start += 1
+    #     else: break
+    for i in range(num_data):
+        filename = data[i] # F'{file_prefix}%d{file_format}' % i
         if not only_get_names:
            tensor = torch.load(filename)
-           if i == start:
+           if i == 0:
               t_min = tensor.min(0).values.unsqueeze(-1)
               t_max = tensor.max(0).values.unsqueeze(-1)
            else:
               t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
               t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
-        data.append(filename)
+        # data.append(filename)
         cnt_progress +=1
         bar.update(cnt_progress)
     bar.finish()
@@ -220,8 +219,15 @@ class MyTensorDataset(Dataset):
           self.dataset = path_dataset
           self.components = components
           self.length = len(path_dataset)
-          self.t_max = np.loadtxt('./t_max.txt')
-          self.t_min = np.loadtxt('./t_min.txt')
+          t_max = torch.load(self.dataset[0]).max(-2).values.unsqueeze(0)
+          t_min = torch.load(self.dataset[0]).min(-2).values.unsqueeze(0)
+          for i in range(1, self.length):
+              t_max = torch.cat((t_max, torch.load(self.dataset[i]).max(-2).values.unsqueeze(0)), 0)
+              t_min = torch.cat((t_min, torch.load(self.dataset[i]).min(-2).values.unsqueeze(0)), 0)
+          self.t_max = t_max.max(-2).values
+          self.t_min = t_max.min(-2).values
+        #   self.t_max = np.loadtxt('./t_max.txt')
+        #   self.t_min = np.loadtxt('./t_min.txt')
           self.tk = (upper - lower) / (self.t_max - self.t_min)
           self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
 
