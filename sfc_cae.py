@@ -272,6 +272,7 @@ class SFC_CAE_Decoder(nn.Module):
         print('enter final sp')
         f_nn = self.final_sp(z)
         print('out final sp')
+        del z
         z = self.activate(f_nn)
         del f_nn
     else: z = zs[0].squeeze(-1)
