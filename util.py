@@ -218,19 +218,19 @@ class MyTensorDataset(Dataset):
       def __init__(self, path_dataset, lower, upper):
           self.dataset = path_dataset
           self.length = len(path_dataset)
-          t_max = torch.load(self.dataset[0]).max(-2).values.unsqueeze(0)
-          t_min = torch.load(self.dataset[0]).min(-2).values.unsqueeze(0)
+          t_max = torch.load(self.dataset[0]).max(0).values.unsqueeze(0)
+          t_min = torch.load(self.dataset[0]).min(0).values.unsqueeze(0)
           cnt_progress = 0
           print("Computing min and max......\n")
           bar=progressbar.ProgressBar(maxval=self.length)
           for i in range(1, self.length):
-              t_max = torch.cat((t_max, torch.load(self.dataset[i]).max(-2).values.unsqueeze(0)), 0)
-              t_min = torch.cat((t_min, torch.load(self.dataset[i]).min(-2).values.unsqueeze(0)), 0)
+              t_max = torch.cat((t_max, torch.load(self.dataset[i]).max(0).values.unsqueeze(0)), 0)
+              t_min = torch.cat((t_min, torch.load(self.dataset[i]).min(0).values.unsqueeze(0)), 0)
               cnt_progress +=1
               bar.update(cnt_progress)
           bar.finish()
-          self.t_max = t_max.max(-2).values
-          self.t_min = t_max.min(-2).values
+          self.t_max = t_max.max(0).values
+          self.t_min = t_min.min(0).values
         #   self.t_max = np.loadtxt('./t_max.txt')
         #   self.t_min = np.loadtxt('./t_min.txt')
           self.tk = (upper - lower) / (self.t_max - self.t_min)
