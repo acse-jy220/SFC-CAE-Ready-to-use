@@ -119,6 +119,7 @@ class SFC_CAE_Encoder(nn.Module):
             # print(a.shape)
             a = self.activate(self.convs[i][j](a))
         xs.append(a.view(-1, a.size(1)*a.size(2)))
+        del a
         # print(xs[i].shape)
     del x
     if self.sfc_nums > 1: x = torch.cat(xs, -1)
@@ -249,9 +250,10 @@ class SFC_CAE_Decoder(nn.Module):
         b = b.view(-1, self.input_size * self.input_channel)
         # print(b.shape)
         if self.NN:
-           b = self.get_concat_list(b, i)
+           tt_list = self.get_concat_list(b, i)
         #    print(tt_list.shape)
-           b = self.activate(self.sps[i](b))
+           b = self.activate(self.sps[i](tt_list))
+           del tt_list
         else:
            if self.self_concat > 1:
               b = ordering_tensor(b, self.orderings[i]).view(-1, self.self_concat, self.components * self.input_size).permute(0, -1, -2)
@@ -260,6 +262,7 @@ class SFC_CAE_Decoder(nn.Module):
            else:
               b = ordering_tensor(b, self.orderings[i])
         zs.append(b.unsqueeze(-1))
+        del b
     del x
     if self.sfc_nums > 1: 
         z = torch.cat(zs, -1)
