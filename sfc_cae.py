@@ -267,12 +267,13 @@ class SFC_CAE_Decoder(nn.Module):
         del b
     del x
     if self.sfc_nums > 1: 
-        z = torch.cat(zs, -1)
+        tt_list = torch.cat(zs, -1)
+        del zs
         # print(z.shape)
-        print('enter final sp')
-        f_nn = self.final_sp(z)
-        print('out final sp')
-        del z
+        # print('enter final sp')
+        f_nn = self.final_sp(tt_list)
+        # print('out final sp')
+        del tt_list
         z = self.activate(f_nn)
         del f_nn
     else: z = zs[0].squeeze(-1)
