@@ -42,9 +42,9 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       optimizer.zero_grad()  # Set optimiser grad to 0
       x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
       MSE = criterion(batch, x_hat)  # Calculate MSE loss
+      with torch.no_grad(): other_MSE = other_metric(batch, x_hat).item() # Calculate (may be) relative loss
       del x_hat
       del batch
-      with torch.no_grad(): other_MSE = other_metric(batch, x_hat).item() # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
       optimizer.step()  # Step the optimiser
       train_loss += MSE * batch.size(0)
@@ -60,10 +60,10 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
         with torch.no_grad():
             batch = batch.to(device)  # Send batch of images to the GPU
             x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
-            del batch
-            del x_hat
             MSE = criterion(batch, x_hat)  # Calculate MSE loss
             other_MSE = other_metric(batch, x_hat)
+            del batch
+            del x_hat
             validation_loss += MSE * batch.size(0)
             del MSE
             valid_loss_other += other_MSE * batch.size(0)
