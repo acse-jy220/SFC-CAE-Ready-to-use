@@ -366,9 +366,10 @@ class NearestNeighbouring(nn.Module):
 
     def forward(self, tensor_list):
         tensor_list *= self.weights
-        z = tensor_list.sum(-1) 
+        z = tensor_list[..., 0]
+        for i in range(1, self.num_neigh):
+            z += tensor_list[..., i]
         z += self.bias
-        del tensor_list
         return z
 
 def expend_SFC_NUM(sfc_ordering, partitions):
