@@ -215,9 +215,8 @@ def get_path_data(data_path, indexes):
 
 
 class MyTensorDataset(Dataset):
-      def __init__(self, path_dataset, components, lower, upper):
+      def __init__(self, path_dataset, lower, upper):
           self.dataset = path_dataset
-          self.components = components
           self.length = len(path_dataset)
           t_max = torch.load(self.dataset[0]).max(-2).values.unsqueeze(0)
           t_min = torch.load(self.dataset[0]).min(-2).values.unsqueeze(0)
