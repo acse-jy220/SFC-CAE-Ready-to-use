@@ -269,7 +269,9 @@ class SFC_CAE_Decoder(nn.Module):
     if self.sfc_nums > 1: 
         z = torch.cat(zs, -1)
         # print(z.shape)
+        print('enter final sp')
         f_nn = self.final_sp(z)
+        print('out final sp')
         z = self.activate(f_nn)
         del f_nn
     else: z = zs[0].squeeze(-1)
