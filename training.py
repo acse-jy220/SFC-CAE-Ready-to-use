@@ -37,7 +37,10 @@ def relative_MSE(x, y, epsilon = 0):
 def train(autoencoder, optimizer, criterion, other_metric, dataloader):
   autoencoder.train()
   train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  count = 0
   for batch in dataloader:
+      count += batch.size(0)
+      print(count)
       batch = batch.to(device)  # Send batch of images to the GPU
       optimizer.zero_grad()  # Set optimiser grad to 0
       x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
