@@ -267,7 +267,9 @@ class SFC_CAE_Decoder(nn.Module):
     if self.sfc_nums > 1: 
         z = torch.cat(zs, -1)
         # print(z.shape)
-        z = self.activate(self.final_sp(z))
+        f_nn = self.final_sp(z)
+        z = self.activate(f_nn)
+        del f_nn
     else: z = zs[0].squeeze(-1)
     for i in range(self.sfc_nums): del zs[0]
     if self.components > 1: 
