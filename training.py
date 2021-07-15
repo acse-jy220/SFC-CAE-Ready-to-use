@@ -40,7 +40,6 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
   count = 0
   for batch in dataloader:
       count += batch.size(0)
-      print(count)
       batch = batch.to(device)  # Send batch of images to the GPU
       optimizer.zero_grad()  # Set optimiser grad to 0
       x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
@@ -53,6 +52,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       del x_hat
       del batch
       del MSE
+      print(count)
 
   return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 

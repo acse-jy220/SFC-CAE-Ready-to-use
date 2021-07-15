@@ -90,9 +90,14 @@ class SFC_CAE_Encoder(nn.Module):
        self.register_parameter(name='fc%d_bias'%(i + 1), param=self.fcs[i].bias)
 
   def get_concat_list(self, x, num_sfc):
-    return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
-                      ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
-                      ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)), -1)
+      self_t = ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1)
+      minus_neigh = ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1)
+      plus_neigh = ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)
+      tensor_list = torch.cat((minus_neigh, self_t, plus_neigh), -1)
+      del self_t
+      del minus_neigh
+      del plus_neigh
+      return tensor_list
 
 
   def forward(self, x):  # Custom pytorch modules should follow this structure 
@@ -109,8 +114,10 @@ class SFC_CAE_Encoder(nn.Module):
     for i in range(self.sfc_nums):
         if self.NN:
            tt_list = self.get_concat_list(x, i)
-           a = self.activate(self.sps[i](tt_list))
+           tt_nn = self.sps[i](tt_list)
+           a = self.activate(tt_nn)
            del tt_list
+           del tt_nn
         else:
            a = ordering_tensor(x, self.orderings[i])
         if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
@@ -226,9 +233,14 @@ class SFC_CAE_Decoder(nn.Module):
                            ordering_tensor(x, self.orderings[num_sfc]).view(-1, self.self_concat, self.input_size * self.components).permute(0, -1, -2),
                            ordering_tensor(x, self.sfc_plus[num_sfc]).view(-1, self.self_concat, self.input_size * self.components).permute(0, -1, -2)), -1)
     else:
-         return torch.cat((ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1), 
-                           ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1),
-                           ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)), -1)        
+      self_t = ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1)
+      minus_neigh = ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1)
+      plus_neigh = ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)
+      tensor_list = torch.cat((minus_neigh, self_t, plus_neigh), -1)
+      del self_t
+      del minus_neigh
+      del plus_neigh
+      return tensor_list     
 
 
   def forward(self, x):  # Custom pytorch modules should follow this structure 
