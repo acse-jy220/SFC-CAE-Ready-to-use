@@ -252,8 +252,10 @@ class SFC_CAE_Decoder(nn.Module):
         if self.NN:
            tt_list = self.get_concat_list(b, i)
         #    print(tt_list.shape)
-           b = self.activate(self.sps[i](tt_list))
+           tt_nn = self.sps[i](tt_list)
+           b = self.activate(tt_nn)
            del tt_list
+           del tt_nn
         else:
            if self.self_concat > 1:
               b = ordering_tensor(b, self.orderings[i]).view(-1, self.self_concat, self.components * self.input_size).permute(0, -1, -2)
