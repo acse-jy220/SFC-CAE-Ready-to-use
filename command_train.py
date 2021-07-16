@@ -69,17 +69,18 @@ elif parameters['output_reconstructed'] == 'False':
    output = False
 
 # if tensors folder
-if parameters['data_type'] == 'tensors':
-   if parameters['got_min_max'] == 'True':
-      path_data = find_min_and_max(parameters['data_dir'], False)
-   elif parameters['got_min_max'] == 'False':
-      path_data = find_min_and_max(parameters['data_dir'], True) 
+# if parameters['data_type'] == 'tensors':
+#    if parameters['got_min_max'] == 'True':
+#       path_data = find_min_and_max(parameters['data_dir'], False)
+#    elif parameters['got_min_max'] == 'False':
+#       path_data = find_min_and_max(parameters['data_dir'], True) 
 
    # if parameters['activation'] == 'ReLU':
    #    full_tensor =  MyTensorDataset(path_data, components, 0, 1)
    # elif parameters['activation'] == 'Tanh':
    #    full_tensor =  MyTensorDataset(path_data, components, -1, 1)
-   samples = len(path_data)
+
+samples = len(glob.glob(parameters['data_dir']))
 
 print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
 print('dims_latent ', dims_latent, '\n', 'components ', components, '\n', 'nearest_neighbouring ', nearest_neighbouring, '\n')
