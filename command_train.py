@@ -2,8 +2,12 @@ from structured import *
 from training import *
 from util import *
 from sfc_cae import *
+import sys
 
-parameters = read_parameters()
+if(len(sys.argv) > 1):
+   parameters = read_parameters(sys.argv[1])
+else:
+   parameters = read_parameters()
 
 print(parameters)
 
@@ -71,11 +75,11 @@ if parameters['data_type'] == 'tensors':
    elif parameters['got_min_max'] == 'False':
       path_data = find_min_and_max(parameters['data_dir'], True) 
 
-   if parameters['activation'] == 'ReLU':
-      full_tensor =  MyTensorDataset(path_data, components, 0, 1)
-   elif parameters['activation'] == 'Tanh':
-      full_tensor =  MyTensorDataset(path_data, components, -1, 1)
-   samples = len(full_tensor)
+   # if parameters['activation'] == 'ReLU':
+   #    full_tensor =  MyTensorDataset(path_data, components, 0, 1)
+   # elif parameters['activation'] == 'Tanh':
+   #    full_tensor =  MyTensorDataset(path_data, components, -1, 1)
+   samples = len(path_data)
 
 print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
 print('dims_latent ', dims_latent, '\n', 'components ', components, '\n', 'nearest_neighbouring ', nearest_neighbouring, '\n')
@@ -98,15 +102,23 @@ else:
    print(space_filling_orderings)
    print(invert_space_filling_orderings)
 
-train_ratio = 0.9
-valid_ratio = 0.1
-test_ratio = 0
+train_ratio = 15/17
+valid_ratio = 1/17
+test_ratio = 1/17
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
 
 train_index = train_index - 1
 valid_index = valid_index - 1
 test_index = test_index - 1
-print(train_index, valid_index, test_index)
+# # print(train_index, valid_index, test_index)
+
+# split_1 = int(samples * train_ratio)
+# split_2 = -1 + int(samples * test_ratio)
+
+# train_set = MyTensorDataset(path_data[:split_1], components, 0, 1)
+# valid_set = MyTensorDataset(path_data[split_1:], components, 0, 1)
+# # test_set = MyTensorDataset(path_data[split_2:-1], components, 0, 1)
+# test_set = []
 
 
 if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
@@ -156,8 +168,8 @@ autoencoder = SFC_CAE(input_size,
                       nearest_neighbouring,
                       dims_latent,
                       space_filling_orderings, 
-                      invert_space_filling_orderings)
-
+                      invert_space_filling_orderings,
+                      activation = activation)
 
 autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,
