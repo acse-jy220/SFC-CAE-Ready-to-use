@@ -137,13 +137,13 @@ if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
       test_set, test_k, test_b = standardlize_tensor(test_set, lower = -1, upper = 1)       
 elif parameters['data_type'] == 'tensors':
      if parameters['activation'] == 'ReLU':
-        train_set = MyTensorDataset(get_path_data(parameters['data_dir'], train_index), components, 0, 1)
-        valid_set = MyTensorDataset(get_path_data(parameters['data_dir'], valid_index), components, 0, 1)
-        test_set = MyTensorDataset(get_path_data(parameters['data_dir'], test_index), components, 0, 1)
+        train_set = MyTensorDataset(get_path_data(parameters['data_dir'], train_index), 0, 1)
+        valid_set = MyTensorDataset(get_path_data(parameters['data_dir'], valid_index), 0, 1)
+        test_set = MyTensorDataset(get_path_data(parameters['data_dir'], test_index), 0, 1)
      elif parameters['activation'] == 'Tanh':
-        train_set = MyTensorDataset(get_path_data(parameters['data_dir'], train_index), components, -1, 1)
-        valid_set = MyTensorDataset(get_path_data(parameters['data_dir'], valid_index), components, -1, 1)
-        test_set = MyTensorDataset(get_path_data(parameters['data_dir'], test_index), components, -1, 1) 
+        train_set = MyTensorDataset(get_path_data(parameters['data_dir'], train_index), -1, 1)
+        valid_set = MyTensorDataset(get_path_data(parameters['data_dir'], valid_index), -1, 1)
+        test_set = MyTensorDataset(get_path_data(parameters['data_dir'], test_index), -1, 1) 
 
 print('length of train set:', len(train_set), '\n')
 print('length of valid set:',len(valid_set), '\n')
