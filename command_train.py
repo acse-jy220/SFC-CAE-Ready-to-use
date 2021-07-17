@@ -111,7 +111,9 @@ train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, tes
 train_index = train_index - 1
 valid_index = valid_index - 1
 test_index = test_index - 1
-# # print(train_index, valid_index, test_index)
+
+
+print(train_index, valid_index, test_index)
 
 # split_1 = int(samples * train_ratio)
 # split_2 = -1 + int(samples * test_ratio)
