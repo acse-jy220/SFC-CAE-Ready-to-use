@@ -159,7 +159,7 @@ seed = int(parameters['seed'])
 dimension = int(parameters['dimension'])
 
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
-valid_loader = DataLoader(dataset=valid_set, batch_size=len(valid_set), shuffle=True)
+valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
 
 input_size = space_filling_orderings[0].shape[0]
 
