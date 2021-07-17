@@ -81,6 +81,7 @@ elif parameters['output_reconstructed'] == 'False':
    #    full_tensor =  MyTensorDataset(path_data, components, -1, 1)
 
 samples = len(glob.glob(parameters['data_dir']))
+print(samples)
 
 print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
 print('dims_latent ', dims_latent, '\n', 'components ', components, '\n', 'nearest_neighbouring ', nearest_neighbouring, '\n')
