@@ -223,6 +223,7 @@ class MyTensorDataset(Dataset):
           cnt_progress = 0
           print("Computing min and max......\n")
           bar=progressbar.ProgressBar(maxval=self.length)
+          bar.start()
           for i in range(1, self.length):
               t_max = torch.cat((t_max, torch.load(self.dataset[i]).max(0).values.unsqueeze(0)), 0)
               t_min = torch.cat((t_min, torch.load(self.dataset[i]).min(0).values.unsqueeze(0)), 0)
