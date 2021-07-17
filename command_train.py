@@ -180,7 +180,8 @@ autoencoder = train_model(autoencoder,
                           n_epochs = n_epoches, 
                           lr = lr, 
                           seed = seed,
-                          visualize = visualize)
+                          visualize = visualize,
+                          save_path = parameters['data_dir'])
 
        
 

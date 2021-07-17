@@ -160,4 +160,11 @@ def train_model(autoencoder,
   print('MESLoss saved to ', filename)
   print('relative MSELoss saved to ', refilename)
 
+  modelname = save_path + F'Slugflow_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.pth'
+  modeldictname = save_path + F'Slugflow_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}_lr_{lr}_n_epoches_{n_epochs}_dict.pth'
+  
+  torch.save(autoencoder, modelname)
+  torch.save(autoencoder.state_dict(), modeldictname)
+  print('model saved to', modelname)
+
   return autoencoder
