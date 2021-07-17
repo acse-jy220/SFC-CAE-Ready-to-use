@@ -181,7 +181,7 @@ autoencoder = train_model(autoencoder,
                           lr = lr, 
                           seed = seed,
                           visualize = visualize,
-                          save_path = parameters['data_dir'])
+                          save_path = '/rds/general/user/jy220/home/results')
 
        
 
