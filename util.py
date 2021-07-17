@@ -383,8 +383,10 @@ def expend_SFC_NUM(sfc_ordering, partitions):
 def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
        channels = [input_channel]
        output_paddings = [size % stride]
+       conv_size = [size]
        while size * num_final_channels  > 1200:
           size = size // stride + 1
+          conv_size.append(size)
           if num_final_channels >= input_channel * increase_multi: 
               input_channel *= increase_multi
               output_paddings.append(size % stride)
@@ -401,7 +403,7 @@ def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, inp
           size_fc.append(size)
        size_fc.append(dims_latent)
 
-       return len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
+       return conv_size, len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
 
 
 def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_spliters):

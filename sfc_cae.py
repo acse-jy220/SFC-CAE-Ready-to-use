@@ -67,7 +67,7 @@ class SFC_CAE_Encoder(nn.Module):
 
     self.num_final_channels = 16  # default
 
-    self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
+    self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
     = find_size_conv_layers_and_fc_layers(self.input_size, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
     
     # set up convolutional layers, fully-connected layers and sparse layers
