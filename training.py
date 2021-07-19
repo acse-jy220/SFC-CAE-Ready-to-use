@@ -149,10 +149,10 @@ def train_model(autoencoder,
       liveloss.draw()
 
     time_end = time.time()
-    train_MSEs.append(train_MSE)
-    valid_MSEs.append(valid_MSE)
-    re_train_MSEs.append(train_MSE_re)
-    re_valid_MSEs.append(valid_MSE_re)
+    train_MSEs.append(train_MSE.cpu().numpy())
+    valid_MSEs.append(valid_MSE.cpu().numpy())
+    re_train_MSEs.append(train_MSE_re.cpu().numpy())
+    re_valid_MSEs.append(valid_MSE_re.cpu().numpy())
 
     print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
@@ -178,3 +178,4 @@ def train_model(autoencoder,
   print('model saved to', modelname)
 
   return autoencoder
+  
