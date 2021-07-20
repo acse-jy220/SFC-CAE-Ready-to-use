@@ -8,6 +8,8 @@ import numpy as np
 from util import *
 import util
 
+device = "cuda:0"  # Set out device to GPU
+
 def set_seed(seed):
     """
     Use this to set ALL the random seeds to a fixed value and take out any randomness from cuda kernels
@@ -96,6 +98,7 @@ def train_model(autoencoder,
                 save_path = ''):
   set_seed(seed)
   if torch.cuda.device_count() > 1:
+     print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
   autoencoder = autoencoder.to(device)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)

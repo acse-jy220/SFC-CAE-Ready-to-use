@@ -7,7 +7,6 @@ import scipy.linalg as sl
 import scipy.sparse as sp
 from util import *
 
-device = 'cuda'  # Set out device to GPU
 
 def loadsimulation(simulaion_steps, simulaion_num, reshape = False):
     for i in range(simulaion_steps + 1):
