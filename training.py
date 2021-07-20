@@ -127,12 +127,12 @@ def train_model(autoencoder,
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other
         valid_MSE_re = valid_loss_other
-        train_MSE = train_loss.cpu().numpy()
+        train_MSE = train_loss.cpu().detach().numpy()
         valid_MSE = valid_loss.cpu().numpy()
     elif criterion_type == 'relative_MSE':
         train_MSE = train_loss_other
         valid_MSE = valid_loss_other
-        train_MSE_re = train_loss.cpu().numpy()
+        train_MSE_re = train_loss.cpu().detach().numpy()
         valid_MSE_re = valid_loss.cpu().numpy()
     
     # do livelossplot if visualize turned-on 
