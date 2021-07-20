@@ -105,6 +105,7 @@ class SFC_CAE_Encoder(nn.Module):
     x: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''
+    print(x.size())
     xs = []
     if self.components > 1: 
         x = x.permute(0, -1, -2)
