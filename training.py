@@ -46,7 +46,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
          x_hat = autoencoder.module(batch)
       else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
       MSE = criterion(batch, x_hat)  # Calculate MSE loss
-      with torch.no_grad(): other_MSE = other_metric(batch, x_hat).item() # Calculate (may be) relative loss
+      with torch.no_grad(): other_MSE = other_metric(batch, x_hat).cpu().numpy() # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
       if torch.cuda.device_count() > 1: optimizer.module.step()
       else: optimizer.step()  # Step the optimiser
@@ -72,7 +72,7 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
                x_hat = autoencoder.module(batch)
             else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
             MSE = criterion(batch, x_hat)  # Calculate MSE loss
-            other_MSE = other_metric(batch, x_hat)
+            other_MSE = other_metric(batch, x_hat).cpu().numpy()
             validation_loss += MSE * batch.size(0)
             valid_loss_other += other_MSE * batch.size(0)
             del batch
@@ -127,13 +127,13 @@ def train_model(autoencoder,
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other
         valid_MSE_re = valid_loss_other
-        train_MSE = train_loss.item()
-        valid_MSE = valid_loss.item()
+        train_MSE = train_loss.cpu().numpy()
+        valid_MSE = valid_loss.cpu().numpy()
     elif criterion_type == 'relative_MSE':
         train_MSE = train_loss_other
         valid_MSE = valid_loss_other
-        train_MSE_re = train_loss.item()
-        valid_MSE_re = valid_loss.item()
+        train_MSE_re = train_loss.cpu().numpy()
+        valid_MSE_re = valid_loss.cpu().numpy()
     
     # do livelossplot if visualize turned-on 
     if visualize: 
@@ -149,10 +149,10 @@ def train_model(autoencoder,
       liveloss.draw()
 
     time_end = time.time()
-    train_MSEs.append(train_MSE.cpu())
-    valid_MSEs.append(valid_MSE.cpu())
-    re_train_MSEs.append(train_MSE_re.cpu())
-    re_valid_MSEs.append(valid_MSE_re.cpu())
+    train_MSEs.append(train_MSE)
+    valid_MSEs.append(valid_MSE)
+    re_train_MSEs.append(train_MSE_re)
+    re_valid_MSEs.append(valid_MSE_re)
 
     print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
