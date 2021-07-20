@@ -366,11 +366,9 @@ class NearestNeighbouring(nn.Module):
         self.bias = nn.Parameter(torch.zeros(size))
 
     def forward(self, tensor_list):
+        print(tensor_list)
+        print(self.weights)
         tensor_list *= self.weights
-        # z = tensor_list[..., 0]
-        # for i in range(1, self.num_neigh):
-        #     z += tensor_list[..., i]
-        # z += self.bias
         return tensor_list.sum(-1) + self.bias
 
 def expend_SFC_NUM(sfc_ordering, partitions):
