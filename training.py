@@ -8,7 +8,7 @@ import numpy as np
 from util import *
 import util
 
-device = "cuda:0"  # Set out device to GPU
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def set_seed(seed):
     """
@@ -42,14 +42,16 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       count += batch.size(0)
       batch = batch.to(device)  # Send batch of images to the GPU
       optimizer.zero_grad()  # Set optimiser grad to 0
-      if torch.cuda.device_count() > 1:
-         x_hat = autoencoder.module(batch)
-      else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
+    #   if torch.cuda.device_count() > 1:
+    #      x_hat = autoencoder(batch)
+    #   else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
+      x_hat = autoencoder(batch)
       MSE = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
-      if torch.cuda.device_count() > 1: optimizer.module.step()
-      else: optimizer.step()  # Step the optimiser
+    #   if torch.cuda.device_count() > 1: optimizer.step()
+    #   else: optimizer.step()  # Step the optimiser
+      optimizer.step()
       train_loss += MSE * batch.size(0)
       train_loss_other += other_MSE * batch.size(0)
       del x_hat
@@ -68,9 +70,10 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
         with torch.no_grad():
             count += batch.size(0)
             batch = batch.to(device)  # Send batch of images to the GPU
-            if torch.cuda.device_count() > 1:
-               x_hat = autoencoder.module(batch)
-            else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
+            # if torch.cuda.device_count() > 1:
+            #    x_hat = autoencoder(batch)
+            # else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
+            x_hat = autoencoder(batch)
             MSE = criterion(batch, x_hat)  # Calculate MSE loss
             other_MSE = other_metric(batch, x_hat)
             validation_loss += MSE * batch.size(0)
@@ -100,8 +103,8 @@ def train_model(autoencoder,
      autoencoder = torch.nn.DataParallel(autoencoder)
   autoencoder = autoencoder.to(device)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  if torch.cuda.device_count() > 1:
-     optimizer = torch.nn.DataParallel(optimizer)
+#   if torch.cuda.device_count() > 1:
+#      optimizer = torch.nn.DataParallel(optimizer)
 
   if criterion_type == 'MSE': 
       criterion = nn.MSELoss()
