@@ -46,7 +46,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
          x_hat = autoencoder.module(batch)
       else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
       MSE = criterion(batch, x_hat)  # Calculate MSE loss
-      with torch.no_grad(): other_MSE = other_metric(batch, x_hat).cpu().numpy() # Calculate (may be) relative loss
+      with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
       if torch.cuda.device_count() > 1: optimizer.module.step()
       else: optimizer.step()  # Step the optimiser
@@ -72,7 +72,7 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
                x_hat = autoencoder.module(batch)
             else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
             MSE = criterion(batch, x_hat)  # Calculate MSE loss
-            other_MSE = other_metric(batch, x_hat).cpu().numpy()
+            other_MSE = other_metric(batch, x_hat)
             validation_loss += MSE * batch.size(0)
             valid_loss_other += other_MSE * batch.size(0)
             del batch
