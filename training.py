@@ -149,11 +149,10 @@ def train_model(autoencoder,
       liveloss.draw()
 
     time_end = time.time()
-    print(type(train_MSE))
-    train_MSEs.append(train_MSE)
-    valid_MSEs.append(valid_MSE)
-    re_train_MSEs.append(train_MSE_re)
-    re_valid_MSEs.append(valid_MSE_re)
+    train_MSEs.append(np.array(train_MSE))
+    valid_MSEs.append(np.array(valid_MSE))
+    re_train_MSEs.append(np.array(train_MSE_re))
+    re_valid_MSEs.append(np.array(valid_MSE_re))
 
     print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
@@ -177,6 +176,7 @@ def train_model(autoencoder,
   torch.save(autoencoder, modelname)
   torch.save(autoencoder.state_dict(), modeldictname)
   print('model saved to', modelname)
+  print('model_dict saved to', modeldictname)
 
   return autoencoder
   
