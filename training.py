@@ -98,10 +98,10 @@ def train_model(autoencoder,
                 seed = 41,
                 save_path = ''):
   set_seed(seed)
-  autoencoder.to(device)
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
+  autoencoder.to(device)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
 #   if torch.cuda.device_count() > 1:
 #      optimizer = torch.nn.DataParallel(optimizer)

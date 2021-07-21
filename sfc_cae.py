@@ -73,6 +73,7 @@ class SFC_CAE_Encoder(nn.Module):
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
     self.convs = []
+    #If NN, add a sparse layer 
     if self.NN: self.sps = []
     for i in range(self.sfc_nums):
        self.convs.append([])
@@ -105,7 +106,6 @@ class SFC_CAE_Encoder(nn.Module):
     x: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''
-    print(x.size())
     xs = []
     if self.components > 1: 
         x = x.permute(0, -1, -2)
@@ -241,8 +241,7 @@ class SFC_CAE_Decoder(nn.Module):
       del self_t
       del minus_neigh
       del plus_neigh
-      return tensor_list     
-
+      return tensor_list
 
   def forward(self, x):  # Custom pytorch modules should follow this structure 
     '''
@@ -337,7 +336,41 @@ class SFC_CAE(nn.Module):
                           space_filling_orderings,
                           activation)
     self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
+  
 
+  def changesfcs(self,sfcs,isfcs):
+
+    self.encoder.orderings = []
+    self.encoder.sfc_plus = []
+    self.encoder.sfc_minus = []
+
+    self.decoder.orderings = []
+    self.decoder.sfc_plus = []
+    self.decoder.sfc_minus = []
+
+
+    #Change encoder
+    for i in range(self.encoder.sfc_nums):
+        if self.encoder.input_channel > 1:
+           self.encoder.orderings.append(expend_SFC_NUM(sfcs[i], self.encoder.input_channel))
+           if self.encoder.NN:
+              self.encoder.sfc_plus.append(expend_SFC_NUM(find_plus_neigh(sfcs[i]), self.encoder.input_channel))
+              self.encoder.sfc_minus.append(expend_SFC_NUM(find_minus_neigh(sfcs[i]), self.encoder.input_channel))
+        else:
+           self.encoder.orderings.append(sfcs[i])
+           self.encoder.sfc_plus.append(find_plus_neigh(sfcs[i]))
+           self.encoder.sfc_minus.append(find_minus_neigh(sfcs[i]))
+    #Change decoder
+    for i in range(self.decoder.sfc_nums):
+        if self.decoder.input_channel > 1:
+           self.decoder.orderings.append(expend_SFC_NUM(isfcs[i], self.decoder.input_channel))
+           if self.decoder.NN:
+              self.decoder.sfc_plus.append(expend_SFC_NUM(find_plus_neigh(isfcs[i]), self.decoder.input_channel))
+              self.decoder.sfc_minus.append(expend_SFC_NUM(find_minus_neigh(isfcs[i]), self.decoder.input_channel))
+        else:
+           self.decoder.orderings.append(isfcs[i])
+           self.decoder.sfc_plus.append(find_plus_neigh(isfcs[i]))
+           self.decoder.sfc_minus.append(find_minus_neigh(isfcs[i]))
 
   def forward(self, x):
     '''
