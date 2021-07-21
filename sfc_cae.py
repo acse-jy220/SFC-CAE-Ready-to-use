@@ -79,16 +79,19 @@ class SFC_CAE_Encoder(nn.Module):
        self.convs.append([])
        for j in range(self.size_conv):
            self.convs[i].append(nn.Conv1d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
-           self.register_parameter(name='conv%d%d_weights'%(i + 1, j + 1), param=self.convs[i][j].weight)
-           self.register_parameter(name='conv%d%d_bias'%(i + 1, j + 1), param=self.convs[i][j].bias)
+        #    self.register_parameter(name='conv%d%d_weights'%(i + 1, j + 1), param=self.convs[i][j].weight)
+        #    self.register_parameter(name='conv%d%d_bias'%(i + 1, j + 1), param=self.convs[i][j].bias)
+       self.convs[i] = nn.ModuleList(self.convs[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
-          self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
-          self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
+    if self.NN: self.sps = nn.ModuleList(self.sps)
+        #   self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
+        #   self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
     for i in range(len(self.size_fc) - 1):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
-       self.register_parameter(name='fc%d_weights'%(i + 1), param=self.fcs[i].weight)
-       self.register_parameter(name='fc%d_bias'%(i + 1), param=self.fcs[i].bias)
+    self.fcs = nn.ModuleList(self.fcs)
+    #    self.register_parameter(name='fc%d_weights'%(i + 1), param=self.fcs[i].weight)
+    #    self.register_parameter(name='fc%d_bias'%(i + 1), param=self.fcs[i].bias)
 
   def get_concat_list(self, x, num_sfc):
       self_t = ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1)
@@ -188,9 +191,9 @@ class SFC_CAE_Decoder(nn.Module):
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
        self.fcs.append(nn.Linear(encoder.size_fc[-k], encoder.size_fc[-k-1]))
-       self.register_parameter(name='fc%d_weights'%(k), param=self.fcs[k - 1].weight)
-       self.register_parameter(name='fc%d_bias'%(k), param=self.fcs[k - 1].bias)
-
+    #    self.register_parameter(name='fc%d_weights'%(k), param=self.fcs[k - 1].weight)
+    #    self.register_parameter(name='fc%d_bias'%(k), param=self.fcs[k - 1].bias)
+    self.fcs = nn.ModuleList(self.fcs)
 
     # set up convolutional layers, fully-connected layers and sparse layers
     self.convTrans = []
@@ -199,24 +202,26 @@ class SFC_CAE_Decoder(nn.Module):
        self.convTrans.append([])
        for j in range(1, encoder.size_conv + 1):
            self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = encoder.output_paddings[j - 1]))
-           self.register_parameter(name='convTrans%d%d_weights'%(i + 1, j), param=self.convTrans[i][j - 1].weight)
-           self.register_parameter(name='convTrans%d%d_bias'%(i + 1, j), param=self.convTrans[i][j - 1].bias)
+        #    self.register_parameter(name='convTrans%d%d_weights'%(i + 1, j), param=self.convTrans[i][j - 1].weight)
+        #    self.register_parameter(name='convTrans%d%d_bias'%(i + 1, j), param=self.convTrans[i][j - 1].bias)
+       self.convTrans[i] = nn.ModuleList(self.convTrans[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= (1/3) / self.self_concat, num_neigh = 3 * self.self_concat))
-          self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
-          self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
+        #   self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
+        #   self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
        else:
           if self.self_concat > 1:
              self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.self_concat, num_neigh = self.self_concat))
-             self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
-             self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)            
+            #  self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
+            #  self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
+    self.sps = nn.ModuleList(self.sps)         
 
     self.split = encoder.size_fc[0] // self.sfc_nums
 
     # final sparse layer combining SFC outputs
     self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
-    self.register_parameter(name='final_sp_weights', param=self.final_sp.weights)
-    self.register_parameter(name='final_sp_bias', param=self.final_sp.bias)   
+    # self.register_parameter(name='final_sp_weights', param=self.final_sp.weights)
+    # self.register_parameter(name='final_sp_bias', param=self.final_sp.bias)   
 
     # final linear activate (shut down it if you have standardlized your data first)
     if output_linear:

@@ -359,7 +359,7 @@ def ordering_tensor(tensor, ordering):
 
 class NearestNeighbouring(nn.Module):
     def __init__(self, size, initial_weight, num_neigh = 3):
-        super(NearestNeighbouring, self).__init__()
+        super().__init__()
         self.size = size
         self.num_neigh = num_neigh
         self.weights = nn.Parameter(torch.ones(size, num_neigh) * initial_weight)
