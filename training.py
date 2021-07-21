@@ -8,7 +8,7 @@ import numpy as np
 from util import *
 import util
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def set_seed(seed):
     """
