@@ -54,10 +54,10 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       optimizer.step()
       train_loss += MSE * batch.size(0)
       train_loss_other += other_MSE * batch.size(0)
-      del x_hat
-      del batch
-      del MSE
-      del other_MSE
+      # del x_hat
+      # del batch
+      # del MSE
+      # del other_MSE
     #   print(count)
 
   return train_loss / data_length, train_loss_other/ data_length  # Return MSE
@@ -78,10 +78,10 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
             other_MSE = other_metric(batch, x_hat)
             validation_loss += MSE * batch.size(0)
             valid_loss_other += other_MSE * batch.size(0)
-            del batch
-            del x_hat
-            del MSE
-            del other_MSE
+            # del batch
+            # del x_hat
+            # del MSE
+            # del other_MSE
             # print('valid ', count)
 
     return validation_loss / data_length, valid_loss_other / data_length   # Return MSE  
@@ -101,7 +101,7 @@ def train_model(autoencoder,
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
-  autoencoder = autoencoder.to(device)
+  autoencoder.to(device)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
 #   if torch.cuda.device_count() > 1:
 #      optimizer = torch.nn.DataParallel(optimizer)
