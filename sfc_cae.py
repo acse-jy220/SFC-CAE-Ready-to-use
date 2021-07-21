@@ -84,6 +84,7 @@ class SFC_CAE_Encoder(nn.Module):
        self.convs[i] = nn.ModuleList(self.convs[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
+    self.convs = nn.ModuleList(self.convs)
     if self.NN: self.sps = nn.ModuleList(self.sps)
         #   self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
         #   self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
@@ -214,6 +215,7 @@ class SFC_CAE_Decoder(nn.Module):
              self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.self_concat, num_neigh = self.self_concat))
             #  self.register_parameter(name='sp%d_weights'%(i + 1), param=self.sps[i].weights)
             #  self.register_parameter(name='sp%d_bias'%(i + 1), param=self.sps[i].bias)   
+    self.convTrans = nn.ModuleList(self.convTrans)
     self.sps = nn.ModuleList(self.sps)         
 
     self.split = encoder.size_fc[0] // self.sfc_nums
