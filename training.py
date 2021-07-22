@@ -103,8 +103,8 @@ def train_model(autoencoder,
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  if torch.cuda.device_count() > 1:
-     optimizer = torch.nn.DataParallel(optimizer)
+  # if torch.cuda.device_count() > 1:
+  #    optimizer = torch.nn.DataParallel(optimizer)
 
   if criterion_type == 'MSE': 
       criterion = nn.MSELoss()
