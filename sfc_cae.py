@@ -370,7 +370,7 @@ class SFC_CAE(nn.Module):
       with open('LatexTable.txt', 'w') as f:
         f.write('\\begin{table}[!htbp]\n')
         f.write('\\resizebox{\\columnwidth}{!}{%\n')
-        f.write('\\scriptsize%\n')
+        f.write('\\small%\n')
         f.write('\\begin{tabular}{|c|c|c|c|c|c|c|c|c|}\n')
         f.write('\\hline\n')
         f.write('layers & input size \\& ordering & kernel size & channels & stride & padding & output padding & output size \\& ordering & activation\\\\\n')
