@@ -104,7 +104,7 @@ class SFC_CAE_Encoder(nn.Module):
     x: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''
-    # print(x.size())
+    print(x.size())
     xs = []
     if self.components > 1: 
         x = x.permute(0, -1, -2)
@@ -365,6 +365,124 @@ class SFC_CAE(nn.Module):
            self.decoder.orderings.append(isfcs[i])
            self.decoder.sfc_plus.append(find_plus_neigh(isfcs[i]))
            self.decoder.sfc_minus.append(find_minus_neigh(isfcs[i]))
+
+  def output_structure(self):
+      with open('LatexTable.txt', 'w') as f:
+        f.write('\\begin{table}[!htbp]\n')
+        f.write('\\resizebox{\\columnwidth}{!}{%\n')
+        f.write('\\scriptsize%\n')
+        f.write('\\begin{tabular}{|c|c|c|c|c|c|c|c|c|}\n')
+        f.write('\\hline\n')
+        f.write('layers & input size \\& ordering & kernel size & channels & stride & padding & output padding & output size \\& ordering & activation\\\\\n')
+        f.write('\\hline\n')
+    
+      # initialize numbers inside the cells
+      size = self.encoder.input_size
+      components = self.encoder.components
+      sfc_set = '\{1'
+      for i in range(1, self.encoder.sfc_nums):
+         sfc_set += F', {i + 1}'
+      sfc_set += '\}'
+    
+      components_set = '\{1'
+      for i in range(1, self.encoder.components):
+          components_set += F', {i + 1}'
+      components_set += '\}'
+    
+      if isinstance(self.encoder.activate, type(nn.ReLU())):
+         activate = 'ReLU'
+      elif isinstance(self.encoder.activate, type(nn.Tanh())):
+         activate = 'Tanh'
+    
+      if self.encoder.structured:
+         cell_11 = '1-Grid'
+         type_m = 'Grid'
+         cell_end = '-Grid'
+      else: 
+         cell_11 = '1-FEM (ANN input)'
+         cell_end = '-FEM (ANN input)'
+         type_m = 'FEM'
+    
+      first_line = F'{cell_11} & ({size}, {components}, {type_m}) & 1 Identity & {components} & 1 & 0 & 0 & ({size}, {components}, SFC$\\mathcal{{C}}$)  $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$ & Identity\\\\\n'
+      f.write(first_line)
+      f.write('\\hline\n')
+    
+
+      f.write('\\multicolumn{9}{|c|}{\\textbf{Encoder}}\\\\\n')
+      f.write('\\hline\n')
+    
+      layer_count = 1
+    
+      if self.encoder.NN:
+        if self.encoder.self_concat > 1:
+            f.write(F'\\multicolumn{{9}}{{|c|}}{{Copying channels and concatenate at the 2nd dimension to form ({size}, {components * self.encoder.self_concat}, SFC$\\mathcal{{C}}$), flatten it to 1D.}} \\\\\n')     
+        else:
+            f.write(F'\\multicolumn{{9}}{{|c|}}{{Flatten ({size}, {components}, SFC$\\mathcal{{C}}$) to 1D $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$}} \\\\\n')
+            
+        f.write('\\hline\n')  
+        layer_count += 1
+        f.write(F'{layer_count}-ExpandNN-SFC$\\mathcal{{C}}$ & ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) & 3 Variable (3 $\\times$ {size * components * self.encoder.self_concat}) & 1 & 1 & 0 & 0 & ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write('\\hline\n') 
+        f.write(F'\\multicolumn{{9}}{{|c|}}{{Reshape ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) to form ({size}, {components * self.encoder.self_concat}, SFC$\\mathcal{{C}}$)}} \\\\\n')
+        f.write('\\hline\n')
+      else:
+           if self.encoder.self_concat > 1:
+              f.write(F'\\multicolumn{{9}}{{|c|}}{{Copying channels and concatenate at the 2nd dimension to form ({size}, {components * self.encoder.self_concat}, SFC$\\mathcal{{C}}$)}} \\\\\n')
+              f.write('\\hline\n')
+    
+      for i in range(len(self.encoder.conv_size) - 1):
+        conv_f = self.encoder.conv_size[i]
+        conv_n = self.encoder.conv_size[i + 1]
+        layer_count += 1
+        f.write(F'{layer_count}-Conv1d-SFC$\\mathcal{{C}}$ & {conv_f}, {self.encoder.channels[i]}, SFC$\\mathcal{{C}}$) & 32 & {self.encoder.channels[i]} & {self.encoder.stride} & {self.encoder.padding} & 0 & ({conv_n}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write('\\hline\n')
+    
+      for i in range(len(self.encoder.size_fc) - 1):
+        layer_count += 1
+        fc_f = self.encoder.size_fc[i]
+        fc_n = self.encoder.size_fc[i + 1]
+        if i == 0:
+            f.write(F'{layer_count}-FC & {fc_f} ($= {self.encoder.conv_size[-1]} \\times {self.encoder.channels[-1]} \\times {self.encoder.sfc_nums}$) & \\multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
+        else:
+            f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
+        f.write('\\hline\n')
+        
+      f.write('\\multicolumn{9}{|c|}{\\textbf{Decoder}}\\\\\n')
+      f.write('\\hline\n')  
+    
+      for i in range(1, len(self.encoder.size_fc)):
+        layer_count += 1
+        fc_f = self.encoder.size_fc[-i]
+        fc_n = self.encoder.size_fc[-i - 1]
+        f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
+        f.write('\\hline\n')
+    
+      for i in range(1, len(self.encoder.conv_size)):
+        conv_f = self.encoder.conv_size[-i]
+        conv_n = self.encoder.conv_size[-i - 1]
+        layer_count += 1
+        f.write(F'{layer_count}-TransConv1d-SFC$\\mathcal{{C}}$ & {conv_f}, {self.encoder.channels[-i]}, SFC$\\mathcal{{C}}$) & 32 & {self.encoder.channels[-i]} & {self.encoder.stride} & {self.encoder.padding} & {self.encoder.output_paddings[i - 1]} & ({conv_n}, {self.encoder.channels[-i - 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write('\\hline\n')
+    
+      if self.encoder.NN:
+        f.write(F'\multicolumn{{9}}{{|c|}}{{Apply inverse SFC orderings to ({size}, {components}, SFC$\\mathcal{{C}}$) $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$,  flatten into ({size * components * self.encoder.self_concat}, 1, {type_m}$\mathcal{{C}}$)}} \\\\\n')
+        f.write('\\hline\n')
+        layer_count += 1
+        f.write(F'{layer_count}-ExpandNN-{type_m}$\\mathcal{{C}}$ & ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$) & 3 Variable (3 $\\times$ {size * components * self.encoder.self_concat}) & 1 & 1 & 0 & 0 & ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write('\\hline\n')    
+        f.write(F'\multicolumn{{9}}{{|c|}}{{Reshape ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$), and separate self-concat channels, to form ({size}, {components}, {type_m}$\\mathcal{{C}}$) $\\times$ {self.encoder.self_concat}}} \\\\\n')
+        f.write('\\hline\n')         
+      else:
+        f.write(F'\multicolumn{{9}}{{|c|}}{{Apply inverse SFC orderings to ({size}, {self.encoder.input_channel}, SFC$\\mathcal{{C}}$) $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$, and separate self-concat channels, to form ({size}, {components}, {type_m}$\\mathcal{{C}}$) $\\times$ {self.encoder.self_concat}}} \\\\\n')
+        f.write('\\hline\n')
+    
+      layer_count += 1
+      f.write(F'{layer_count}{cell_end} & ({size}, {components}, {type_m}$\\mathcal{{C}}$) $\\times$ {self.encoder.self_concat * self.encoder.sfc_nums} & $\\sum\\limits_{{i = 1}}^{{{self.encoder.self_concat * self.encoder.sfc_nums}}} \\; \\omega_{{i}} \\cdot ${type_m}$i$ & {components} & 1 & 0 & 0 & ({size}, {components}, {type_m}$\\mathcal{{C}}$) & {activate} \\\\\n')
+      f.write('\\hline\n')
+    
+      f.write('\\end{tabular}%\n')
+      f.write('}\n')
+      f.write('\\end{table}\n')
 
   def forward(self, x):
     '''
