@@ -380,7 +380,7 @@ def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, inp
        channels = [input_channel]
        output_paddings = [size % stride]
        conv_size = [size]
-       while size * num_final_channels * sfc_nums > 2000 * stride:
+       while size * num_final_channels * sfc_nums > 4000:
           size = size // stride + 1
           conv_size.append(size)
           if num_final_channels >= input_channel * increase_multi: 

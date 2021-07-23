@@ -456,6 +456,9 @@ class SFC_CAE(nn.Module):
         fc_n = self.encoder.size_fc[-i - 1]
         f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
         f.write('\\hline\n')
+
+      f.write(F'\multicolumn{{9}}{{|c|}}{{Split the data into {self.encoder.sfc_nums} sequences as the input of layer {layer_count + 1}-TransConv1d-SFC$\\mathcal{{C}}$ $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$, convert from {self.encoder.size_fc[0] // self.encoder.sfc_nums} to ({self.encoder.conv_size[-1]}, {self.encoder.num_final_channels})}} \\\\\n')
+      f.write('\\hline\n')    
     
       for i in range(1, len(self.encoder.conv_size)):
         conv_f = self.encoder.conv_size[-i]
