@@ -367,14 +367,14 @@ class SFC_CAE(nn.Module):
            self.decoder.sfc_minus.append(find_minus_neigh(isfcs[i]))
 
   def output_structure(self):
-      with open('LatexTable.txt', 'w') as f:
-        f.write('\\begin{table}[!htbp]\n')
-        f.write('\\resizebox{\\columnwidth}{!}{%\n')
-        f.write('\\small%\n')
-        f.write('\\begin{tabular}{|c|c|c|c|c|c|c|c|c|}\n')
-        f.write('\\hline\n')
-        f.write('layers & input size \\& ordering & kernel size & channels & stride & padding & output padding & output size \\& ordering & activation\\\\\n')
-        f.write('\\hline\n')
+    with open('LatexTable.txt', 'w') as f:
+      f.write('\\begin{table}[!htbp]\n')
+      f.write('\\resizebox{\\columnwidth}{!}{%\n')
+      f.write('\\small%\n')
+      f.write('\\begin{tabular}{|c|c|c|c|c|c|c|c|c|}\n')
+      f.write('\\hline\n')
+      f.write('layers & input size \\& ordering & kernel size & channels & stride & padding & output padding & output size \\& ordering & activation\\\\\n')
+      f.write('\\hline\n')
     
       # initialize numbers inside the cells
       size = self.encoder.input_size
@@ -486,6 +486,7 @@ class SFC_CAE(nn.Module):
       f.write('\\end{tabular}%\n')
       f.write('}\n')
       f.write('\\end{table}\n')
+      f.close()
       print("The LaTeX script for the table structure of the SFC-CAE has been written to 'LatexTable.txt', please copy it to a LaTeX compiler environment, e.g. overleaf.")
 
   def forward(self, x):

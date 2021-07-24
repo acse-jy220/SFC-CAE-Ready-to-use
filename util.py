@@ -435,3 +435,60 @@ def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_
             bar.update(cnt_progress)
     bar.finish()
     print('\n Finished writing vtu files.')
+
+
+def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb):
+    data = glob.glob(data_path + "*")
+    num_data = len(data)
+    file_prefix = data[0].split('.')[0].split('_')
+    file_prefix.pop(-1)
+    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
+    else: file_prefix = file_prefix[0] + "_"
+    file_format = '.vtu'
+    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    point_data = {''}
+    cnt_progress = 0
+    print("Write vtu Data......\n")
+    bar=progressbar.ProgressBar(maxval=num_data)
+    bar.start()
+    start = 0
+    while(True):
+        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+            start += 1
+        else: break
+    for i in range(start, num_data + start):
+            point_data = {}
+            field_spliter = [0]
+            vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
+            coords = vtu_file.points
+            cells = vtu_file.cells_dict            
+            filename = F'./reconstructed/reconstructed_%d{file_format}' % i
+            for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
+                field = vtu_file.point_data[vtu_field]
+                # see if last dimension is zero
+                if field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[..., :-1]
+                if j == 0: tensor = torch.from_numpy(field).unsqueeze(0)
+                else: tensor = torch.cat((tensor, torch.from_numpy(field).unsqueeze(0)), -1)
+                field_spliter.append(tensor.shape[-1])
+            tensor = tensor.float()
+            for k in range(tensor.shape[-1]):
+                tensor[...,k] *= tk[k]
+                tensor[...,k] += tb[k] 
+            reconsturcted_tensor = autoencoder(tensor)
+            print('error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
+            for k in range(tensor.shape[-1]):
+                reconsturcted_tensor[...,k] -= tb[k]
+                reconsturcted_tensor[...,k] /= tk[k]        
+            reconsturcted_tensor = reconsturcted_tensor.squeeze(0)    
+            print(reconsturcted_tensor.shape)
+            for j in range(len(vtu_fields)):
+                field = (reconsturcted_tensor[..., field_spliter[j] : field_spliter[j + 1]]).detach().numpy()
+                point_data.update({vtu_field: field})
+            mesh = meshio.Mesh(coords, cells, point_data)
+            mesh.write(filename)
+            cnt_progress +=1
+            bar.update(cnt_progress)
+    bar.finish()
+    print('\n Finished writing vtu files.')
