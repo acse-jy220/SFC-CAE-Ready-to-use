@@ -108,9 +108,6 @@ valid_ratio = 1/17
 test_ratio = 1/17
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
 
-train_val_index = np.concatenate((train_index - 1, valid_index - 1))
-test_index = test_index - 1
-
 # print(train_index, valid_index, test_index)
 
 # split_1 = int(samples * train_ratio)
@@ -137,15 +134,11 @@ if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
       test_set, test_k, test_b = standardlize_tensor(test_set, lower = -1, upper = 1)       
 elif parameters['data_type'] == 'tensors':
      if parameters['activation'] == 'ReLU':
-        train_val_set = MyTensorDataset(get_path_data(parameters['data_dir'], train_val_index), 0, 1)
-      #   valid_set = MyTensorDataset(get_path_data(parameters['data_dir'], valid_index), 0, 1)
-        train_set, valid_set = torch.utils.data.dataset.random_split(train_val_set, [len(train_index), len(valid_index)])
-        test_set = MyTensorDataset(get_path_data(parameters['data_dir'], test_index), 0, 1)
+        full_set = MyTensorDataset(get_path_data(parameters['data_dir'], np.arange(samples)), 0, 1)
+        train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
      elif parameters['activation'] == 'Tanh':
-        train_val_set = MyTensorDataset(get_path_data(parameters['data_dir'], train_val_index), -1, 1)
-      #   valid_set = MyTensorDataset(get_path_data(parameters['data_dir'], valid_index), -1, 1)
-        train_set, valid_set = torch.utils.data.dataset.random_split(train_val_set, [len(train_index), len(valid_index)])
-        test_set = MyTensorDataset(get_path_data(parameters['data_dir'], test_index), -1, 1) 
+        full_set = MyTensorDataset(get_path_data(parameters['data_dir'], np.arange(samples)), -1, 1)
+        train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
 
 print('length of train set:', len(train_set), '\n')
 print('length of valid set:',len(valid_set), '\n')
