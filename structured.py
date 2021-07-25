@@ -8,9 +8,9 @@ import scipy.sparse as sp
 from util import *
 
 
-def loadsimulation(simulaion_steps, simulaion_num, reshape = False):
+def loadsimulation(data_dir, simulaion_steps, simulaion_num, reshape = False):
     for i in range(simulaion_steps + 1):
-        iter_data = np.loadtxt(F'{DATADIR}_%d/step_%d.txt'% (simulaion_num, i))
+        iter_data = np.loadtxt(F'{data_dir}_%d/step_%d.txt'% (simulaion_num, i))
         if reshape: 
             size = np.sqrt(iter_data.shape[0]).astype('int')
             iter_data = iter_data.reshape((size, size))
