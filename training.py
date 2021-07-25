@@ -165,9 +165,16 @@ def train_model(autoencoder,
 
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
+
+  if torch.cuda.device_count() > 1:
+     NN = autoencoder.module.encoder.NN
+     sfc_nums = autoencoder.module.encoder.sfc_nums
+  else:
+     NN = autoencoder.encoder.NN
+     sfc_nums = autoencoder.encoder.sfc_nums
   
-  filename = save_path + F'MSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
-  refilename = save_path + F'reMSELoss_nearest_neighbouring_{autoencoder.encoder.NN}_SFC_nums_{autoencoder.encoder.sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
+  filename = save_path + F'MSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
+  refilename = save_path + F'reMSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
 
   np.savetxt(filename, MSELoss)
   np.savetxt(refilename, reMSELoss)
