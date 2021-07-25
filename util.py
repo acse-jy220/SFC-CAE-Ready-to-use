@@ -237,6 +237,9 @@ class MyTensorDataset(Dataset):
           self.tk = (upper - lower) / (self.t_max - self.t_min)
           self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
 
+          print('tk: ', self.tk, '\n')
+          print('tb: ', self.tb, '\n')
+
       def __getitem__(self, index):
           tensor = torch.load(self.dataset[index])
           return (tensor * self.tk + self.tb).float()
