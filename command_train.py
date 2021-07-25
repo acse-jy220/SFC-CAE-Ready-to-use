@@ -153,6 +153,7 @@ dimension = int(parameters['dimension'])
 
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
 input_size = space_filling_orderings[0].shape[0]
 
@@ -170,6 +171,7 @@ autoencoder = SFC_CAE(input_size,
 autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,
                           valid_loader = valid_loader,
+                          test_loader = test_loader,
                           n_epochs = n_epoches, 
                           lr = lr, 
                           seed = seed,

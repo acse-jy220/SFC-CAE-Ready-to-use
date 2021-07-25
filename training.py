@@ -89,7 +89,8 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
 def train_model(autoencoder, 
                 train_loader, 
-                valid_loader, 
+                valid_loader,
+                test_loader, 
                 n_epochs = 100, 
                 lr = 1e-4, 
                 weight_decay = 0, 
@@ -119,10 +120,12 @@ def train_model(autoencoder,
   re_train_MSEs = []
   re_valid_MSEs = []
   
+  total_time_start = time.time()
+
   # do livelossplot if visualize turned-on
   if visualize:
       liveloss = PlotLosses()
-
+  
   for epoch in range(n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
@@ -162,6 +165,19 @@ def train_model(autoencoder,
     print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
           '\nEpoch %d use: %.2f second.' % (epoch, time_end - time_start))
+  
+  test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
+
+  if criterion_type == 'MSE':
+    test_MSE_re = test_loss_other.cpu().numpy()
+    test_MSE = test_loss.cpu().detach().numpy()
+  elif criterion_type == 'relative_MSE':
+      test_MSE = test_loss_other.cpu().numpy()
+      test_MSE_re = test_loss.cpu().detach().numpy()
+
+  total_time_end = time.time()
+
+  print('test MSE Error: ', test_MSE, '| relative MSE Error: %e' % test_MSE_re, '\n Total time used for training: %.2f hour.' % ((total_time_end - total_time_start)/3600)) 
 
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
