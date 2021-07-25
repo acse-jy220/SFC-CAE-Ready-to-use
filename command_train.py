@@ -178,6 +178,8 @@ autoencoder = train_model(autoencoder,
                           visualize = visualize,
                           save_path = parameters['save_path'])
 
+# if parameters['output_reconstructed'] == 'True':
+
 
 
        
