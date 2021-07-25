@@ -202,7 +202,7 @@ def train_model(autoencoder,
   modeldictname = save_path + F'Slugflow_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}_dict.pth'
   
   if torch.cuda.device_count() > 1:
-    torch.save(autoencoder.module, modelname)
+    torch.save(autoencoder, modelname)
     torch.save(autoencoder.module.state_dict(), modeldictname)
   else:
     torch.save(autoencoder, modelname)
