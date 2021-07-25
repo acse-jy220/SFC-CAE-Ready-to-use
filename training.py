@@ -130,13 +130,13 @@ def train_model(autoencoder,
     valid_loss, valid_loss_other = validate(autoencoder, optimizer, criterion, other_metric, valid_loader)
 
     if criterion_type == 'MSE':
-        train_MSE_re = train_loss_other.item().cpu().numpy()
-        valid_MSE_re = valid_loss_other.item().cpu().numpy()
+        train_MSE_re = train_loss_other.cpu().numpy()
+        valid_MSE_re = valid_loss_other.cpu().numpy()
         train_MSE = train_loss.cpu().detach().numpy()
         valid_MSE = valid_loss.cpu().numpy()
     elif criterion_type == 'relative_MSE':
-        train_MSE = train_loss_other.item().cpu().numpy()
-        valid_MSE = valid_loss_other.item().cpu().numpy()
+        train_MSE = train_loss_other.cpu().numpy()
+        valid_MSE = valid_loss_other.cpu().numpy()
         train_MSE_re = train_loss.cpu().detach().numpy()
         valid_MSE_re = valid_loss.cpu().numpy()
     
