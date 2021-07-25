@@ -98,6 +98,7 @@ def train_model(autoencoder,
                 seed = 41,
                 save_path = ''):
   set_seed(seed)
+  print('torch device num:', torch.cuda.device_count(),'\n')
   autoencoder.to(device)
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
