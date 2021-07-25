@@ -474,8 +474,10 @@ def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, dimension = '3
                 # see if last dimension is zero
                 if dimension == '2D' and field.ndim > 2: field = field[..., :-1]
                 tensor = torch.from_numpy(field)
-                print(tensor.ndim)
+                print(tensor.ndim == 1)
+                print(tensor.shape)
                 if tensor.ndim == 1: tensor = tensor.unsqueeze(-1)
+                print(tensor.shape)
                 if j == 0: tensor = tensor.unsqueeze(0)
                 else: tensor = torch.cat((tensor, tensor.unsqueeze(0)), -1)
                 field_spliter.append(tensor.shape[-1])
