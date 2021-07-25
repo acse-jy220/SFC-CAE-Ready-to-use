@@ -473,8 +473,10 @@ def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb):
                 field = vtu_file.point_data[vtu_field]
                 # see if last dimension is zero
                 if field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[..., :-1]
-                if j == 0: tensor = torch.from_numpy(field).unsqueeze(0)
-                else: tensor = torch.cat((tensor, torch.from_numpy(field).unsqueeze(0)), -1)
+                tensor = torch.from_numpy(field)
+                if tensor.ndim == 2: tensor = tensor.unsqueeze(-1)
+                if j == 0: tensor = tensor.unsqueeze(0)
+                else: tensor = torch.cat((tensor, tensor.unsqueeze(0)), -1)
                 field_spliter.append(tensor.shape[-1])
             tensor = tensor.float()
             for k in range(tensor.shape[-1]):
