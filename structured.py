@@ -20,7 +20,7 @@ def loadsimulation(data_dir, simulaion_steps, simulaion_num, reshape = False):
       
     return tensor
 
-def load_tensor(simulation_indexes):
+def load_tensor(data_dir, simulation_indexes):
     total = len(simulation_indexes)
     cnt_progress = 0
     bar=progressbar.ProgressBar(maxval=total)
@@ -28,7 +28,7 @@ def load_tensor(simulation_indexes):
     cnt_progress+=1
     bar.update(cnt_progress)    
     for i in range(1, total):
-        tensor = torch.cat((tensor, loadsimulation(simulaion_steps, simulation_indexes[i])))
+        tensor = torch.cat((tensor, loadsimulation(data_dir, simulaion_steps, simulation_indexes[i])))
         cnt_progress+=1
         bar.update(cnt_progress)          
     bar.finish()
