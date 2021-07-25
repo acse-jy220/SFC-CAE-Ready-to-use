@@ -24,7 +24,7 @@ def load_tensor(data_dir, simulation_indexes):
     total = len(simulation_indexes)
     cnt_progress = 0
     bar=progressbar.ProgressBar(maxval=total)
-    tensor = loadsimulation(simulaion_steps, simulation_indexes[0])
+    tensor = loadsimulation(data_dir, simulaion_steps, simulation_indexes[0])
     cnt_progress+=1
     bar.update(cnt_progress)    
     for i in range(1, total):
