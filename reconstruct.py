@@ -20,4 +20,8 @@ for i in range(len(vtu_fields)):
 
 autoencoder = torch.load('/rds/general/user/jy220/home/results/Slugflow_nearest_neighbouring_True_SFC_nums_3_lr_0.0001_n_epoches_1.pth')
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+autoencoder = autoencoder.to(device)
+
 result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb)
