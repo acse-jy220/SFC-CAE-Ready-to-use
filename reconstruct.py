@@ -18,10 +18,10 @@ vtu_fields = list(parameters['vtu_fields'].split(','))
 for i in range(len(vtu_fields)): 
     vtu_fields[i] = vtu_fields[i].strip()
 
-autoencoder = torch.load('/rds/general/user/jy220/home/results/Slugflow_nearest_neighbouring_True_SFC_nums_3_lr_0.0001_n_epoches_1.pth')
+autoencoder = torch.load('/rds/general/user/jy220/home/results/Slugflow_nearest_neighbouring_True_SFC_nums_3_lr_0.0001_n_epoches_100.pth')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 autoencoder = autoencoder.to(device)
 
-result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = 1100, end_index= 1400)
+result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = 1100, end_index= 1400, model_device = device)

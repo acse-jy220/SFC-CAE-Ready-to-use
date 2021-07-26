@@ -441,7 +441,7 @@ def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_
     print('\n Finished writing vtu files.')
 
 
-def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, dimension = '3D'):
+def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = '3D'):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -485,11 +485,13 @@ def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = 
             for k in range(tensor.shape[-1]):
                 tensor[...,k] *= tk[k]
                 tensor[...,k] += tb[k] 
+            tensor = tensor.to(model_device)
             reconsturcted_tensor = autoencoder(tensor)
+            reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
             print('error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
             for k in range(tensor.shape[-1]):
                 reconsturcted_tensor[...,k] -= tb[k]
-                reconsturcted_tensor[...,k] /= tk[k]        
+                reconsturcted_tensor[...,k] /= tk[k]       
             reconsturcted_tensor = reconsturcted_tensor.squeeze(0)    
             print(reconsturcted_tensor.shape)
             for j in range(len(vtu_fields)):
