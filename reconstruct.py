@@ -24,4 +24,4 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 autoencoder = autoencoder.to(device)
 
-result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb)
+result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = 1100, end_index= 1400)

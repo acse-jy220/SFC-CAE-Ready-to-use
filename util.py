@@ -441,7 +441,7 @@ def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_
     print('\n Finished writing vtu files.')
 
 
-def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, dimension = '3D'):
+def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, dimension = '3D'):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -461,7 +461,9 @@ def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, dimension = '3
             print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
             start += 1
         else: break
-    for i in range(start, num_data + start):
+    if start_index is None: start_index = start
+    if end_index is None: end_index = num_data + start
+    for i in range(start_index, end_index):
             point_data = {}
             field_spliter = [0]
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
