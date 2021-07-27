@@ -268,7 +268,7 @@ def get_sfc_curves_from_coords_CG(coords, num, template_vtu):
     ncolm=0
     colm=[]
     findm=[0]
-    for nod in range(nNodes):
+    for nod in range(coords.shape[0]):
         nodes = template_vtu.GetPointPoints(nod)
         nodes2 = np.sort(nodes) #sort_assed(nodes) 
         colm.extend(nodes2[:]) 
