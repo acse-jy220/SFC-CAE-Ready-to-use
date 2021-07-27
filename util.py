@@ -281,6 +281,8 @@ def get_sfc_curves_from_coords_CG(coords, num, template_vtu):
     findm = np.array(findm)
     findm = findm + 1
 
+    return findm, colm, ncolm
+
 def plot_trace_vtu_2D(coords, levels):
     x_left = coords[:, 0].min()
     x_right = coords[:, 0].max()
