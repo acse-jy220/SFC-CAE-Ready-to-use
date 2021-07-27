@@ -493,32 +493,32 @@ def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = 
         else: break
     if start_index is None: start_index = start
     if end_index is None: end_index = num_data + start
+    os.system('mkdir -p reconstructed') 
     for i in range(start_index, end_index):
             point_data = {}
             field_spliter = [0]
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
             coords = vtu_file.points
-            cells = vtu_file.cells_dict            
+            cells = vtu_file.cells_dict         
             filename = F'./reconstructed/reconstructed_%d{file_format}' % i
             for j in range(len(vtu_fields)):
                 vtu_field = vtu_fields[j]
                 field = vtu_file.point_data[vtu_field]
                 # see if last dimension is zero
-                if dimension == '2D' and field.ndim > 2: field = field[..., :-1]
+                if dimension == '2D' and field.shape[-1] > 2: field = field[..., :-1]
                 vari_tensor = torch.from_numpy(field)
                 if vari_tensor.ndim == 1: vari_tensor = vari_tensor.unsqueeze(-1)
                 if j == 0: tensor = vari_tensor.unsqueeze(0)
                 else: tensor = torch.cat((tensor, vari_tensor.unsqueeze(0)), -1)
                 field_spliter.append(tensor.shape[-1])
             tensor = tensor.float()
-            print(tensor.shape)
             for k in range(tensor.shape[-1]):
                 tensor[...,k] *= tk[k]
                 tensor[...,k] += tb[k] 
             tensor = tensor.to(model_device)
             reconsturcted_tensor = autoencoder(tensor)
-            reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
             print('error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
+            reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
             for k in range(tensor.shape[-1]):
                 reconsturcted_tensor[...,k] -= tb[k]
                 reconsturcted_tensor[...,k] /= tk[k]       
