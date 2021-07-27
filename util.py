@@ -263,6 +263,23 @@ def get_sfc_curves_from_coords(coords, num):
 
     return curve_lists, inv_lists
 
+def get_sfc_curves_from_coords_CG(coords, num, template_vtu):
+    ncolm=0
+    colm=[]
+    findm=[0]
+    for nod in range(nNodes):
+        nodes = template_vtu.GetPointPoints(nod)
+        nodes2 = np.sort(nodes) #sort_assed(nodes) 
+        colm.extend(nodes2[:]) 
+        nlength = nodes2.shape[0]
+        ncolm=ncolm+nlength
+        findm.append(ncolm)
+
+    colm = np.array(colm)
+    colm = colm + 1
+    findm = np.array(findm)
+    findm = findm + 1
+
 def plot_trace_vtu_2D(coords, levels):
     x_left = coords[:, 0].min()
     x_right = coords[:, 0].max()
