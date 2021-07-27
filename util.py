@@ -264,7 +264,8 @@ def get_sfc_curves_from_coords(coords, num):
 
     return curve_lists, inv_lists
 
-def get_sfc_curves_from_coords_CG(coords, num, template_vtu):
+def get_sfc_curves_from_coords_CG(coords, ncurves, template_vtu):
+    '''copied from Claire's Code'''
     ncolm=0
     colm=[]
     findm=[0]
@@ -281,7 +282,16 @@ def get_sfc_curves_from_coords_CG(coords, num, template_vtu):
     findm = np.array(findm)
     findm = findm + 1
 
-    return findm, colm, ncolm
+    curve_lists = []
+    inv_lists = []
+    graph_trim = -10  # has always been set at -10
+    starting_node = 0 # =0 do not specifiy a starting node, otherwise, specify the starting node
+    whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurves, coords.shape[0], ncolm)
+    for i in range(space_filling_curve_numbering.shape[-1]):
+       curve_lists.append(np.argsort(space_filling_curve_numbering[:,i]))
+       inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))
+
+    return curve_lists, inv_lists
 
 def plot_trace_vtu_2D(coords, levels):
     x_left = coords[:, 0].min()
