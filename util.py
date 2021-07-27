@@ -4,6 +4,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import space_filling_decomp_new as sfc
 import sys
 import vtk
+import vtktools
 import numpy as np
 import time
 import glob
