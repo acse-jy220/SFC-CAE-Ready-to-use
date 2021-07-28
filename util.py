@@ -74,13 +74,11 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
             bar.update(cnt_progress)
         bar.finish()
         whole_data = torch.from_numpy(np.array(data)).float()
-        print(whole_data.shape)
         # get rid of zero coords
         for i in range(whole_data.shape[-1]):
             if whole_data[..., i].max() - whole_data[..., i].min() < 1e-8:
                whole_data[..., i:-1] = whole_data[..., i + 1:]
                whole_data = whole_data[..., :-1]
-        print(whole_data.shape)
         # if whole_data[..., whole_data.ndim - 1].max() - whole_data[..., whole_data.ndim - 1].min() < 1e-6: 
         #     whole_data = whole_data[..., :whole_data.ndim - 1]
         # if coords[..., -1].max() - coords[..., -1].min() < 1e-6: coords = coords[..., :-1]
