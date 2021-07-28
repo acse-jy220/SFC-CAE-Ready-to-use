@@ -127,7 +127,7 @@ def train_model(autoencoder,
       liveloss = PlotLosses()
   
   # initialize old loss
-  loss_old = 1
+  old_loss = 1
   
   for epoch in range(n_epochs):
     print("epoch %d starting......"%(epoch))
