@@ -128,7 +128,8 @@ def train_model(autoencoder,
   
   # initialize old loss
   old_loss = 1
-  
+  decrease_rate = 0
+
   for epoch in range(n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
@@ -174,9 +175,12 @@ def train_model(autoencoder,
     digits = -np.floor(np.log10(train_MSE))
     print('decrease', abs(this_loss - old_loss))
     print('digits', digits)
-    decrease_rate = abs(this_loss - old_loss) * 10 ** digits
-    print('Loss decreasing rate bewteen two consecutive epoches :%e' % decrease_rate)
-    if decrease_rate < 1e-3: optimizer.param_groups[0]['lr'] /= 2
+    decrease_rate += abs(this_loss - old_loss) * 10 ** digits
+    if epoch % 10 == 0: 
+      print('Loss decreasing rate bewteen two consecutive 10 epoches :%e' % decrease_rate)  
+      if decrease_rate < 1e-3:    
+         optimizer.param_groups[0]['lr'] /= 2
+      decrease_rate = 0
     old_loss = this_loss
   
   test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
