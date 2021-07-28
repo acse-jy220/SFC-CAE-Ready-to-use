@@ -183,7 +183,7 @@ def train_model(autoencoder,
          lr_change_epoches.append(int(epoch))
       decrease_rate = 0
 
-    print('Accumulated loss bewteen two consecutive 10 epoches :%.2e' % decrease_rate * 10 ** digits) 
+    print('Accumulated loss bewteen two consecutive 10 epoches :%.2e' % (decrease_rate * 10 ** digits))
     old_loss = this_loss
   
   test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
