@@ -303,7 +303,8 @@ def plot_trace_vtu_2D(coords, levels):
     x_right = coords[:, 0].max()
     y_bottom = coords[:, 1].min()
     y_top = coords[:, 1].max()
-    fig, ax = plt.subplots(figsize=(40,8))
+    y_scale = (y_top - y_bottom) / (x_right - x_left)
+    fig, ax = plt.subplots(figsize=(40, 40 * y_scale))
     ax.set_xlim(x_left, x_right)
     ax.set_ylim(y_bottom, y_top)
     cuts = np.linspace(0, coords.shape[0], levels + 1).astype(np.int32)
@@ -312,26 +313,31 @@ def plot_trace_vtu_2D(coords, levels):
     plt.axis('off')
     plt.show() 
 
-def countour_plot_vtu_2D(coords, levels, values=None, cmap = None):
+def countour_plot_vtu_2D(coords, levels, mask=True, values=None, cmap = None):
     x = coords[:, 0]
     y = coords[:, 1]
     x_left = x.min()
     x_right = x.max()
     y_bottom = y.min()
     y_top = y.max()
-    fig, ax = plt.subplots(figsize=(40,8))
+    y_scale = (y_top - y_bottom) / (x_right - x_left)
+    fig, ax = plt.subplots(figsize=(40, 40 * y_scale))
     ax.set_xlim(x_left, x_right)
     ax.set_ylim(y_bottom, y_top)
+    
     triang = tri.Triangulation(x, y)
+
     if values == None:
         values=np.arange(coords.shape[0])
     
-    min_radius = 0.05
-    # Mask off unwanted triangles.
-    xmid = x[triang.triangles].mean(axis=1)
-    ymid = y[triang.triangles].mean(axis=1)
-    mask = np.where((xmid - 0.2)**2 + (ymid - 0.2)**2 <= min_radius*min_radius, 1, 0)
-    triang.set_mask(mask)
+    if mask:
+       min_radius = 0.05
+       # Mask off unwanted triangles for the FPC case.
+       xmid = x[triang.triangles].mean(axis=1)
+       ymid = y[triang.triangles].mean(axis=1)
+       mask = np.where((xmid - 0.2)**2 + (ymid - 0.2)**2 <= min_radius*min_radius, 1, 0)
+       triang.set_mask(mask)
+    
     plt.tricontourf(triang, values, levels = levels, cmap = cmap)    
     plt.axis('off')
     plt.show()  
