@@ -62,7 +62,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 if not vtu_field in vtu_file.point_data.keys():
                    raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
                 field = vtu_file.point_data[vtu_field]
-                if field.ndim > 1 and field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[...,0:-1] # get rid of zero coords
+                # if field.ndim > 1 and field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[...,0:-1] # get rid of zero coords
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start] = field
@@ -74,6 +74,13 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
             bar.update(cnt_progress)
         bar.finish()
         whole_data = torch.from_numpy(np.array(data)).float()
+        print(whole_data.shape)
+        # get rid of zero coords
+        for i in range(whole_data.shape[-1]):
+            if whole_data[..., i].max() - whole_data[..., i].min() < 1e-8:
+               whole_data[..., i:-1] = whole_data[..., i + 1:]
+               whole_data = whole_data[..., :-1]
+        print(whole_data.shape)
         # if whole_data[..., whole_data.ndim - 1].max() - whole_data[..., whole_data.ndim - 1].min() < 1e-6: 
         #     whole_data = whole_data[..., :whole_data.ndim - 1]
         # if coords[..., -1].max() - coords[..., -1].min() < 1e-6: coords = coords[..., :-1]
