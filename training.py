@@ -173,10 +173,11 @@ def train_model(autoencoder,
     print("Current learning rate: %e"% optimizer.param_groups[0]['lr'])
     this_loss = train_MSE
     digits = -np.floor(np.log10(train_MSE))
-    print('decrease', abs(this_loss - old_loss))
-    print('digits', digits)
-    decrease_rate += abs(this_loss - old_loss) * 10 ** digits
+    # print('digits', digits)
+    decrease_rate += old_loss - this_loss
+    print('decrease', decrease_rate)
     if epoch % 10 == 0: 
+      decrease_rate *= 10 ** digits
       print('Loss decreasing rate bewteen two consecutive 10 epoches :%e' % decrease_rate)  
       if decrease_rate < 1e-3:    
          optimizer.param_groups[0]['lr'] /= 2
