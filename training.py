@@ -92,6 +92,7 @@ def train_model(autoencoder,
                 valid_loader,
                 test_loader, 
                 n_epochs = 100, 
+                check_gap = 10,
                 lr = 1e-4, 
                 weight_decay = 0, 
                 criterion_type = 'MSE', 
@@ -131,6 +132,7 @@ def train_model(autoencoder,
   decrease_rate = 0
   lr_list = [lr]
   lr_change_epoches = [int(0)]
+
   for epoch in range(n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
@@ -174,16 +176,17 @@ def train_model(autoencoder,
     print("Current learning rate: %.0e"% optimizer.param_groups[0]['lr'])
     this_loss = train_MSE
     decrease_rate += old_loss - this_loss
-    if epoch % 10 == 0: 
+    if epoch % check_gap == 0: 
       digits = -np.floor(np.log10(train_MSE))
       decrease_rate *= 10 ** digits
       if decrease_rate < 1e-3:    
          optimizer.param_groups[0]['lr'] /= 2
+         check_gap *= 2
          lr_list.append(optimizer.param_groups[0]['lr'])
          lr_change_epoches.append(int(epoch))
       decrease_rate = 0
 
-    print('Accumulated loss bewteen two consecutive 10 epoches :%.2e' % (decrease_rate * 10 ** digits))
+    print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate * 10 ** digits))
     old_loss = this_loss
   
   test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
