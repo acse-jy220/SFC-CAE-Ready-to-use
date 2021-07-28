@@ -172,8 +172,9 @@ def train_model(autoencoder,
     print("Current learning rate: %e"% optimizer.param_groups[0]['lr'])
     this_loss = train_MSE
     digits = 1 * np.floor(np.log10(train_MSE))
+    print('digits', np.floor(np.log10(train_MSE)))
     decrease_rate = abs(this_loss - old_loss) / digits
-    print('Decreasing rate: ', decrease_rate)
+    print('Loss decreasing percent %.2f: ' % decrease_rate)
     if decrease_rate < 5e-3: optimizer.param_groups[0]['lr'] /= 2
     old_loss = this_loss
   
