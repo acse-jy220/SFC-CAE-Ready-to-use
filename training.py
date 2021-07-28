@@ -126,6 +126,9 @@ def train_model(autoencoder,
   if visualize:
       liveloss = PlotLosses()
   
+  # initialize old loss
+  loss_old = 1
+  
   for epoch in range(n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
@@ -164,7 +167,15 @@ def train_model(autoencoder,
 
     print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
-          '\nEpoch %d use: %.2f second.' % (epoch, time_end - time_start))
+          '\nEpoch %d use: %.2f second.\n' % (epoch, time_end - time_start))
+    
+    print("Current learning rate: %e"% optimizer.param_groups[0]['lr'])
+    this_loss = train_MSE
+    digits = 1 * np.floor(np.log10(train_MSE))
+    decrease_rate = abs(this_loss - old_loss) / digits
+    print('Decreasing rate: ', decrease_rate)
+    if decrease_rate < 5e-3: optimizer.param_groups[0]['lr'] /= 2
+    old_loss = this_loss
   
   test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
 
