@@ -130,7 +130,7 @@ def train_model(autoencoder,
   old_loss = 1
   decrease_rate = 0
   lr_list = [lr]
-  lr_change_epoches = [0]
+  lr_change_epoches = [int(0)]
   for epoch in range(n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
@@ -181,7 +181,7 @@ def train_model(autoencoder,
       if decrease_rate < 1e-3:    
          optimizer.param_groups[0]['lr'] /= 2
          lr_list.append(optimizer.param_groups[0]['lr'])
-         lr_change_epoches.append(epoch)
+         lr_change_epoches.append(int(epoch))
       decrease_rate = 0
     old_loss = this_loss
   
@@ -198,9 +198,9 @@ def train_model(autoencoder,
 
   print('test MSE Error: %e' % test_MSE, '| relative MSE Error: %e' % test_MSE_re, '\n Total time used for training: %.2f hour.' % ((total_time_end - total_time_start)/3600)) 
   
-  lr_epoch_lists = np.vstack((np.array(lr_list), np.array(lr_change_epoches)))
+  lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
   np.savetxt('lr_changes_at_epoch.txt', lr_epoch_lists)
-  
+
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
 
