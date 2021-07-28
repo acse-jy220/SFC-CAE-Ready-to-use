@@ -175,7 +175,7 @@ def train_model(autoencoder,
     print('decrease', abs(this_loss - old_loss))
     print('digits', digits)
     decrease_rate = abs(this_loss - old_loss) * 10 ** digits
-    print('Loss decreasing percent bewteen epoches %.2f%: ' % (decrease_rate))
+    print('Loss decreasing rate bewteen two consecutive epoches %e: ' decrease_rate)
     if decrease_rate < 1e-3: optimizer.param_groups[0]['lr'] /= 2
     old_loss = this_loss
   
