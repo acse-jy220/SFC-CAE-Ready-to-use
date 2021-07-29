@@ -169,7 +169,7 @@ def train_model(autoencoder,
   decrease_rate = 0
   lr_list = [lr]
   lr_change_epoches = [int(epoch_start)]
-  n_epoches += epoch_start
+  n_epochs += epoch_start
 
   for epoch in range(epoch_start, n_epochs):
     print("epoch %d starting......"%(epoch))
@@ -265,9 +265,9 @@ def train_model(autoencoder,
   save_path = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_batch_size_{batch_size}_n_epoches_{n_epochs}'
   
   if torch.cuda.device_count() > 1:
-    save_model(autoencoder.module, optimizer, batch_size, n_epoches, save_path)
+    save_model(autoencoder.module, optimizer, batch_size, n_epochs, save_path)
   else:
-    save_model(autoencoder.module, optimizer, batch_size, n_epoches, save_path)
+    save_model(autoencoder.module, optimizer, batch_size, n_epochs, save_path)
 
   return autoencoder
   
