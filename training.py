@@ -265,9 +265,9 @@ def train_model(autoencoder,
   save_path = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
   if torch.cuda.device_count() > 1:
-    save_model(autoencoder.module, optimizer, batch_size, n_epochs, save_path)
+    save_model(autoencoder.module, optimizer, n_epochs, save_path)
   else:
-    save_model(autoencoder.module, optimizer, batch_size, n_epochs, save_path)
+    save_model(autoencoder, optimizer, n_epochs, save_path)
 
   return autoencoder
   
