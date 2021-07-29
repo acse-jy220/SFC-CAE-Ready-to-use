@@ -440,7 +440,7 @@ def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, inp
        size_fc = [size]
        while size // (stride ** 1.5) > dims_latent: 
           size //= stride
-          if size < 40: break
+        #   if size < 40: break
           size_fc.append(size)
        size_fc.append(dims_latent)
 

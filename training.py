@@ -26,13 +26,39 @@ def set_seed(seed):
 
 def relative_MSE(x, y, epsilon = 0):
     '''
-    Compute relative MSE
+    Compute the relative MSE
     x: [tensor] prediction
     y: [tensor] true_value
     '''
 
     assert x.shape == y.shape, 'the input tensors should have the same shape!'
     return ((x - y) ** 2).sum() / (y ** 2).sum()     
+
+def save_model(model, optimizer, n_epoches, save_path):
+    '''
+    Save model and parameters of the optimizer as pth file, for continuous training.
+    ---
+    model: the neutral network
+    optimizer: the current optimizer in training process
+    n_epoches: the finishing epoches for this run
+    save_path: the path for saving this module
+
+    '''
+    model_name = F"{save_path}.pth" 
+    model_dictname = F"{save_path}_dict.pth"
+
+    # save the model_dict (as well as the learning rate and epoches)
+    torch.save({
+            'model_state_dict': model.state_dict(),
+            'lr':optimizer.param_groups[0]['lr'],
+            'epoch_start':n_epoches
+            }, model_dictname)
+
+    # save the pure model (for direct evaluation)
+    torch.save(model, model_name)
+
+    print('model saved to', model_name)
+    print('model_dict saved to', model_dictname)
 
 def train(autoencoder, optimizer, criterion, other_metric, dataloader):
   autoencoder.train()
@@ -91,20 +117,31 @@ def train_model(autoencoder,
                 train_loader, 
                 valid_loader,
                 test_loader, 
+                state_load = None,
                 n_epochs = 100, 
-                check_gap = 10,
+                check_gap = 5,
                 lr = 1e-4, 
                 weight_decay = 0, 
                 criterion_type = 'MSE', 
-                visualize=True, 
+                visualize = True, 
                 seed = 41,
                 save_path = ''):
   set_seed(seed)
+
   print('torch device num:', torch.cuda.device_count(),'\n')
   autoencoder.to(device)
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
+
+  # see if continue training happens
+  if state_load is not None:
+     state_load = torch.load(state_load)
+     lr = state_load['lr']
+     epoch_start = state_load['epoch_start']
+     autoencoder.load_state_dict(state_load['model_state_dict'])
+  else: epoch_start = 0
+
   optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   # if torch.cuda.device_count() > 1:
   #    optimizer = torch.nn.DataParallel(optimizer)
@@ -127,13 +164,14 @@ def train_model(autoencoder,
   if visualize:
       liveloss = PlotLosses()
   
-  # initialize old loss
+  # initialize some parameters before training
   old_loss = 1
   decrease_rate = 0
   lr_list = [lr]
-  lr_change_epoches = [int(0)]
+  lr_change_epoches = [int(epoch_start)]
+  n_epoches += epoch_start
 
-  for epoch in range(n_epochs):
+  for epoch in range(epoch_start, n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
     train_loss, train_loss_other = train(autoencoder, optimizer, criterion, other_metric, train_loader)
@@ -215,8 +253,8 @@ def train_model(autoencoder,
      NN = autoencoder.encoder.NN
      sfc_nums = autoencoder.encoder.sfc_nums
   
-  filename = save_path + F'MSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
-  refilename = save_path + F'reMSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.txt'
+  filename = save_path + F'MSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_batch_size_{batch_size}_n_epoches_{n_epochs}.txt'
+  refilename = save_path + F'reMSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_batch_size_{batch_size}_n_epoches_{n_epochs}.txt'
 
   np.savetxt(filename, MSELoss)
   np.savetxt(refilename, reMSELoss)
@@ -224,18 +262,12 @@ def train_model(autoencoder,
   print('MESLoss saved to ', filename)
   print('relative MSELoss saved to ', refilename)
 
-  modelname = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}.pth'
-  modeldictname = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_lr_{lr}_n_epoches_{n_epochs}_dict.pth'
+  save_path = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_batch_size_{batch_size}_n_epoches_{n_epochs}'
   
   if torch.cuda.device_count() > 1:
-    torch.save(autoencoder.module, modelname)
-    torch.save(autoencoder.module.state_dict(), modeldictname)
+    save_model(autoencoder.module, optimizer, batch_size, n_epoches, save_path)
   else:
-    torch.save(autoencoder, modelname)
-    torch.save(autoencoder.state_dict(), modeldictname)
-  
-  print('model saved to', modelname)
-  print('model_dict saved to', modeldictname)
+    save_model(autoencoder.module, optimizer, batch_size, n_epoches, save_path)
 
   return autoencoder
   
