@@ -34,7 +34,7 @@ def relative_MSE(x, y, epsilon = 0):
     assert x.shape == y.shape, 'the input tensors should have the same shape!'
     return ((x - y) ** 2).sum() / (y ** 2).sum()     
 
-def save_model(model, optimizer, n_epoches, save_path):
+def save_model(model, optimizer, check_gap, n_epoches, save_path):
     '''
     Save model and parameters of the optimizer as pth file, for continuous training.
     ---
@@ -51,6 +51,7 @@ def save_model(model, optimizer, n_epoches, save_path):
     torch.save({
             'model_state_dict': model.state_dict(),
             'lr':optimizer.param_groups[0]['lr'],
+            'check_gap':check_gap,
             'epoch_start':n_epoches
             }, model_dictname)
 
@@ -137,6 +138,7 @@ def train_model(autoencoder,
   # see if continue training happens
   if state_load is not None:
      state_load = torch.load(state_load)
+     check_gap = state_load['check_gap']
      lr = state_load['lr']
      epoch_start = state_load['epoch_start']
      autoencoder.load_state_dict(state_load['model_state_dict'])
@@ -217,14 +219,13 @@ def train_model(autoencoder,
     if epoch % check_gap == 0: 
       digits = -np.floor(np.log10(train_MSE))
       decrease_rate *= 10 ** digits
+      print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate))
       if decrease_rate < 1e-3:    
          optimizer.param_groups[0]['lr'] /= 2
          check_gap *= 2
          lr_list.append(optimizer.param_groups[0]['lr'])
          lr_change_epoches.append(int(epoch))
       decrease_rate = 0
-
-    print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate * 10 ** digits))
     old_loss = this_loss
   
   test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
@@ -265,9 +266,9 @@ def train_model(autoencoder,
   save_path = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
   if torch.cuda.device_count() > 1:
-    save_model(autoencoder.module, optimizer, n_epochs, save_path)
+    save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path)
   else:
-    save_model(autoencoder, optimizer, n_epochs, save_path)
+    save_model(autoencoder, optimizer, check_gap, n_epochs, save_path)
 
   return autoencoder
   
