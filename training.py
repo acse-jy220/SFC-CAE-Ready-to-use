@@ -250,12 +250,14 @@ def train_model(autoencoder,
   if torch.cuda.device_count() > 1:
      NN = autoencoder.module.encoder.NN
      sfc_nums = autoencoder.module.encoder.sfc_nums
+     latent = autoencoder.module.encoder.dims_latent
   else:
      NN = autoencoder.encoder.NN
      sfc_nums = autoencoder.encoder.sfc_nums
+     latent = autoencoder.encoder.dims_latent
   
-  filename = save_path + F'MSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-  refilename = save_path + F'reMSELoss_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+  filename = save_path + F'MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+  refilename = save_path + F'reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
 
   np.savetxt(filename, MSELoss)
   np.savetxt(refilename, reMSELoss)
@@ -263,7 +265,7 @@ def train_model(autoencoder,
   print('MESLoss saved to ', filename)
   print('relative MSELoss saved to ', refilename)
 
-  save_path = save_path + F'Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+  save_path = save_path + F'Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
   if torch.cuda.device_count() > 1:
     save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path)
