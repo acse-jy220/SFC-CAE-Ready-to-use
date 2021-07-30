@@ -214,7 +214,6 @@ def train_model(autoencoder,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
           '\nEpoch %d use: %.2f second.\n' % (epoch, time_end - time_start))
     
-    print("Current learning rate: %.0e"% optimizer.param_groups[0]['lr'])
     if varying_lr:
       print("Current learning rate: %.0e"% optimizer.param_groups[0]['lr'])
       this_loss = train_MSE
