@@ -119,7 +119,8 @@ def train_model(autoencoder,
                 valid_loader,
                 test_loader, 
                 state_load = None,
-                n_epochs = 100, 
+                n_epochs = 100,
+                varying_lr = False, 
                 check_gap = 5,
                 lr = 1e-4, 
                 weight_decay = 0, 
@@ -214,11 +215,13 @@ def train_model(autoencoder,
           '\nEpoch %d use: %.2f second.\n' % (epoch, time_end - time_start))
     
     print("Current learning rate: %.0e"% optimizer.param_groups[0]['lr'])
-    this_loss = train_MSE
-    decrease_rate += old_loss - this_loss
-    if epoch % check_gap == 0: 
-      digits = -np.floor(np.log10(train_MSE))
-      decrease_rate *= 10 ** digits
+    if varying_lr:
+      print("Current learning rate: %.0e"% optimizer.param_groups[0]['lr'])
+      this_loss = train_MSE
+      decrease_rate += old_loss - this_loss
+      if epoch % check_gap == 0: 
+        digits = -np.floor(np.log10(train_MSE))
+        decrease_rate *= 10 ** digits
       print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate))
       if decrease_rate < 1e-2:    
          optimizer.param_groups[0]['lr'] /= 2
@@ -226,7 +229,7 @@ def train_model(autoencoder,
          lr_list.append(optimizer.param_groups[0]['lr'])
          lr_change_epoches.append(int(epoch))
       decrease_rate = 0
-    old_loss = this_loss
+      old_loss = this_loss
   
   test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
 
