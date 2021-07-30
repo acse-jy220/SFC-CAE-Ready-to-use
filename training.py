@@ -71,7 +71,7 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       optimizer.zero_grad()  # Set optimiser grad to 0
       if autoencoder.encoder.variational:
         x_hat, KL = autoencoder(batch)
-        KL /= batch.size(0) * autoencoder.encoder.dims_latent
+        KL /= batch.size(0) * autoencoder.encoder.dims_latent * autoencoder.encoder.components
         print('KL divergence:', KL.item())
         MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
         print('MSE:', criterion(batch, x_hat).item())
