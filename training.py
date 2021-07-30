@@ -240,7 +240,7 @@ def train_model(autoencoder,
       decrease_rate = 0
       old_loss = this_loss
   
-  test_loss, test_loss_other = validate(autoencoder, optimizer, criterion, other_metric, test_loader)
+  test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader)
 
   if criterion_type == 'MSE':
     test_MSE_re = test_loss_other.cpu().numpy()
