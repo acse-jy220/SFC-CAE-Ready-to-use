@@ -222,8 +222,8 @@ def train_model(autoencoder,
         print(F'check at epoch {epoch}')
         digits = -np.floor(np.log10(train_MSE))
         decrease_rate *= 10 ** digits
-      print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate))
-      if decrease_rate < 1e-2:    
+        print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate))
+        if decrease_rate < 1e-2:    
          optimizer.param_groups[0]['lr'] /= 2
          check_gap *= 2
          lr_list.append(optimizer.param_groups[0]['lr'])
