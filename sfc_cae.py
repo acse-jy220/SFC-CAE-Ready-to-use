@@ -148,8 +148,6 @@ class SFC_CAE_Encoder(nn.Module):
       mu = self.layerMu(x)
       sigma = torch.exp(self.layerSig(x))
       sample = self.Normal01.sample(mu.shape).to(x.device)
-      print(sample.shape)
-      print(sample.device)
       x = mu + sigma * sample
       kl_div = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
       return x, kl_div
