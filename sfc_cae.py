@@ -90,8 +90,8 @@ class SFC_CAE_Encoder(nn.Module):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
     
     if self.variational:
-       self.layerMu = nn.linear(self.size_fc[-2], self.size_fc[-1])
-       self.layerSig = nn.linear(self.size_fc[-2], self.size_fc[-1])
+       self.layerMu = nn.Linear(self.size_fc[-2], self.size_fc[-1])
+       self.layerSig = nn.Linear(self.size_fc[-2], self.size_fc[-1])
        self.Normal01 = torch.distributions.Normal(0, 1)
     else:
        self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
