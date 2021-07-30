@@ -145,11 +145,11 @@ class SFC_CAE_Encoder(nn.Module):
     for i in range(len(self.fcs)): x = self.activate(self.fcs[i](x))
     # variational sampling
     if self.variational:
-       mu = self.layerMu(x)
-       sigma = torch.exp(self.layerSig(x))
-       sample = self.Normal01(self.dims_latent).to(x.device)
-       x = mu + sigma * sample
-       kl_div = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
+      mu = self.layerMu(x)
+      sigma = torch.exp(self.layerSig(x))
+      sample = self.Normal01(self.dims_latent).to(x.device)
+      x = mu + sigma * sample
+      kl_div = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
       return x, kl_div
     else: return x
 
