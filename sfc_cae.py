@@ -13,7 +13,8 @@ class SFC_CAE_Encoder(nn.Module):
                nearest_neighbouring, 
                dims_latent, 
                space_filling_orderings,
-               activation):
+               activation,
+               variational):
     '''
     Class contains the Encoder (snapshot -> latent).
     '''
@@ -26,6 +27,7 @@ class SFC_CAE_Encoder(nn.Module):
     self.components = components
     self.self_concat = self_concat
     self.input_channel = components * self_concat
+    self.variational = variational
     self.orderings = []
     self.sfc_plus = []
     self.sfc_minus = []
@@ -84,8 +86,15 @@ class SFC_CAE_Encoder(nn.Module):
           self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
     self.convs = nn.ModuleList(self.convs)
     if self.NN: self.sps = nn.ModuleList(self.sps)
-    for i in range(len(self.size_fc) - 1):
+    for i in range(len(self.size_fc) - 2):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
+    
+    if self.variational:
+       self.layerMu = nn.linear(self.size_fc[-2], self.size_fc[-1])
+       self.layerSig = nn.linear(self.size_fc[-2], self.size_fc[-1])
+       self.Normal01 = torch.distributions.Normal(0, 1)
+    else:
+       self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
     self.fcs = nn.ModuleList(self.fcs)
 
   def get_concat_list(self, x, num_sfc):
@@ -134,7 +143,15 @@ class SFC_CAE_Encoder(nn.Module):
     for i in range(self.sfc_nums): del xs[0] # clear memory 
     # fully connect layers
     for i in range(len(self.fcs)): x = self.activate(self.fcs[i](x))
-    return x
+    # variational sampling
+    if self.variational:
+       mu = self.layerMu(x)
+       sigma = torch.exp(self.layerSig(x))
+       sample = self.Normal01(self.dims_latent).to(x.device)
+       x = mu + sigma * sample
+       kl_div = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
+      return x, kl_div
+    else: return x
 
 class SFC_CAE_Decoder(nn.Module): 
   def __init__(self, encoder, inv_space_filling_orderings, output_linear = False):
@@ -144,6 +161,7 @@ class SFC_CAE_Decoder(nn.Module):
 
     super(SFC_CAE_Decoder, self).__init__()
     self.NN = encoder.NN
+    self.variational = encoder.variational
     self.activate = encoder.activate
     self.dims_latent = encoder.dims_latent
     self.dimension = encoder.dimension
@@ -312,6 +330,7 @@ class SFC_CAE(nn.Module):
                space_filling_orderings, 
                invert_space_filling_orderings,
                activation = None,
+               variational = False,
                output_linear = False):
     '''
     Class combines the Encoder and the Decoder with an Autoencoder latent space.
@@ -328,7 +347,8 @@ class SFC_CAE(nn.Module):
                           nearest_neighbouring, 
                           dims_latent, 
                           space_filling_orderings,
-                          activation)
+                          activation,
+                          variational)
     self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
   
 
@@ -493,7 +513,11 @@ class SFC_CAE(nn.Module):
     '''
     x - [Torch.Tensor.float] A batch of fluid snapshots from the data-loader
     '''
-
-    z = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}.
-    return self.decoder(z)  # Return the output of the decoder (1-D, the predicted image)
+    
+    if self.encoder.variational:
+      z, kl_div = self.encoder(x)
+      return self.decoder(z), kl_div
+    else:
+      z = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}.
+      return self.decoder(z)  # Return the output of the decoder (1-D, the predicted image)
 
