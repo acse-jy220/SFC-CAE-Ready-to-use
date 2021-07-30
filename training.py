@@ -69,11 +69,12 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       count += batch.size(0)
       batch = batch.to(device)  # Send batch of images to the GPU
       optimizer.zero_grad()  # Set optimiser grad to 0
-    #   if torch.cuda.device_count() > 1:
-    #      x_hat = autoencoder(batch)
-    #   else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
-      x_hat = autoencoder(batch)
-      MSE = criterion(batch, x_hat)  # Calculate MSE loss
+      if autoencoder.encoder.variational:
+        x_hat, KL = autoencoder(batch)
+        MSE = criterion(batch, x_hat) + KL/(batch.size(0) * autoencoder.encoder.dims_latent)  # MSE loss plus KL divergence
+      else:
+        x_hat = autoencoder(batch)
+        MSE = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
       MSE.backward()  # Back-propagate
     #   if torch.cuda.device_count() > 1: optimizer.step()
@@ -97,11 +98,12 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
         with torch.no_grad():
             count += batch.size(0)
             batch = batch.to(device)  # Send batch of images to the GPU
-            # if torch.cuda.device_count() > 1:
-            #    x_hat = autoencoder(batch)
-            # else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
-            x_hat = autoencoder(batch)
-            MSE = criterion(batch, x_hat)  # Calculate MSE loss
+            if autoencoder.encoder.variational:
+              x_hat, KL = autoencoder(batch)
+              MSE = criterion(batch, x_hat) + KL/(batch.size(0) * autoencoder.encoder.dims_latent)  # MSE loss plus KL divergence
+            else:
+              x_hat = autoencoder(batch)
+              MSE = criterion(batch, x_hat)  # Calculate MSE loss
             other_MSE = other_metric(batch, x_hat)
             validation_loss += MSE * batch.size(0)
             valid_loss_other += other_MSE * batch.size(0)
