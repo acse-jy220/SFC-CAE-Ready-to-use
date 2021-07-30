@@ -71,8 +71,8 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
       optimizer.zero_grad()  # Set optimiser grad to 0
       if variational:
         x_hat, KL = autoencoder(batch)
-        if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
-        else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
+        # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
+        # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
         # print('KL divergence:', KL.item())
         MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
         # print('MSE:', criterion(batch, x_hat).item())
@@ -104,8 +104,8 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
             batch = batch.to(device)  # Send batch of images to the GPU
             if variational:
               x_hat, KL = autoencoder(batch)
-              if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
-              else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
+              # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
+              # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
               MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
             else:
               x_hat = autoencoder(batch)
