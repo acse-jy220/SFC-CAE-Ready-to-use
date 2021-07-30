@@ -72,9 +72,9 @@ def train(autoencoder, optimizer, criterion, other_metric, dataloader):
       if autoencoder.encoder.variational:
         x_hat, KL = autoencoder(batch)
         KL /= batch.size(0) * autoencoder.encoder.dims_latent * autoencoder.encoder.components
-        print('KL divergence:', KL.item())
+        # print('KL divergence:', KL.item())
         MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
-        print('MSE:', criterion(batch, x_hat).item())
+        # print('MSE:', criterion(batch, x_hat).item())
       else:
         x_hat = autoencoder(batch)
         MSE = criterion(batch, x_hat)  # Calculate MSE loss
@@ -103,7 +103,7 @@ def validate(autoencoder, optimizer, criterion, other_metric, dataloader):
             batch = batch.to(device)  # Send batch of images to the GPU
             if autoencoder.encoder.variational:
               x_hat, KL = autoencoder(batch)
-              MSE = criterion(batch, x_hat) + KL/(batch.size(0) * autoencoder.encoder.dims_latent)  # MSE loss plus KL divergence
+              MSE = criterion(batch, x_hat) + KL/(batch.size(0) * autoencoder.encoder.dims_latent * autoencoder.encoder.components)  # MSE loss plus KL divergence
             else:
               x_hat = autoencoder(batch)
               MSE = criterion(batch, x_hat)  # Calculate MSE loss
