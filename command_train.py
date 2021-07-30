@@ -58,6 +58,16 @@ if parameters['nearest_neighbouring'] == 'True':
 elif parameters['nearest_neighbouring'] == 'False':
     nearest_neighbouring = False
 
+if parameters['changing_lr'] == 'True':
+   change_lr = True
+elif parameters['changing_lr'] == 'False':
+   change_lr = False
+
+if parameters['variational'] == 'True':
+   variational = True
+elif parameters['variational'] == 'False':
+   variational = False
+
 if parameters['visualize'] == 'True':
     visualize = True
 elif parameters['visualize'] == 'False':
@@ -67,18 +77,6 @@ if parameters['output_reconstructed'] == 'True':
    output = True
 elif parameters['output_reconstructed'] == 'False':
    output = False
-
-# if tensors folder
-# if parameters['data_type'] == 'tensors':
-#    if parameters['got_min_max'] == 'True':
-#       path_data = find_min_and_max(parameters['data_dir'], False)
-#    elif parameters['got_min_max'] == 'False':
-#       path_data = find_min_and_max(parameters['data_dir'], True) 
-
-   # if parameters['activation'] == 'ReLU':
-   #    full_tensor =  MyTensorDataset(path_data, components, 0, 1)
-   # elif parameters['activation'] == 'Tanh':
-   #    full_tensor =  MyTensorDataset(path_data, components, -1, 1)
 
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
@@ -166,13 +164,15 @@ autoencoder = SFC_CAE(input_size,
                       dims_latent,
                       space_filling_orderings, 
                       invert_space_filling_orderings,
-                      activation = activation)
+                      activation = activation,
+                      variational = variational)
 
 autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,
                           valid_loader = valid_loader,
                           test_loader = test_loader,
                           n_epochs = n_epoches, 
+                          varying_lr = change_lr,
                           lr = lr, 
                           seed = seed,
                           visualize = visualize,
