@@ -147,7 +147,7 @@ class SFC_CAE_Encoder(nn.Module):
     if self.variational:
       mu = self.layerMu(x)
       sigma = torch.exp(self.layerSig(x))
-      sample = self.Normal01(self.dims_latent).to(x.device)
+      sample = self.Normal01.sample(self.dims_latent).to(x.device)
       x = mu + sigma * sample
       kl_div = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
       return x, kl_div
