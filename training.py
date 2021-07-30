@@ -219,6 +219,7 @@ def train_model(autoencoder,
       this_loss = train_MSE
       decrease_rate += old_loss - this_loss
       if epoch % check_gap == 0: 
+        print(F'check at epoch {epoch}')
         digits = -np.floor(np.log10(train_MSE))
         decrease_rate *= 10 ** digits
       print(F'Accumulated loss bewteen two consecutive {check_gap} epoches :%.2e' % (decrease_rate))
