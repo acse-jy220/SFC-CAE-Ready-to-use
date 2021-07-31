@@ -81,7 +81,7 @@ samples = len(glob.glob(parameters['data_dir'] + '*'))
 
 print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
 print('dims_latent ', dims_latent, '\n', 'components ', components, '\n', 'nearest_neighbouring ', nearest_neighbouring, '\n')
-print('visualize ', visualize, '\n', 'output', output, '\n', 'sample number ', samples, '\n')
+print('visualize ', visualize, '\n', 'sample number ', samples, '\n')
 
 # if specifies sfc_file and inv_sfc_file
 if parameters['sfc_file'] != 'None':
@@ -104,16 +104,6 @@ train_ratio = 15/17
 valid_ratio = 1/17
 test_ratio = 1/17
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
-
-# print(train_index, valid_index, test_index)
-
-# split_1 = int(samples * train_ratio)
-# split_2 = -1 + int(samples * test_ratio)
-
-# train_set = MyTensorDataset(path_data[:split_1], components, 0, 1)
-# valid_set = MyTensorDataset(path_data[split_1:], components, 0, 1)
-# # test_set = MyTensorDataset(path_data[split_2:-1], components, 0, 1)
-# test_set = []
 
 
 if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
