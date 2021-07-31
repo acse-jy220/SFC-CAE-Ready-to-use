@@ -482,7 +482,7 @@ def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_
     print('\n Finished writing vtu files.')
 
 
-def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = '3D'):
+def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -511,12 +511,12 @@ def result_vtu_to_vtu(data_path, vtu_fields, autoencoder, tk, tb, start_index = 
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
             coords = vtu_file.points
             cells = vtu_file.cells_dict         
-            filename = F'./reconstructed/reconstructed_%d{file_format}' % i
+            filename = F'{save_path}reconstructed_{file_prefix}%d{file_format}' % i
             for j in range(len(vtu_fields)):
                 vtu_field = vtu_fields[j]
                 field = vtu_file.point_data[vtu_field]
                 # see if last dimension is zero
-                if dimension == '2D' and field.shape[-1] > 2: field = field[..., :-1]
+                if dimension == 2 and field.shape[-1] > 2: field = field[..., :-1]
                 vari_tensor = torch.from_numpy(field)
                 if vari_tensor.ndim == 1: vari_tensor = vari_tensor.unsqueeze(-1)
                 if j == 0: tensor = vari_tensor.unsqueeze(0)

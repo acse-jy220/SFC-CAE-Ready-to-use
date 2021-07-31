@@ -78,6 +78,10 @@ if parameters['output_reconstructed'] == 'True':
 elif parameters['output_reconstructed'] == 'False':
    output = False
 
+if parameters['state_load'] != 'None':
+   state_load = parameters['state_load']
+else: state_load = None
+
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
 print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
@@ -148,6 +152,12 @@ lr = float(parameters['lr'])
 n_epoches = int(parameters['n_epoches'])
 seed = int(parameters['seed'])
 dimension = int(parameters['dimension'])
+if parameters['reconstruct_start_index'] != 'None':
+   reconstruct_start_index = int(parameters['reconstruct_start_index'])
+else: reconstruct_start_index = None
+if parameters['reconstruct_end_index'] != 'None':
+   reconstruct_end_index = int(parameters['reconstruct_end_index'])
+else: reconstruct_end_index = None
 
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
@@ -171,6 +181,7 @@ autoencoder = train_model(autoencoder,
                           train_loader = train_loader,
                           valid_loader = valid_loader,
                           test_loader = test_loader,
+                          state_load = state_load,
                           n_epochs = n_epoches, 
                           varying_lr = change_lr,
                           lr = lr, 
@@ -178,7 +189,10 @@ autoencoder = train_model(autoencoder,
                           visualize = visualize,
                           save_path = parameters['save_path'])
 
-# if parameters['output_reconstructed'] == 'True':
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+if parameters['reconstructed_path'] != 'None':
+   result_vtu_to_vtu(parameters['data_dir'], parameters['reconstructed_path'], vtu_fields, autoencoder, full_set.tk, full_set.tb, reconstruct_start_index, reconstruct_end_index, model_device = device, dimension = dimension)
 
 
 
