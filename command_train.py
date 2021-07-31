@@ -73,11 +73,6 @@ if parameters['visualize'] == 'True':
 elif parameters['visualize'] == 'False':
     visualize = False
 
-if parameters['output_reconstructed'] == 'True':
-   output = True
-elif parameters['output_reconstructed'] == 'False':
-   output = False
-
 if parameters['state_load'] != 'None':
    state_load = parameters['state_load']
 else: state_load = None
