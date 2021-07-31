@@ -135,7 +135,7 @@ def train_model(autoencoder,
                 criterion_type = 'MSE', 
                 visualize = True, 
                 seed = 41,
-                save_path = ''):
+                save_path = None):
   set_seed(seed)
   variational = autoencoder.encoder.variational
   
@@ -252,9 +252,6 @@ def train_model(autoencoder,
   total_time_end = time.time()
 
   print('test MSE Error: %e' % test_MSE, '| relative MSE Error: %e' % test_MSE_re, '\n Total time used for training: %.2f hour.' % ((total_time_end - total_time_start)/3600)) 
-  
-  lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
-  np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
 
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
@@ -270,21 +267,27 @@ def train_model(autoencoder,
      latent = autoencoder.encoder.dims_latent
      variational = autoencoder.encoder.variational
   
-  filename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-  refilename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+  if save_path is not None:
 
-  np.savetxt(filename, MSELoss)
-  np.savetxt(refilename, reMSELoss)
+    if varying_lr:
+      lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
+      np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
+    
+    filename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    refilename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
 
-  print('MESLoss saved to ', filename)
-  print('relative MSELoss saved to ', refilename)
+    np.savetxt(filename, MSELoss)
+    np.savetxt(refilename, reMSELoss)
 
-  save_path = save_path + F'Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+    print('MESLoss saved to ', filename)
+    print('relative MSELoss saved to ', refilename)
+
+    save_path = save_path + F'Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
-  if torch.cuda.device_count() > 1:
-    save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path)
-  else:
-    save_model(autoencoder, optimizer, check_gap, n_epochs, save_path)
+    if torch.cuda.device_count() > 1:
+      save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path)
+    else:
+      save_model(autoencoder, optimizer, check_gap, n_epochs, save_path)
 
   return autoencoder
   
