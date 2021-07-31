@@ -482,7 +482,134 @@ def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_
     print('\n Finished writing vtu files.')
 
 
-def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
+def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, variational = False, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
+    data = glob.glob(data_path + "*")
+    num_data = len(data)
+    file_prefix = data[0].split('.')[0].split('_')
+    file_prefix.pop(-1)
+    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
+    else: file_prefix = file_prefix[0] + "_"
+    file_format = '.vtu'
+    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    point_data = {''}
+    cnt_progress = 0
+    print("Compressing vtu Data......\n")
+    bar=progressbar.ProgressBar(maxval=num_data)
+    bar.start()
+    start = 0
+    while(True):
+        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+            start += 1
+        else: break
+    if start_index is None: start_index = start
+    if end_index is None: end_index = num_data + start
+    os.system(F'mkdir -p {save_path}') 
+    save_path += '/'
+    for i in range(start_index, end_index):
+            point_data = {}
+            field_spliter = [0]
+            vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
+            coords = vtu_file.points
+            cells = vtu_file.cells_dict         
+            filename = F'{save_path}reconstructed_%d{file_format}' % i
+            for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
+                field = vtu_file.point_data[vtu_field]
+                # see if last dimension is zero
+                if dimension == 2 and field.shape[-1] > 2: field = field[..., :-1]
+                vari_tensor = torch.from_numpy(field)
+                if vari_tensor.ndim == 1: vari_tensor = vari_tensor.unsqueeze(-1)
+                if j == 0: tensor = vari_tensor.unsqueeze(0)
+                else: tensor = torch.cat((tensor, vari_tensor.unsqueeze(0)), -1)
+                field_spliter.append(tensor.shape[-1])
+            tensor = tensor.float()
+            for k in range(tensor.shape[-1]):
+                tensor[...,k] *= tk[k]
+                tensor[...,k] += tb[k] 
+            tensor = tensor.to(model_device)
+            if variational: compressed_tensor = autoencoder.encoder(tensor)[0]
+            else: compressed_tensor = autoencoder.encoder(tensor)
+            compressed_tensor = compressed_tensor.to('cpu') 
+            print('compressing snapshot %d, shape:' % i, compressed_tensor.shape)
+            torch.save(compressed_tensor, save_path +'compressed_%d.pt' % i)
+            cnt_progress +=1
+            bar.update(cnt_progress)
+    bar.finish()
+    print('\n Finished compressing vtu files.')
+
+def read_in_compressed_tensors(data_path, start_index = None, end_index = None):
+    data = glob.glob(data_path + "*")
+    num_data = len(data)
+    file_prefix = data[0].split('.')[0].split('_')
+    file_prefix.pop(-1)
+    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
+    else: file_prefix = file_prefix[0] + "_"
+    file_format = '.pt'
+    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    point_data = {''}
+    cnt_progress = 0
+    print("Reading in compressed Data......\n")
+    bar=progressbar.ProgressBar(maxval=num_data)
+    bar.start()
+    start = 0
+    while(True):
+        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+            start += 1
+        else: break
+    if start_index is None: start_index = start
+    if end_index is None: end_index = num_data + start   
+    for i in range(start_index, end_index):
+        print('read in compressed data %d ...' % i)
+        if i == start_index:
+           full_tensor = torch.load(F'{file_prefix}%d{file_format}' % i)
+        else:
+           full_tensor = torch.cat((full_tensor, torch.load(F'{file_prefix}%d{file_format}' % i)), 0)
+        print(full_tensor.shape)
+        bar.update(cnt_progress)
+    bar.finish() 
+    return full_tensor  
+
+def decompress_to_vtu(full_tensor, tamplate_vtu, save_path, vtu_fields, field_spliter, autoencoder, tk, tb, variational = False, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
+    file_format = '.vtu'
+    point_data = {''}
+    coords = tamplate_vtu.points
+    cells = tamplate_vtu.cells_dict 
+    cnt_progress = 0
+    print("Write vtu Data......\n")
+    bar=progressbar.ProgressBar(maxval=full_tensor.shape[0])
+    bar.start()
+    start = 0
+    if start_index is None: start_index = 0
+    if end_index is None: end_index = full_tensor.shape[0]
+    os.system(F'mkdir -p {save_path}') 
+    save_path += '/'
+    for i in range(start_index, end_index):
+            point_data = {}
+            tensor = full_tensor[i]    
+            print("Reconstructing vtu %d ......\n" % i)
+            filename = F'{save_path}reconstructed_from_latent_%d{file_format}' % i
+            tensor = tensor.to(model_device)
+            reconsturcted_tensor = autoencoder.decoder(tensor)
+            reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
+            for k in range(reconsturcted_tensor.shape[-1]):
+                reconsturcted_tensor[...,k] -= tb[k]
+                reconsturcted_tensor[...,k] /= tk[k]       
+            reconsturcted_tensor = reconsturcted_tensor.squeeze(0)    
+            print(reconsturcted_tensor.shape)
+            for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
+                field = (reconsturcted_tensor[..., field_spliter[j] : field_spliter[j + 1]]).detach().numpy()
+                point_data.update({vtu_field: field})
+            mesh = meshio.Mesh(coords, cells, point_data)
+            mesh.write(filename)
+            cnt_progress +=1
+            bar.update(cnt_progress)
+    bar.finish()
+    print('\n Finished decompressing vtu files.')
+
+def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, variational = False, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -504,14 +631,15 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
         else: break
     if start_index is None: start_index = start
     if end_index is None: end_index = num_data + start
-    os.system('mkdir -p reconstructed') 
+    os.system(F'mkdir -p {save_path}') 
+    save_path += '/'
     for i in range(start_index, end_index):
             point_data = {}
             field_spliter = [0]
             vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
             coords = vtu_file.points
             cells = vtu_file.cells_dict         
-            filename = F'{save_path}reconstructed_{file_prefix}%d{file_format}' % i
+            filename = F'{save_path}reconstructed_%d{file_format}' % i
             for j in range(len(vtu_fields)):
                 vtu_field = vtu_fields[j]
                 field = vtu_file.point_data[vtu_field]
@@ -527,7 +655,8 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
                 tensor[...,k] *= tk[k]
                 tensor[...,k] += tb[k] 
             tensor = tensor.to(model_device)
-            reconsturcted_tensor = autoencoder(tensor)
+            if variational: reconsturcted_tensor = autoencoder(tensor)[0]
+            else: reconsturcted_tensor = autoencoder(tensor)
             print('error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
             reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
             for k in range(tensor.shape[-1]):
@@ -536,6 +665,7 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
             reconsturcted_tensor = reconsturcted_tensor.squeeze(0)    
             print(reconsturcted_tensor.shape)
             for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
                 field = (reconsturcted_tensor[..., field_spliter[j] : field_spliter[j + 1]]).detach().numpy()
                 point_data.update({vtu_field: field})
             mesh = meshio.Mesh(coords, cells, point_data)
