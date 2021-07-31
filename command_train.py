@@ -154,6 +154,10 @@ if parameters['reconstruct_end_index'] != 'None':
    reconstruct_end_index = int(parameters['reconstruct_end_index'])
 else: reconstruct_end_index = None
 
+if parameters['save_path'] != 'None':
+   save_path = parameters['save_path']
+else: save_path = None
+
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
@@ -182,7 +186,7 @@ autoencoder = train_model(autoencoder,
                           lr = lr, 
                           seed = seed,
                           visualize = visualize,
-                          save_path = parameters['save_path'])
+                          save_path = save_path)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
