@@ -94,6 +94,43 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
 
   return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
+def train_shuffle(autoencoder, optimizer, criterion, other_metric, dataloader, sfcs, isfcs):
+  autoencoder.train()
+  train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  count = 0
+  shuffle = 0
+  maxcurves = len(isfcs)-autoencoder.encoder.sfc_nums
+  for batch in dataloader:
+      ind1 = (shuffle * autoencoder.encoder.sfc_nums)%maxcurves
+      ind2 = ind1 + autoencoder.encoder.sfc_nums + 1
+      if (autoencoder.encoder.sfc_nums == 1): #There is no better way to do this I think. Simply indexing issues
+        autoencoder.changesfcs([sfcs[ind1]],[isfcs[ind1]])
+      else:
+        autoencoder.changesfcs(sfcs[ind1:ind2],isfcs[ind1:ind2])
+      count += batch.size(0)
+      shuffle += 1
+      batch = batch.to(device)  # Send batch of images to the GPU
+      optimizer.zero_grad()  # Set optimiser grad to 0
+    #   if torch.cuda.device_count() > 1:
+    #      x_hat = autoencoder(batch)
+    #   else: x_hat = autoencoder(batch)  # Generate predicted images (x_hat) by running batch of images through autoencoder
+      x_hat = autoencoder(batch)
+      MSE = criterion(batch, x_hat)  # Calculate MSE loss
+      with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
+      MSE.backward()  # Back-propagate
+    #   if torch.cuda.device_count() > 1: optimizer.step()
+    #   else: optimizer.step()  # Step the optimiser
+      optimizer.step()
+      train_loss += MSE * batch.size(0)
+      train_loss_other += other_MSE * batch.size(0)
+      del x_hat
+      del batch
+      del MSE
+      del other_MSE
+    #   print(count)
+
+  return train_loss / data_length, train_loss_other/ data_length  # Return MSE
+
 def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
     autoencoder.eval()
     validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
@@ -125,7 +162,11 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
 def train_model(autoencoder, 
                 train_loader, 
                 valid_loader,
-                test_loader, 
+                test_loader,
+                shuffle = False,
+                shufflebatches = False,
+                sfcstoshuffle = [],
+                isfcstoshuffle = [], 
                 state_load = None,
                 n_epochs = 100,
                 varying_lr = False, 
@@ -187,8 +228,21 @@ def train_model(autoencoder,
   for epoch in range(epoch_start, n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
-    train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
-    valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+    if shuffle:  #WORK IN PROGRESS, WILL TIDY LATER
+      ind1 = (epoch * autoencoder.encoder.sfc_nums)%maxcurves
+      ind2 = ind1 + autoencoder.encoder.sfc_nums + 1
+      if (autoencoder.encoder.sfc_nums == 1): #There is no better way to do this I think. Simply indexing issues
+        autoencoder.changesfcs([sfcs[ind1]],[isfcs[ind1]])
+      else:
+        autoencoder.changesfcs(sfcs[ind1:ind2],isfcs[ind1:ind2])
+      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
+      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+    if shufflebatches: #WORK IN PROGRESS FOR BOTH SHUFFLE AND SHUFFLEBATCHES, CURRENTLY WORKS FOR ONLY 1 CURVE
+      train_loss, train_loss_other = train_shuffle(autoencoder, optimizer, criterion, other_metric, train_loader, sfcstoshuffle, isfcstoshuffle)
+      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+    else:
+      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
+      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
 
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other.cpu().numpy()

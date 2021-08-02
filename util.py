@@ -128,7 +128,7 @@ def normalize_tensor(tensor):
         t_std = torch.std(tensor)
         return (tensor - t_mean)/t_std, t_mean, t_std
 
-def standardlize_tensor(tensor, lower = -1, upper = 1):
+def standardize_tensor(tensor, lower = -1, upper = 1):
     if tensor.ndim > 2:
        tk = torch.zeros(tensor.shape[-1])
        tb = torch.zeros(tensor.shape[-1])
@@ -153,7 +153,7 @@ def denormalize_tensor(tensor, t_mean, t_std):
           tensor += t_mean
     return tensor
 
-def destandardlize_tensor(tensor, tk, tb):
+def destandardize_tensor(tensor, tk, tb):
     if tensor.ndim > 2:
        for i in range(tensor.shape[-1]):
            tensor[...,i] -= tb[i]
@@ -399,7 +399,10 @@ def find_minus_neigh(ordering):
     return minus_neigh
 
 def ordering_tensor(tensor, ordering):
-    return tensor[:, ordering]
+    if len(tensor.size())==1:
+      return tensor.unsqueeze(0)[:,ordering].to("cuda")
+    else:
+      return tensor[:, ordering]
 
 class NearestNeighbouring(nn.Module):
     def __init__(self, size, initial_weight, num_neigh = 3):
@@ -420,12 +423,17 @@ def expend_SFC_NUM(sfc_ordering, partitions):
         sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
     return sfc_ext
 
-def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
+def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels, FC):
+       #The first element of our channel array is the input channel
        channels = [input_channel]
-       output_paddings = [size % stride]
+       #As the first element of our size array is the input size
        conv_size = [size]
-       while size * num_final_channels * sfc_nums > 4000:
-          size = size // stride + 1
+       #The first element of the output padding array (which we will use later in the decoder) is the mod of the size and the stride
+       output_paddings = [size % stride]
+       
+
+       while size * num_final_channels * sfc_nums > dims_latent: #4000: #Jin, why was this 4000 exactly?
+          size = size // stride + 1 #Why +1?
           conv_size.append(size)
           if num_final_channels >= input_channel * increase_multi: 
               input_channel *= increase_multi
@@ -437,12 +445,15 @@ def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, inp
     
        inv_conv_start = size
        size *= sfc_nums * num_final_channels
-       size_fc = [size]
-       while size // (stride ** 1.5) > dims_latent: 
-          size //= stride
-          if size * stride < 100 and size < 50: break
-          size_fc.append(size)
-       size_fc.append(dims_latent)
+       
+       size_fc = []
+       if FC:
+        size_fc = [size]
+        while size // (stride ** 1.5) > dims_latent: 
+            size //= stride
+            if size * stride < 100 and size < 50: break
+            size_fc.append(size)
+        size_fc.append(dims_latent)
 
        return conv_size, len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
 
