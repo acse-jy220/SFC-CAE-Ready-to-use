@@ -1,4 +1,4 @@
-name: run-Pytest-tests
+name: run-pytest-tests
 on:
   push:
     branches: [ main ]
@@ -37,10 +37,10 @@ jobs:
           environment-file: environment.yml
           auto-activate-base: true
 
-    # compile fortran
-    - name: Compile Fortran library
-      run: f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+      # compile fortran
+      - name: Compile Fortran library
+        run: f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
 
-    # run pytests      
-    - name: Test with pytest
-      run: python3 -m pytest tests/ --doctest-modules -v
+      # run pytests      
+      - name: Test with pytest
+        run: python3 -m pytest tests/ --doctest-modules -v
