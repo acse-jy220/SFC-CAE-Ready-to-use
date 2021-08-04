@@ -1,25 +1,77 @@
-name: run-tests
+name: run-Pytest-tests
 on:
   push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 # This job installs dependencies and runs tests
 jobs:
-  run-tests:
-    runs-on: ubuntu-latest
+
+  pytest-unbuntu:
+    
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
 
-    # Install dependencies
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
+      - uses: actions/checkout@v2
 
-    - name: Install data & dependencies
-      run: |
-        pip install pytest
-        pip install -e .
-    # Run tests
-    - name: run tests
-      run: |
-        python -m pytest .
+
+      - name: Set pytest directory
+        run: echo "::set-env name=TESTS::tests/"
+
+
+      - name: Set doctest suffix
+        run: echo "::set-env name=DOCTEST::--doctest-modules -v"
+
+      # Install dependencies
+      - name: Set up Python 3.8.5
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8.5
+
+      - name: Install data & dependencies
+        run: |
+          pip install -e .
+          python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
+          
+        
+      # Run tests
+      - name: Set a run prefix
+        run: echo "::set-env name=RUN::python3 -m"
+        
+      - name: Test with pytest
+        run: $RUN pytest $TESTS $DOCTEST
+
+  pytest-windows:
+    
+    runs-on: windows-2019
+    steps:
+
+      - uses: actions/checkout@v2
+
+
+      - name: Set pytest directory
+        run: echo "::set-env name=TESTS::tests/"
+
+
+      - name: Set doctest suffix
+        run: echo "::set-env name=DOCTEST::--doctest-modules -v"
+
+      # Install dependencies
+      - name: Set up Python 3.8.5
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8.5
+
+      - name: Install data & dependencies
+        run: |
+          pip install -e .
+          f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+          
+        
+      # Run tests
+      - name: Set a run prefix
+        run: echo "::set-env name=RUN::python3 -m"
+        
+      - name: Test with pytest
+        run: $RUN pytest $TESTS $DOCTEST
