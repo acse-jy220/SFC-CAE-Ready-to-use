@@ -13,13 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: matthewrmshin/conda-action@v1
-      # - uses: conda-incubator/setup-miniconda@v2
-        with:
-          args: conda env update -f environment.yml
-          # environment-file: environment.yml
-          # auto-activate-base: true
-          # activate-environment: sfc_cae
+      - uses: conda-incubator/setup-miniconda@v2
+          environment-file: environment.yml
+          auto-activate-base: true
+          activate-environment: sfc_cae
           
       # get vtktools
       - name: Download vtktools
@@ -39,14 +36,13 @@ jobs:
     steps:
 
       - uses: actions/checkout@v2
-      - uses: matthewrmshin/conda-action@v1
+
+      # only linux supports Container action
+      - uses: conda-incubator/setup-miniconda@v2
         with:
-          args: conda env update -f environment.yml
-      # - uses: conda-incubator/setup-miniconda@v2
-      #   with:
-      #     environment-file: environment.yml
-      #     auto-activate-base: true
-      #     activate-environment: sfc_cae
+          environment-file: environment.yml
+          auto-activate-base: true
+          activate-environment: sfc_cae
       
       # get vtktools
       - name: Download vtktools
