@@ -16,8 +16,8 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: environment.yml
-          auto-activate-base: true
-          activate-environment: "sfc_cae"
+          auto-activate-base: false
+          activate-environment: sfc_cae
           
       # get vtktools
       - name: Download vtktools
@@ -40,8 +40,8 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: environment.yml
-          auto-activate-base: true
-          activate-environment: "sfc_cae"
+          auto-activate-base: false
+          activate-environment: sfc_cae
       
       # get vtktools
       - name: Download vtktools
