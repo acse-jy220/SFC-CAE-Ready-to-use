@@ -45,7 +45,7 @@ jobs:
       
       # get vtktools
       - name: Download vtktools
-        run: wget https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
+        run: C:\msys64\usr\bin\wget.exe https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
 
       # compile fortran
       - name: Compile Fortran library
