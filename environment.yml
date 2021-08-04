@@ -12,6 +12,7 @@ dependencies:
   - numpy=1.17.3
   - pandas=0.25.3
   - scipy
+  - pytest=5.1.1
   - pip:
     - vtk
     - progressbar
