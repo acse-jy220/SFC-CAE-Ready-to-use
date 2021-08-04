@@ -4,3 +4,4 @@ meshio[all]
 cmocean
 torch
 dash
+pytest

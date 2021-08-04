@@ -13,15 +13,13 @@ for ir in required:
     else:
         reqs += [ir]
 
-os.system('bash get_scripts.sh')
+# os.system('bash get_scripts.sh')
 
 setup(name='SFC-CAE',
-      version="Version: 0.01",
-      description="A Space-filling curve autoencoder for compressing data on unstructured mesh.",
-      long_description="""need filling""",
-      url='wait for the url',
+      description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
+      url='https://github.com/acse-2020/acse2020-acse9-finalreport-acse-jy220',
       author="Imperial College London",
       author_email='jin.yu20@imperial.ac.uk',
-      license='MIT',
       install_requires=reqs,
-      test_suite='tests')
+      test_suite='tests',
+      packages=['sfc_cae'])
