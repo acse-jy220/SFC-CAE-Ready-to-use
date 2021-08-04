@@ -17,7 +17,12 @@ jobs:
         with:
           environment-file: environment.yml
           auto-activate-base: true
-      
+          activate-environment: "sfc_cae"
+          
+      # get vtktools
+      - name: Download vtktools
+        run: wget https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
+
       # compile fortran
       - name: Compile Fortran library
         run: python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
@@ -36,6 +41,11 @@ jobs:
         with:
           environment-file: environment.yml
           auto-activate-base: true
+          activate-environment: "sfc_cae"
+      
+      # get vtktools
+      - name: Download vtktools
+        run: wget https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
 
       # compile fortran
       - name: Compile Fortran library
