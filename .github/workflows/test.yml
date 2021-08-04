@@ -16,7 +16,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: environment.yml
-          auto-activate-base: false
+          auto-activate-base: true
           activate-environment: sfc_cae
           
       # get vtktools
@@ -25,11 +25,11 @@ jobs:
 
       # compile fortran
       - name: Compile Fortran library
-        run: python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
+        run: python -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
 
       # run pytests      
       - name: Test with pytest
-        run: python3 -m pytest tests/ --doctest-modules -v
+        run: python -m pytest tests/ --doctest-modules -v
 
   pytest-windows:
     
@@ -40,7 +40,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: environment.yml
-          auto-activate-base: false
+          auto-activate-base: true
           activate-environment: sfc_cae
       
       # get vtktools
@@ -53,4 +53,4 @@ jobs:
 
       # run pytests      
       - name: Test with pytest
-        run: python3 -m pytest tests/ --doctest-modules -v
+        run: python -m pytest tests/ --doctest-modules -v
