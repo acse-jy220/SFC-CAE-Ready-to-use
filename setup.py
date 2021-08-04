@@ -12,9 +12,7 @@ for ir in required:
         reqs += ['%s @ %s@master' % (name, ir)]
     else:
         reqs += [ir]
-
-os.system('bash get_scripts.sh')
-
+        
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
       url='https://github.com/acse-2020/acse2020-acse9-finalreport-acse-jy220',
