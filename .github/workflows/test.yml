@@ -21,7 +21,7 @@ jobs:
       
       # activate environment 
       - name: Activate SFC-CAE
-        run: conda activate sfc_cae
+        run: source activate sfc_cae
           
       # get vtktools
       - name: Download vtktools
