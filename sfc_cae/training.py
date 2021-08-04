@@ -5,8 +5,7 @@ from torch.utils.data import DataLoader
 from livelossplot import PlotLosses
 import random 
 import numpy as np
-from util import *
-import util
+from sfc_cae.utils import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
