@@ -13,10 +13,12 @@ for ir in required:
     else:
         reqs += [ir]
 
+print(sys.platform)
+
 if sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'darwin':
    # on linux and mac
    compile_command = 'python -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'
-elif sys.platform == 'win32':
+elif sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys'
    # on windows
    compile_command = 'f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32'
 else:
