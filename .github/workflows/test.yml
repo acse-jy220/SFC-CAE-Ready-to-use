@@ -25,27 +25,7 @@ jobs:
 
       # run pytests      
       - name: Test with pytest
-        run: python -m pytest tests/ --doctest-modules -v
-
-  pytest-macOS:
-
-    runs-on: macos-latest
-                      
-    steps:
-      - uses: actions/checkout@v2
-
-      # setup python
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.5'
-      
-      # pip install the module
-      - name: Pip install
-        run: pip3 install -e .
-
-      # run pytests      
-      - name: Test with pytest
-        run: python3 -m pytest tests/ --doctest-modules -v      
+        run: python -m pytest tests/ --doctest-modules -v 
 
   pytest-windows:
     
