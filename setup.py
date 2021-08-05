@@ -1,8 +1,6 @@
 import os
 import sys
 from setuptools import setup, find_packages
-import numpy as np
-from distutils.core import Command
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
