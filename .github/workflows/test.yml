@@ -18,18 +18,10 @@ jobs:
           environment-file: environment.yml
           auto-activate-base: true
           activate-environment: sfc_cae
-          
-      # get vtktools
-      - name: Download vtktools
-        run: wget https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
       
       # pip install the module
       - name: Pip install
         run: pip install -e .
-
-      # compile fortran
-      - name: Compile Fortran library
-        run: python -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
 
       # run pytests      
       - name: Test with pytest
@@ -48,10 +40,6 @@ jobs:
           environment-file: environment.yml
           auto-activate-base: true
           activate-environment: sfc_cae
-      
-      # get vtktools
-      - name: Download vtktools
-        run: C:\msys64\usr\bin\wget.exe https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
 
       # compile fortran
       - name: Compile Fortran library

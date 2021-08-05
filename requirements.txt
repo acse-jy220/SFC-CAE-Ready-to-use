@@ -5,3 +5,4 @@ cmocean
 torch
 dash
 pytest
+progressbar
