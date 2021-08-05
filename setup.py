@@ -18,10 +18,7 @@ if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys'
    compile_command = 'f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32'
 elif sys.platform == 'linux' or sys.platform == 'linux2':
    # on linux
-   compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'
-elif sys.platform == 'darwin':
-   # on mac
-   compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=g++-9'    
+   compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'   
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
