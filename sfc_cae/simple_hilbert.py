@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 
 def rotation(grid_in, pattern = 1):
     if pattern == 1:

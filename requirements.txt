@@ -1,3 +1,6 @@
+numpy 
+scipy
+matplotlib
 vtk
 livelossplot
 meshio[all]
