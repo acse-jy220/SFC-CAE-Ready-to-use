@@ -10,7 +10,7 @@ jobs:
 
   pytest-unbuntu:
     
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
@@ -22,6 +22,10 @@ jobs:
       # get vtktools
       - name: Download vtktools
         run: wget https://raw.githubusercontent.com/FluidityProject/fluidity/main/python/vtktools.py
+      
+      # pip install the module
+      - name: Pip install
+        run: pip install -e .
 
       # compile fortran
       - name: Compile Fortran library
