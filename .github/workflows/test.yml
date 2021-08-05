@@ -41,11 +41,7 @@ jobs:
       
       # pip install the module
       - name: Pip install
-        run: pip3 install -e . --with-f90mc
-      
-      # # Compile fortran 
-      # - name: Compile Fortran
-      #   run: python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
+        run: pip3 install -e .
 
       # run pytests      
       - name: Test with pytest
