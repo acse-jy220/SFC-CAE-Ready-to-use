@@ -15,6 +15,15 @@ for ir in required:
     else:
         reqs += [ir]
 
+setup(name='SFC-CAE',
+      description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
+      url='https://github.com/acse-2020/acse2020-acse9-finalreport-acse-jy220',
+      author="Imperial College London",
+      author_email='jin.yu20@imperial.ac.uk',
+      install_requires=reqs,
+      test_suite='tests',
+      packages=['sfc_cae'])
+
 if sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'darwin':
    # on linux and mac
    compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'
@@ -25,12 +34,3 @@ else:
     raise ValueError('Unknown operating system!')
 
 os.system(compile_command)
-
-setup(name='SFC-CAE',
-      description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
-      url='https://github.com/acse-2020/acse2020-acse9-finalreport-acse-jy220',
-      author="Imperial College London",
-      author_email='jin.yu20@imperial.ac.uk',
-      install_requires=reqs,
-      test_suite='tests',
-      packages=['sfc_cae'])
