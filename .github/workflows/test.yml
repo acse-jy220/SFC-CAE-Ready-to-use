@@ -44,6 +44,8 @@ jobs:
         run: pip3 install -e .
       
       # Compile fortran 
+      - name: Compile Fortran
+        run: python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
 
       # run pytests      
       - name: Test with pytest
