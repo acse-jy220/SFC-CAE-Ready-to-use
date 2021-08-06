@@ -29,4 +29,5 @@ setup(name='SFC-CAE',
       test_suite='tests',
       packages=['sfc_cae'])
 
+# compile fortran
 os.system(compile_command)

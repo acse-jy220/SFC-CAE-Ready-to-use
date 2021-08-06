@@ -48,9 +48,12 @@ class SFC_CAE_Encoder(nn.Module):
     if dimension == 2: 
         self.kernel_size = 32
         self.stride = 4
+        self.num_final_channels = 8
     elif dimension == 3:
         self.kernel_size = 176
         self.stride = 8
+        self.num_final_channels = 16
+
     self.padding = self.kernel_size//2
 
     self.structured = structured
@@ -66,8 +69,6 @@ class SFC_CAE_Encoder(nn.Module):
           self.activate = nn.Tanh()
        else:
           self.activate = activation
-
-    self.num_final_channels = 16  # default
 
     self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
     = find_size_conv_layers_and_fc_layers(self.input_size, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
@@ -457,7 +458,7 @@ class SFC_CAE(nn.Module):
         f.write(F'{layer_count}-Conv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[i + 1]} & {self.encoder.stride} & {self.encoder.padding} & 0 & ({conv_n}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
         f.write('\\hline\n')
     
-      for i in range(len(self.encoder.size_fc) - 1):
+      for i in range(len(self.encoder.size_fc) - 2):
         layer_count += 1
         fc_f = self.encoder.size_fc[i]
         fc_n = self.encoder.size_fc[i + 1]
@@ -466,6 +467,20 @@ class SFC_CAE(nn.Module):
         else:
             f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
         f.write('\\hline\n')
+      
+      # Whether a variational encoder decide the cells in the middle
+      if self.encoder.variational: 
+         f.write('\\multicolumn{9}{|c|}{\\textbf{Variational Reparametrization}}\\\\\n')
+         f.write('\\hline\n') 
+         f.write(F'{layer_count}-FC-$\\sigma$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
+         f.write(F'{layer_count}-FC-$\\mu$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
+         layer_count += 1
+         f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 2 Variable (2 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & {Identity}\\\\\n')
+         layer_count += 1
+      else: 
+         f.write(F'{layer_count}-FC & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n') 
+         layer_count += 1    
+      f.write('\\hline\n')
         
       f.write('\\multicolumn{9}{|c|}{\\textbf{Decoder}}\\\\\n')
       f.write('\\hline\n')  

@@ -7,7 +7,7 @@ from sfc_cae import *
 
 # @fixture(scope='module')
 
-class TestHilbert(object):
+class TestGenerateNetwork(object):
     @pytest.mark.parametrize('hilbert_4, hilbert_8, hilbert_16', 
     [
         ([ 0,  1,  5,  4,  8, 12, 13,  9, 10, 14, 15, 11,  7,  6,  2,  3],

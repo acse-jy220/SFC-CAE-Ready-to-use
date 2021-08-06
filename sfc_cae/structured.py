@@ -9,6 +9,19 @@ from sfc_cae.utils import *
 
 
 def loadsimulation(data_dir, simulaion_steps, simulaion_num, reshape = False):
+    '''
+    Load a single simulation generated in sfc_cae.advection_block_analytical.py
+    ---
+    data_dir: [string] the abosolute address of the root dir of the simulation folders
+    simulation_steps: [int] the steps of each simulation, defined in the run_simulation_advection() class
+    simulaion_num: [int] index of the simulation to load
+    reshape: [boolean] whether reshape this 1d-array to 2d, default is False.
+    ---
+    Returns:
+    
+    tensor: [torch.floatTensor] the tensor of the loaded simulation, of shape tuple(shape of each simulation tensor)   
+
+    '''
     for i in range(simulaion_steps + 1):
         iter_data = np.loadtxt(F'{data_dir}_%d/step_%d.txt'% (simulaion_num, i))
         if reshape: 
@@ -21,6 +34,17 @@ def loadsimulation(data_dir, simulaion_steps, simulaion_num, reshape = False):
     return tensor
 
 def load_tensor(data_dir, simulation_indexes):
+    '''
+    Load simulation tensors by the simulation generated in sfc_cae.advection_block_analytical.py
+    ---
+    data_dir: [string] the abosolute address of the root dir of the simulation folders
+    simulation_indexes: [1d-array] the indices of the simulation number to be loaded.
+    ---
+    Returns:
+
+    tensor: [torch.floatTensor] the whole tensors of the loaded simulations, of shape[len(simulation_indexes), tuple(shape of each simulation tensor)]
+    '''
+
     total = len(simulation_indexes)
     cnt_progress = 0
     bar=progressbar.ProgressBar(maxval=total)
@@ -35,6 +59,21 @@ def load_tensor(data_dir, simulation_indexes):
     return tensor
 
 def index_split(train_ratio, valid_ratio, test_ratio, total_num = 500):
+    '''
+    Get random spilting indexes, for train, valid and test set.
+    ---
+    train_ratio: [float] The ratio of the number of train set.
+    valid_ratio: [float] The ratio of the number of valid set.
+    test_ratio: [float] The ratio of the number of test set.
+    total_num: [int] The total number of the dataset (snapshots)
+    ---
+    Returns:
+
+    train_index: [1d-array] The indices of the train set, shape of [total_num * train_ratio]
+    valid_index: [1d-array] The indices of the valid set, shape of [total_num * valid_ratio]
+    test_index: [1d-array] The indices of the test set, shape of [total_num * test_ratio]
+    '''
+
     if train_ratio + valid_ratio + test_ratio != 1:
         raise ValueError("The sum of three input ratios should be 1!")
     total_index = np.arange(1, total_num + 1)
@@ -46,6 +85,18 @@ def index_split(train_ratio, valid_ratio, test_ratio, total_num = 500):
     return train_index, valid_index, test_index
 
 def sparse_square_grid(N):
+    '''
+    Get the Fortran CSRformat of the connectivity matrix of a square grid.
+    ---
+    N: [int] the size of the square grid.
+    ---
+    Returns:
+
+    findm: [1d-array] The Intptr of the CSRMatrix, start index is 1
+    colm: [1d-array] The Column Indices of the CSRMatrix, start index is 1
+    ncolm: The number of non-zeros in this sparse Matrix, equal to findm[-1]
+    '''
+
     n = N ** 2
     
     offsets = [-N, -1, 0, 1, N]
@@ -72,6 +123,18 @@ def sparse_square_grid(N):
     return K.indptr + 1, K.indices + 1, K.getnnz()
 
 def get_hilbert_curves(size, num):
+    '''
+    Get the hilbert_curves on a structured square grid of size [size]^ 2.
+    ---
+    size: [int] the size of the square grid.
+    num: [int] the number of space-filling curves want to generate.
+    ---
+    Returns:
+
+    curve_lists: [list of 1d-arrays] the list of space-filling curve orderings, of shape (number of curves, number of Nodes).
+    inv_lists: [list of 1d-arrays] the list of inverse space-filling curve orderings, of shape (number of curves, number of Nodes).
+    '''
+
     Hilbert_index = hilbert_space_filling_curve(size)
     invert_Hilbert_index = np.argsort(Hilbert_index)
     if num == 1: return [Hilbert_index], [invert_Hilbert_index]
@@ -81,6 +144,18 @@ def get_hilbert_curves(size, num):
         return [Hilbert_index, Hilbert_index_2], [invert_Hilbert_index, invert_Hilbert_index_2]
 
 def get_MFT_RNN_curves_structured(size, num):
+    '''
+    Get the MFT_RNN_curves on a structured square grid of size [size]^ 2.
+    ---
+    size: [int] the size of the square grid.
+    num: [int] the number of space-filling curves want to generate.
+    ---
+    Returns:
+
+    curve_lists: [list of 1d-arrays] the list of space-filling curve orderings, of shape (number of curves, number of Nodes).
+    inv_lists: [list of 1d-arrays] the list of inverse space-filling curve orderings, of shape (number of curves, number of Nodes).
+    '''
+
     findm, colm, ncolm  = sparse_square_grid(size)
     curve_lists = []
     inv_lists = []
@@ -93,3 +168,49 @@ def get_MFT_RNN_curves_structured(size, num):
         inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))
 
     return curve_lists, inv_lists
+
+def csr_to_edges(findm, colm, direct = False):
+    '''
+    Convert the Intptr and Indices of Fortran (start with 1) compressed row array 
+    to a 2d-array of Edges, remove self-loop.
+    ---
+    findm: [1d-array] the Intptr of the CSRMatrix, start index is 1
+    colm: [1d-array] The Column Indices of the CSRMatrix, start index is 1
+    direct: [boolean] Whether the graph is directed or undirected, default is undirected.
+    ---
+    Returns:
+
+    edge_list: [2d-array] The list of edges, shape of (number of Nodes, 2).
+    '''
+
+    findm = findm - 1
+    colm = colm - 1
+    csr_1 = sp.csr_matrix((np.ones(findm[-1]), colm, findm))
+    coo_1 = csr_1.tocoo()
+    adjency_indice = (coo_1.row != coo_1.col) 
+    edge_list = (np.vstack((coo_1.row, coo_1.col)).T)[adjency_indice]
+    if not direct: edge_list = np.sort(edge_list, axis = -1)
+    return np.unique(edge_list, axis = 0)
+
+def filled_edges_for_sfcs(edge_list, sfc_orderings):
+    '''
+    Obtain the number of edges filled by the sfc_list of an abstract graph.
+    ---
+    edge_list: [2d-array] list of edges, shape of (Number of Nodes, 2)
+    sfc_orderings: [list of 1d-arrays] list of space-filling orderings, shape of (Number of sfcs, Number of Nodes)
+    ---
+    Returns:
+
+    Some print indices the (edges_filled) / (total edges at the graph) by (number) space-filling curves.
+    '''
+    cnt = 0
+
+    for sfc_num in sfc_orderings:
+        vertices_1 = sfc_num[:-1]
+        vertices_2 = sfc_num[1:]
+        edges_sfc = np.unique(np.sort(np.vstack((vertices_1, vertices_2)).T, axis = -1), axis = 0)
+        if cnt == 0: exist_edges = edges_sfc
+        exist_edges = np.unique(np.vstack((exist_edges, edges_sfc)), axis = 0)
+        common_edges = np.array([x for x in set(tuple(x) for x in exist_edges) & set(tuple(x) for x in edge_list)])
+        cnt += 1
+        print('filled adjacency by the sfc orderings %d: %d / %d' % (cnt, len(common_edges), len(edge_list)))

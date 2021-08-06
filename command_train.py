@@ -1,6 +1,3 @@
-from structured import *
-from training import *
-from util import *
 from sfc_cae import *
 import sys
 
@@ -27,8 +24,13 @@ if parameters['data_type'] == 'one_tensor':
 # load coords and cells 
 if parameters['coords_file'] != 'None':
    coords = torch.load(parameters['coords_file']).detach().numpy()
+else:
+   coords = meshio.read(glob.glob(parameters['data_dir'] + '*')[0]).points
+
 if parameters['cells_file'] != 'None':
    cells = np.load(parameters['cells_file'], allow_pickle= True)
+else:
+   cells = meshio.read(glob.glob(parameters['data_dir'] + '*')[0]).cells_dict
 
 print(coords)
 print(cells)
@@ -100,6 +102,7 @@ else:
    print(space_filling_orderings)
    print(invert_space_filling_orderings)
 
+
 train_ratio = 15/17
 valid_ratio = 1/17
 test_ratio = 1/17
@@ -121,10 +124,10 @@ if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
       test_set, test_k, test_b = standardlize_tensor(test_set, lower = -1, upper = 1)       
 elif parameters['data_type'] == 'tensors':
      if parameters['activation'] == 'ReLU':
-        full_set = MyTensorDataset(get_path_data(parameters['data_dir'], np.arange(samples)), 0, 1)
+        full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
         train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
      elif parameters['activation'] == 'Tanh':
-        full_set = MyTensorDataset(get_path_data(parameters['data_dir'], np.arange(samples)), -1, 1)
+        full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
         train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
 
 print('length of train set:', len(train_set), '\n')
@@ -178,7 +181,7 @@ autoencoder = train_model(autoencoder,
                           visualize = visualize,
                           save_path = save_path)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = autoencoder.device
 
 if parameters['reconstructed_path'] != 'None':
    result_vtu_to_vtu(parameters['vtu_dir'], parameters['reconstructed_path'], parameters['vtu_fields'], autoencoder, full_set.tk, full_set.tb, reconstruct_start_index, reconstruct_end_index, model_device = device, dimension = dimension)
