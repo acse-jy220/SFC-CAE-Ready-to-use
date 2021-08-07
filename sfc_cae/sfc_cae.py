@@ -51,7 +51,7 @@ class SFC_CAE_Encoder(nn.Module):
         self.num_final_channels = 8
     elif dimension == 3:
         self.kernel_size = 176
-        self.stride = 4
+        self.stride = 8
         self.num_final_channels = 16
 
     self.padding = self.kernel_size//2
@@ -475,7 +475,7 @@ class SFC_CAE(nn.Module):
          f.write(F'{layer_count}-FC-$\\sigma$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
          f.write(F'{layer_count}-FC-$\\mu$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
          layer_count += 1
-         f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 2 Variable (2 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & {Identity}\\\\\n')
+         f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 2 Variable (2 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & Identity\\\\\n')
          layer_count += 1
       else: 
          f.write(F'{layer_count}-FC & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n') 
