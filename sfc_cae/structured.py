@@ -213,4 +213,4 @@ def filled_edges_for_sfcs(edge_list, sfc_orderings):
         exist_edges = np.unique(np.vstack((exist_edges, edges_sfc)), axis = 0)
         common_edges = np.array([x for x in set(tuple(x) for x in exist_edges) & set(tuple(x) for x in edge_list)])
         cnt += 1
-        print('filled adjacency by the sfc orderings %d: %d / %d' % (cnt, len(common_edges), len(edge_list)))
+        print('filled adjacencies by the %d sfcs : %d / %d' % (cnt, len(common_edges), len(edge_list)))
