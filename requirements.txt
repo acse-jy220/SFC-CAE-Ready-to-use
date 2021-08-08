@@ -1,11 +1,11 @@
-numpy 
-scipy
-matplotlib
-vtk
-livelossplot
+numpy >= 1.19.5
+scipy >= 1.4.1
+matplotlib ~= 3.2.2
+vtk >= 9.0
+livelossplot ~= 0.5.4
 meshio[all]
-cmocean
-torch
-dash
-pytest
-progressbar
+cmocean ~= 2.0
+torch >= 1.8.0
+dash ~= 1.21.0
+pytest >= 3.6.4
+progressbar2 ~= 3.38.0
