@@ -316,14 +316,17 @@ class SFC_CAE_Decoder(nn.Module):
     del x
     if self.sfc_nums > 1: 
         tt_list = torch.cat(zs, -1)
+        print(tt_list.shape)
         # print(z.shape)
         # print('enter final sp')
       #   f_nn = self.final_sp(tt_list)
-        f_nn = tt_list * self.final_sp
+        tt_list *= self.final_sp
+        tt_list = tt_list.sum(-1)
         # print('out final sp')
+      #   del tt_list
+        z = self.activate(tt_list)
+      #   del f_nn
         del tt_list
-        z = self.activate(f_nn)
-        del f_nn
     else: z = zs[0].squeeze(-1)
     for i in range(self.sfc_nums): del zs[0]
     if self.components > 1: 
