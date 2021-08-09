@@ -250,7 +250,8 @@ class SFC_CAE_Decoder(nn.Module):
     self.split = encoder.size_fc[0] // self.sfc_nums
 
     # final sparse layer combining SFC outputs
-    if self.sfc_nums > 1: self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
+    if self.sfc_nums > 1: self.final_sp = nn.Parameter(torch.ones(self.sfc_nums) / self.sfc_nums)
+    # if self.sfc_nums > 1: self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
 
     # final linear activate (shut down it if you have standardlized your data first)
     if output_linear:
@@ -317,7 +318,8 @@ class SFC_CAE_Decoder(nn.Module):
         tt_list = torch.cat(zs, -1)
         # print(z.shape)
         # print('enter final sp')
-        f_nn = self.final_sp(tt_list)
+      #   f_nn = self.final_sp(tt_list)
+        f_nn = tt_list * self.final_sp
         # print('out final sp')
         del tt_list
         z = self.activate(f_nn)
