@@ -154,7 +154,7 @@ def train_model(autoencoder,
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
   else: epoch_start = 0
 
-  optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   # if torch.cuda.device_count() > 1:
   #    optimizer = torch.nn.DataParallel(optimizer)
 
