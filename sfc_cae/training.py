@@ -121,10 +121,11 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
     return validation_loss / data_length, valid_loss_other / data_length   # Return MSE  
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
-def train_model(autoencoder, 
+def train_model(autoencoder,
+                optimizer = 'Adam', 
                 train_loader, 
                 valid_loader,
-                test_loader, 
+                test_loader,
                 state_load = None,
                 n_epochs = 100,
                 varying_lr = False, 
@@ -153,8 +154,9 @@ def train_model(autoencoder,
      if torch.cuda.device_count() > 1: autoencoder.module.load_state_dict(state_load['model_state_dict'])
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
   else: epoch_start = 0
-
-  optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  
+  if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   # if torch.cuda.device_count() > 1:
   #    optimizer = torch.nn.DataParallel(optimizer)
 
