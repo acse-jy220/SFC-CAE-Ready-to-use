@@ -14,7 +14,8 @@ class SFC_CAE_Encoder(nn.Module):
                dims_latent, 
                space_filling_orderings,
                activation,
-               variational):
+               variational,
+               force_initialising_param):
     '''
     Class contains the Encoder (snapshot -> latent).
     '''
@@ -32,6 +33,7 @@ class SFC_CAE_Encoder(nn.Module):
     self.sfc_plus = []
     self.sfc_minus = []
     self.sfc_nums = len(space_filling_orderings)
+    self.init_param = force_initialising_param
 
     for i in range(self.sfc_nums):
         if self.input_channel > 1:
@@ -82,6 +84,9 @@ class SFC_CAE_Encoder(nn.Module):
        self.convs.append([])
        for j in range(self.size_conv):
            self.convs[i].append(nn.Conv1d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+           if self.init_param: 
+              self.convs[i][j].weight.data.fill_(1)
+              self.convs[i][j].bias.data.fill_(0)
        self.convs[i] = nn.ModuleList(self.convs[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
@@ -89,13 +94,24 @@ class SFC_CAE_Encoder(nn.Module):
     if self.NN: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
+       if self.init_param: 
+            self.fcs[i].weight.data.fill_(1)
+            self.fcs[i].bias.data.fill_(0)
     
     if self.variational:
        self.layerMu = nn.Linear(self.size_fc[-2], self.size_fc[-1])
        self.layerSig = nn.Linear(self.size_fc[-2], self.size_fc[-1])
        self.Normal01 = torch.distributions.Normal(0, 1)
+       if self.init_param: 
+            self.layerMu.weight.data.fill_(1)
+            self.layerMu.bias.data.fill_(0)
+            self.layerSig.weight.data.fill_(1)
+            self.layerSig.bias.data.fill_(0)
     else:
        self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
+       if self.init_param: 
+            self.fcs[-1].weight.data.fill_(1)
+            self.fcs[-1].bias.data.fill_(0)
     self.fcs = nn.ModuleList(self.fcs)
 
   def get_concat_list(self, x, num_sfc):
@@ -206,6 +222,9 @@ class SFC_CAE_Decoder(nn.Module):
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
        self.fcs.append(nn.Linear(encoder.size_fc[-k], encoder.size_fc[-k-1]))
+       if encoder.init_param: 
+            self.fcs[i].weight.data.fill_(1)
+            self.fcs[i].bias.data.fill_(0) 
     self.fcs = nn.ModuleList(self.fcs)
 
     # set up convolutional layers, fully-connected layers and sparse layers
@@ -215,6 +234,9 @@ class SFC_CAE_Decoder(nn.Module):
        self.convTrans.append([])
        for j in range(1, encoder.size_conv + 1):
            self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = encoder.output_paddings[j - 1]))
+           if encoder.init_param: 
+              self.convTrans[i][j].weight.data.fill_(1)
+              self.convTrans[i][j].bias.data.fill_(0)       
        self.convTrans[i] = nn.ModuleList(self.convTrans[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= (1/3) / self.self_concat, num_neigh = 3 * self.self_concat))  
@@ -332,6 +354,7 @@ class SFC_CAE(nn.Module):
                invert_space_filling_orderings,
                activation = None,
                variational = False,
+               force_initialising_param = False,
                output_linear = False):
     '''
     Class combines the Encoder and the Decoder with an Autoencoder latent space.
@@ -349,7 +372,8 @@ class SFC_CAE(nn.Module):
                           dims_latent, 
                           space_filling_orderings,
                           activation,
-                          variational)
+                          variational,
+                          force_initialising_param)
     self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
   
 
