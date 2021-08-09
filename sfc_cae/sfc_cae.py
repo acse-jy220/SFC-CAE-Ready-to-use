@@ -250,7 +250,7 @@ class SFC_CAE_Decoder(nn.Module):
     self.split = encoder.size_fc[0] // self.sfc_nums
 
     # final sparse layer combining SFC outputs
-    self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
+    if self.sfc_nums > 1: self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
 
     # final linear activate (shut down it if you have standardlized your data first)
     if output_linear:
