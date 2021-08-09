@@ -85,7 +85,7 @@ class SFC_CAE_Encoder(nn.Module):
        for j in range(self.size_conv):
            self.convs[i].append(nn.Conv1d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
            if self.init_param: 
-              self.convs[i][j].weight.data.fill_(1)
+              self.convs[i][j].weight.data.uniform_(0.5, 1.0)
               self.convs[i][j].bias.data.fill_(0)
        self.convs[i] = nn.ModuleList(self.convs[i])
        if self.NN:
@@ -95,7 +95,7 @@ class SFC_CAE_Encoder(nn.Module):
     for i in range(len(self.size_fc) - 2):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
        if self.init_param: 
-            self.fcs[i].weight.data.fill_(1)
+            self.fcs[i].weight.data.uniform_(0.25, 0.5)
             self.fcs[i].bias.data.fill_(0)
     
     if self.variational:
@@ -103,14 +103,14 @@ class SFC_CAE_Encoder(nn.Module):
        self.layerSig = nn.Linear(self.size_fc[-2], self.size_fc[-1])
        self.Normal01 = torch.distributions.Normal(0, 1)
        if self.init_param: 
-            self.layerMu.weight.data.fill_(1)
+            self.layerMu.weight.data.uniform_(0.25, 0.5)
             self.layerMu.bias.data.fill_(0)
-            self.layerSig.weight.data.fill_(1)
+            self.layerSig.weight.data.uniform_(0.25, 0.5)
             self.layerSig.bias.data.fill_(0)
     else:
        self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
        if self.init_param: 
-            self.fcs[-1].weight.data.fill_(1)
+            self.fcs[-1].weight.data.uniform_(0.25, 0.5)
             self.fcs[-1].bias.data.fill_(0)
     self.fcs = nn.ModuleList(self.fcs)
 
@@ -223,7 +223,7 @@ class SFC_CAE_Decoder(nn.Module):
     for k in range(1, len(encoder.size_fc)):
        self.fcs.append(nn.Linear(encoder.size_fc[-k], encoder.size_fc[-k-1]))
        if encoder.init_param: 
-            self.fcs[k - 1].weight.data.fill_(1)
+            self.fcs[k - 1].weight.data.uniform_(0.25, 0.5)
             self.fcs[k - 1].bias.data.fill_(0) 
     self.fcs = nn.ModuleList(self.fcs)
 
@@ -235,7 +235,7 @@ class SFC_CAE_Decoder(nn.Module):
        for j in range(1, encoder.size_conv + 1):
            self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = encoder.output_paddings[j - 1]))
            if encoder.init_param: 
-              self.convTrans[i][j - 1].weight.data.fill_(1)
+              self.convTrans[i][j - 1].weight.data.uniform_(0.5, 1.0)
               self.convTrans[i][j - 1].bias.data.fill_(0)       
        self.convTrans[i] = nn.ModuleList(self.convTrans[i])
        if self.NN:
