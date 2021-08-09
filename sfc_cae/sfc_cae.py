@@ -235,8 +235,8 @@ class SFC_CAE_Decoder(nn.Module):
        for j in range(1, encoder.size_conv + 1):
            self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = encoder.output_paddings[j - 1]))
            if encoder.init_param: 
-              self.convTrans[i][j].weight.data.fill_(1)
-              self.convTrans[i][j].bias.data.fill_(0)       
+              self.convTrans[i][j - 1].weight.data.fill_(1)
+              self.convTrans[i][j - 1].bias.data.fill_(0)       
        self.convTrans[i] = nn.ModuleList(self.convTrans[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= (1/3) / self.self_concat, num_neigh = 3 * self.self_concat))  
