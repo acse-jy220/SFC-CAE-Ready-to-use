@@ -79,6 +79,8 @@ if parameters['state_load'] != 'None':
    state_load = parameters['state_load']
 else: state_load = None
 
+optimizer = parameters['optimizer']
+
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
 print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
@@ -107,7 +109,6 @@ train_ratio = 15/17
 valid_ratio = 1/17
 test_ratio = 1/17
 train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
-
 
 if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
    train_set = full_tensor[train_index].float()
@@ -173,6 +174,7 @@ autoencoder = train_model(autoencoder,
                           train_loader = train_loader,
                           valid_loader = valid_loader,
                           test_loader = test_loader,
+                          optimizer = optimizer,
                           state_load = state_load,
                           n_epochs = n_epoches, 
                           varying_lr = change_lr,
