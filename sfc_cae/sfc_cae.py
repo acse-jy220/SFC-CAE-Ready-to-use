@@ -223,8 +223,8 @@ class SFC_CAE_Decoder(nn.Module):
     for k in range(1, len(encoder.size_fc)):
        self.fcs.append(nn.Linear(encoder.size_fc[-k], encoder.size_fc[-k-1]))
        if encoder.init_param: 
-            self.fcs[k].weight.data.fill_(1)
-            self.fcs[k].bias.data.fill_(0) 
+            self.fcs[k - 1].weight.data.fill_(1)
+            self.fcs[k - 1].bias.data.fill_(0) 
     self.fcs = nn.ModuleList(self.fcs)
 
     # set up convolutional layers, fully-connected layers and sparse layers
