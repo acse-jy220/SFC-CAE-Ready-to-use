@@ -122,10 +122,10 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
 def train_model(autoencoder,
-                optimizer = 'Adam', 
                 train_loader, 
                 valid_loader,
                 test_loader,
+                optimizer = 'Adam',
                 state_load = None,
                 n_epochs = 100,
                 varying_lr = False, 
