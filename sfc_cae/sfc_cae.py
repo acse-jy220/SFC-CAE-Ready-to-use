@@ -33,7 +33,10 @@ class SFC_CAE_Encoder(nn.Module):
     self.sfc_plus = []
     self.sfc_minus = []
     self.sfc_nums = len(space_filling_orderings)
-    self.init_param = force_initialising_param
+    if  force_initialising_param is not None and len(force_initialising_param) != 2:
+      raise ValueError("the input size of 'force_initialising_param' must be 2 !!!")
+    else:
+      self.init_param = force_initialising_param
 
     for i in range(self.sfc_nums):
         if self.input_channel > 1:
@@ -84,9 +87,9 @@ class SFC_CAE_Encoder(nn.Module):
        self.convs.append([])
        for j in range(self.size_conv):
            self.convs[i].append(nn.Conv1d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
-           if self.init_param: 
-              self.convs[i][j].weight.data.uniform_(0.5, 1.0)
-              self.convs[i][j].bias.data.fill_(0)
+           if self.init_param is not None: 
+              self.convs[i][j].weight.data.uniform_(self.init_param[0], self.init_param[1])
+              self.convs[i][j].bias.data.fill_(0.001)
        self.convs[i] = nn.ModuleList(self.convs[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
@@ -94,24 +97,24 @@ class SFC_CAE_Encoder(nn.Module):
     if self.NN: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
-       if self.init_param: 
-            self.fcs[i].weight.data.uniform_(0.25, 0.5)
-            self.fcs[i].bias.data.fill_(0)
+       if self.init_param is not None: 
+            self.fcs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
+            self.fcs[i].bias.data.fill_(0.001)
     
     if self.variational:
        self.layerMu = nn.Linear(self.size_fc[-2], self.size_fc[-1])
        self.layerSig = nn.Linear(self.size_fc[-2], self.size_fc[-1])
        self.Normal01 = torch.distributions.Normal(0, 1)
-       if self.init_param: 
-            self.layerMu.weight.data.uniform_(0.25, 0.5)
-            self.layerMu.bias.data.fill_(0)
-            self.layerSig.weight.data.uniform_(0.25, 0.5)
-            self.layerSig.bias.data.fill_(0)
+       if self.init_param is not None: 
+            self.layerMu.weight.data.uniform_(self.init_param[0], self.init_param[1])
+            self.layerMu.bias.data.fill_(0.001)
+            self.layerSig.weight.data.uniform_(self.init_param[0], self.init_param[1])
+            self.layerSig.bias.data.fill_(0.001)
     else:
        self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
-       if self.init_param: 
-            self.fcs[-1].weight.data.uniform_(0.25, 0.5)
-            self.fcs[-1].bias.data.fill_(0)
+       if self.init_param is not None: 
+            self.fcs[-1].weight.data.uniform_(self.init_param[0], self.init_param[1])
+            self.fcs[-1].bias.data.fill_(0.001)
     self.fcs = nn.ModuleList(self.fcs)
 
   def get_concat_list(self, x, num_sfc):
@@ -222,9 +225,9 @@ class SFC_CAE_Decoder(nn.Module):
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
        self.fcs.append(nn.Linear(encoder.size_fc[-k], encoder.size_fc[-k-1]))
-       if encoder.init_param: 
-            self.fcs[k - 1].weight.data.uniform_(0.25, 0.5)
-            self.fcs[k - 1].bias.data.fill_(0) 
+       if encoder.init_param is not None: 
+            self.fcs[k - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
+            self.fcs[k - 1].bias.data.fill_(0.001) 
     self.fcs = nn.ModuleList(self.fcs)
 
     # set up convolutional layers, fully-connected layers and sparse layers
@@ -234,9 +237,9 @@ class SFC_CAE_Decoder(nn.Module):
        self.convTrans.append([])
        for j in range(1, encoder.size_conv + 1):
            self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = encoder.output_paddings[j - 1]))
-           if encoder.init_param: 
-              self.convTrans[i][j - 1].weight.data.uniform_(0.5, 1.0)
-              self.convTrans[i][j - 1].bias.data.fill_(0)       
+           if encoder.init_param is not None: 
+              self.convTrans[i][j - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
+              self.convTrans[i][j - 1].bias.data.fill_(0.001)       
        self.convTrans[i] = nn.ModuleList(self.convTrans[i])
        if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= (1/3) / self.self_concat, num_neigh = 3 * self.self_concat))  
@@ -249,8 +252,8 @@ class SFC_CAE_Decoder(nn.Module):
 
     self.split = encoder.size_fc[0] // self.sfc_nums
 
-    # final sparse layer combining SFC outputs
-   #  if self.sfc_nums > 1: self.final_sp = nn.Parameter(torch.ones(self.sfc_nums) / self.sfc_nums)
+    # final sparse layer combining SFC outputs, those two approaches are not as good as the simple [tensor_list].sum(-1)
+    # if self.sfc_nums > 1: self.final_sp = nn.Parameter(torch.ones(self.sfc_nums) / self.sfc_nums)
     # if self.sfc_nums > 1: self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
 
     # final linear activate (shut down it if you have standardlized your data first)
@@ -316,13 +319,9 @@ class SFC_CAE_Decoder(nn.Module):
     del x
     if self.sfc_nums > 1: 
         tt_list = torch.cat(zs, -1)
-      #   print(tt_list.shape)
-        # print(z.shape)
-        # print('enter final sp')
       #   f_nn = self.final_sp(tt_list)
       #   tt_list *= self.final_sp
         tt_list = tt_list.sum(-1)
-        # print('out final sp')
       #   del tt_list
         z = self.activate(tt_list)
       #   del f_nn
@@ -359,7 +358,7 @@ class SFC_CAE(nn.Module):
                invert_space_filling_orderings,
                activation = None,
                variational = False,
-               force_initialising_param = False,
+               force_initialising_param = None,
                output_linear = False):
     '''
     Class combines the Encoder and the Decoder with an Autoencoder latent space.
@@ -484,7 +483,7 @@ class SFC_CAE(nn.Module):
         conv_f = self.encoder.conv_size[i]
         conv_n = self.encoder.conv_size[i + 1]
         layer_count += 1
-        f.write(F'{layer_count}-Conv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[i + 1]} & {self.encoder.stride} & {self.encoder.padding} & 0 & ({conv_n}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write(F'{layer_count}-Conv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[i]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[i + 1]} & {self.encoder.stride} & {self.encoder.padding} & 0 & ({conv_n}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
         f.write('\\hline\n')
     
       for i in range(len(self.encoder.size_fc) - 2):
@@ -502,7 +501,9 @@ class SFC_CAE(nn.Module):
          f.write('\\multicolumn{9}{|c|}{\\textbf{Variational Reparametrization}}\\\\\n')
          f.write('\\hline\n') 
          f.write(F'{layer_count}-FC-$\\sigma$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
+         f.write('\\hline\n') 
          f.write(F'{layer_count}-FC-$\\mu$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
+         f.write('\\hline\n') 
          layer_count += 1
          f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 2 Variable (2 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & Identity\\\\\n')
          layer_count += 1
