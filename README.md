@@ -6,19 +6,19 @@
 
 
 <details open="open">
-  <summary>Table of Contents</summary>
+  <summary>**Table of Contents**</summary>
   <ol>
     <li>
-      <a href="#Project Description">Project Description</a>
+      <a href="#Project Description">Project\ Description</a>
     </li>
     <li>
-      <a href="#Getting started">Getting Started</a>
+      <a href="#Getting started">Getting\ Started</a>
       <ul>
-        <li><a href="#Prerequisites & Dependencies">Prerequisites & Dependencies</a></li>
+        <li><a href="#Prerequisites & Dependencies">Prerequisites\ &\ Dependencies</a></li>
         <li><a href="#Installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#Examples">Colab Notebook Examples</a>
+    <li><a href="#Examples">Colab\ Notebook Examples</a>
       <ul>
         <li><a href="#Advection of a block">Advection of a block  (128 * 128 Structured Grid)</a></li>
         <li><a href="#Flow Past Cylinder-DG">Flow Past Cylinder - DG Mesh (2000 snapshots, 20550 Nodes, 2/3 components)</a></li>
