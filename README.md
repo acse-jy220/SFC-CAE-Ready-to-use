@@ -6,7 +6,7 @@
 
 
 <details open="open">
-  <summary>\textbf{Table of Contents}</summary>
+  <summary><text font-size="20"> Table of Contents</text></summary>
   <ol>
     <li>
       <a href="#project-description">Project Description</a>
@@ -14,13 +14,13 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#prerequisites-&-dependencies">Prerequisites & Dependencies</a></li>
+        <li><a href="#Prerequisites-&-Dependencies">Prerequisites & Dependencies</a></li>
         <li><a href="#Installation">Installation</a></li>
       </ul>
     </li>
     <li><a href="#Template-Notebooks">Colab Notebooks</a>
       <ul>
-        <li><a href="#advecting-block">Advection of a Block/Gaussian  (128 * 128 Structured Grid)</a></li>
+        <li><a href="#advecting-block/gaussian">Advection of a Block/Gaussian  (128 * 128 Structured Grid)</a></li>
         <li><a href="#FPC-DG">Flow Past Cylinder - DG Mesh (2000 snapshots, 20550 Nodes, 2/3 components)</a></li>
         <li><a href="#FPC-CG">Flow Past Cylinder - CG Mesh (2000 snapshots, 3571 Nodes, 2 components) </a></li>
         <li><a href="#CO2"> CO2 in the room - CG Mesh (455 snapshots, 148906 Nodes, 4 components)</a></li>
@@ -70,7 +70,8 @@ $ cd SFC-CAE-Ready-to-use
 $ pip install -e .
 ```
 It will compile the fortran library automatically, no matter you are on Windows or Linux.
-(2) If you like to create a `conda` environment, just enter
+<br>
+(2) Create a `conda` environment via
 ```sh
 $ conda env create -f environment.yml
 ```
@@ -96,7 +97,7 @@ from sfc_cae import *
 and call the functions you want! Please have a look at the [instruction notebooks](#Template-Notebooks)
 
 ## Template Notebooks
-### Advecting Block
+### Advecting Block/Gaussian
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE.ipynb)
 
 ### FPC-DG
