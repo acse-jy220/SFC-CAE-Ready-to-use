@@ -33,7 +33,7 @@ def loadsimulation(data_dir, simulaion_steps, simulaion_num, reshape = False):
       
     return tensor
 
-def load_tensor(data_dir, simulation_indexes):
+def load_tensor(data_dir, simulaion_steps, simulation_indexes):
     '''
     Load simulation tensors by the simulation generated in sfc_cae.advection_block_analytical.py
     ---
