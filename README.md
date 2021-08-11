@@ -6,7 +6,7 @@
 
 
 <details open="open">
-  <summary><text font-size="50">Table of Contents</text></summary>
+  <summary>__Table of Contents__</summary>
   <ol>
     <li>
       <a href="#project-description">Project Description</a>
@@ -65,12 +65,14 @@ $ git clone https://github.com/acse-jy220/SFC-CAE-Ready-to-use
 $ cd SFC-CAE-Ready-to-use
 ```
 3. Install the module:
+
 (1) For `pip` install, just use 
 ```sh
 $ pip install -e .
 ```
 It will compile the fortran library automatically, no matter you are on Windows or Linux.
 <br>
+
 (2) Create a `conda` environment via
 ```sh
 $ conda env create -f environment.yml
