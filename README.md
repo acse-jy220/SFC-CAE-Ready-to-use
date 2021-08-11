@@ -9,18 +9,18 @@
   <summary>**Table of Contents**</summary>
   <ol>
     <li>
-      <a href="#Project Description">Project\ Description</a>
+      <a href="#Project\ Description">Project Description</a>
     </li>
     <li>
-      <a href="#Getting started">Getting\ Started</a>
+      <a href="#Getting\ started">Getting Started</a>
       <ul>
-        <li><a href="#Prerequisites & Dependencies">Prerequisites\ &\ Dependencies</a></li>
+        <li><a href="#Prerequisites\ &\ Dependencies">Prerequisites & Dependencies</a></li>
         <li><a href="#Installation">Installation</a></li>
       </ul>
     </li>
     <li><a href="#Examples">Colab\ Notebook Examples</a>
       <ul>
-        <li><a href="#Advection of a block">Advection of a block  (128 * 128 Structured Grid)</a></li>
+        <li><a href="#Advection\ of\ a\ block">Advection of a block  (128 * 128 Structured Grid)</a></li>
         <li><a href="#Flow Past Cylinder-DG">Flow Past Cylinder - DG Mesh (2000 snapshots, 20550 Nodes, 2/3 components)</a></li>
         <li><a href="#Flow Past Cylinder-CG Mesh">Flow Past Cylinder - CG Mesh (2000 snapshots, 3571 Nodes, 2 components) </a></li>
         <li><a href="#CO2"> CO2 in the room - CG Mesh (455 snapshots, 148906 Nodes, 4 components)</a></li>
@@ -82,8 +82,10 @@ On linux, type
 $ python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
 ```
 <br>
-On windows, install [MinGW](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/7.2.0/threads-posix/seh/)
- (I use version 7.2.0) and compile fortran use
+On windows, install 
+
+[MinGW](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/7.2.0/threads-posix/seh/)
+(I use version 7.2.0) and compile fortran use
 
 ```sh
 $ f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
