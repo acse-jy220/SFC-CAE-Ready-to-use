@@ -8,11 +8,13 @@ else:
 
 print(parameters)
 
+# get vtu_fields
+vtu_fields = list(parameters['vtu_fields'].split(','))
+for i in range(len(vtu_fields)): 
+   vtu_fields[i] = vtu_fields[i].strip()
+
 # if vtu file folder
 if parameters['data_type'] == 'vtu':
-   vtu_fields = list(parameters['vtu_fields'].split(','))
-   for i in range(len(vtu_fields)): 
-       vtu_fields[i] = vtu_fields[i].strip()
    full_tensor, coords, cells = read_in_files(parameters['data_dir'], vtu_fields = vtu_fields)
    samples = full_tensor.shape[0]
 
@@ -83,7 +85,7 @@ optimizer = parameters['optimizer']
 
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
-print('structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
+print('vtu fields: ', vtu_fields, '\n', 'structured ', structured, '\n', 'activation ', activation, '\n', 'self concat ', self_concat, '\n', 'sfc_nums ', sfc_nums, '\n')
 print('dims_latent ', dims_latent, '\n', 'components ', components, '\n', 'nearest_neighbouring ', nearest_neighbouring, '\n')
 print('visualize ', visualize, '\n', 'sample number ', samples, '\n')
 
