@@ -18,9 +18,9 @@
         <li><a href="#Installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#Examples">Colab Notebook Examples</a>
+    <li><a href="#Template-Notebooks">Colab Notebooks</a>
       <ul>
-        <li><a href="#advecting-block">Advection of a Block (Gaussian)  (128 * 128 Structured Grid)</a></li>
+        <li><a href="#advecting-block">Advection of a Block/Gaussian  (128 * 128 Structured Grid)</a></li>
         <li><a href="#FPC-DG">Flow Past Cylinder - DG Mesh (2000 snapshots, 20550 Nodes, 2/3 components)</a></li>
         <li><a href="#FPC-CG">Flow Past Cylinder - CG Mesh (2000 snapshots, 3571 Nodes, 2 components) </a></li>
         <li><a href="#CO2"> CO2 in the room - CG Mesh (455 snapshots, 148906 Nodes, 4 components)</a></li>
@@ -64,19 +64,17 @@ $ git clone https://github.com/acse-jy220/SFC-CAE-Ready-to-use
 ```sh 
 $ cd SFC-CAE-Ready-to-use
 ```
-3. Install the module:
+3. Install the module: <br>
 (1) For `pip` install, just use 
 ```sh
 $ pip install -e .
 ```
 It will compile the fortran library automatically, no matter you are on Windows or Linux.
-
 (2) If you like to create a `conda` environment, just enter
 ```sh
 $ conda env create -f environment.yml
 ```
 but you need to compile the fortran code by yourself in this way. 
-<br>
 On linux, type
 ```sh
 $ python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
@@ -95,9 +93,9 @@ $ f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mi
 ```python
 from sfc_cae import *
 ```
-and call the functions you want! Please have a look at the instruction notebooks.
+and call the functions you want! Please have a look at the [instruction notebooks](#Template-Notebooks)
 
-## Examples
+## Template Notebooks
 ### Advecting Block
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE.ipynb)
 
