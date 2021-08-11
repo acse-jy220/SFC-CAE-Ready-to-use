@@ -94,7 +94,7 @@ def sparse_square_grid(N):
 
     findm: [1d-array] The Intptr of the CSRMatrix, start index is 1
     colm: [1d-array] The Column Indices of the CSRMatrix, start index is 1
-    ncolm: The number of non-zeros in this sparse Matrix, equal to findm[-1]
+    ncolm: [int] The number of non-zeros in this sparse Matrix, equal to findm[-1]
     '''
 
     n = N ** 2
@@ -168,6 +168,46 @@ def get_MFT_RNN_curves_structured(size, num):
         inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))
 
     return curve_lists, inv_lists
+   
+def plot_trace_structured_2D(sfc_ordering, levels = 16):
+    '''
+    Plot the trace of index ordering for a structured square grid.
+    ---
+    sfc_ordering: [1d-array] the space-filling orderings on a square grid.
+    levels: [int] the colorbar level for the index ordering, default is 16.
+    ---
+    Returns:
+
+    Nonetype: The plot of the index ordering on a structured square grid.
+    '''
+    num = int(np.sqrt(len(sfc_ordering)))
+    x_coords = sfc_ordering // num 
+    y_coords = sfc_ordering % num 
+    fig, ax = plt.subplots(figsize=(15, 15))
+    cuts = np.linspace(0, len(sfc_ordering), levels + 1).astype(np.int32)
+    for i in range(levels):
+        ax.plot(x_coords[cuts[i]:cuts[i+1]], y_coords[cuts[i]:cuts[i+1]], '-')
+    plt.axis('off')
+    plt.show() 
+
+def plot_contour_structured_2D(sfc_ordering, levels = 256, cmap = None):
+    '''
+    Generate the contour plot of the index ordering for a structured square grid.
+    ---
+    sfc_ordering: [1d-array] the space-filling orderings on a square grid.
+    levels: [int] the colorbar level for the index ordering, default is 256.
+    cmap: [cmap] the colormap for the contour plot, default is None (i.e. viridis)
+    ---
+    Returns:
+
+    Nonetype: The contour plot of the index ordering on a structured square grid.    
+    '''
+    num = int(np.sqrt(len(sfc_ordering)))
+    fig, ax = plt.subplots(figsize=(15, 15))
+    xx, yy = np.meshgrid(np.arange(0, num), np.arange(0, num))
+    cset = plt.contourf(xx, yy, np.argsort(sfc_ordering).reshape(size, size), levels=levels, cmap=cmap)
+    ax.axis('off')
+    plt.show()
 
 def csr_to_edges(findm, colm, direct = False):
     '''
