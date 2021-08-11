@@ -4,6 +4,13 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/LICENSE)
 [![Testing workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/actions/workflows/test.yml/badge.svg)](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml)
 
+<br />
+<p align="center">
+  <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use">
+    <img src="pics/first_version_cover.png.png" alt="Logo" width="1500" height="600">
+  </a>
+</p>
+
 
 <details open="open">
   <summary>__Table of Contents__</summary>
