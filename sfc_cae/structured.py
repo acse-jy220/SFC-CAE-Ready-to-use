@@ -205,7 +205,7 @@ def plot_contour_structured_2D(sfc_ordering, levels = 256, cmap = None):
     num = int(np.sqrt(len(sfc_ordering)))
     fig, ax = plt.subplots(figsize=(15, 15))
     xx, yy = np.meshgrid(np.arange(0, num), np.arange(0, num))
-    cset = plt.contourf(xx, yy, np.argsort(sfc_ordering).reshape(size, size), levels=levels, cmap=cmap)
+    cset = plt.contourf(xx, yy, np.argsort(sfc_ordering).reshape(num, num), levels=levels, cmap=cmap)
     ax.axis('off')
     plt.show()
 
