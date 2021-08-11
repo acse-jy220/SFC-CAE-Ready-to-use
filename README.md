@@ -20,18 +20,17 @@
     </li>
     <li><a href="#Examples">Colab Notebook Examples</a>
       <ul>
-        <li><a href="#Advection of a block  (128 * 128 Structured Grid)">Advection of a block</a></li>
-        <li><a href="#Flow Past Cylinder - DG Mesh (2000 snapshots, 20550 Nodes, 2/3 components)">Flow Past Cylinder-DG</a></li>
-        <li><a href="#Flow Past Cylinder - CG Mesh (2000 snapshots, 3571 Nodes, 2 components)">Flow Past Cylinder-CG </a></li>
-        <li><a href="#CO2 in the room - CG Mesh (455 snapshots, 148906 Nodes, 4 components)"> CO2</a></li>
-        <li><a href="#Slugflow - DG mesh (1706 snapshots, 3571 Nodes, 4 components)"> Slugflow</a></li>
+        <li><a href="#Advection of a block">Advection of a block  (128 * 128 Structured Grid)</a></li>
+        <li><a href="#Flow Past Cylinder-DG">Flow Past Cylinder - DG Mesh (2000 snapshots, 20550 Nodes, 2/3 components)</a></li>
+        <li><a href="#Flow Past Cylinder-CG Mesh">Flow Past Cylinder - CG Mesh (2000 snapshots, 3571 Nodes, 2 components) </a></li>
+        <li><a href="#CO2"> CO2 in the room - CG Mesh (455 snapshots, 148906 Nodes, 4 components)</a></li>
+        <li><a href="#Slugflow"> Slugflow - DG mesh (1706 snapshots, 3571 Nodes, 4 components)</a></li>
       </ul>   
     </li>
-
-    <li><a href="#license">License</a></li>
+    <li><a href="#License">License</a></li>
     <li><a href="#Testing">Testing</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgements">Acknowledgements</a></li>
+    <li><a href="#Contact">Contact</a></li>
+    <li><a href="#Acknowledgements">Acknowledgements</a></li>
   </ol>
 </details>
 
@@ -66,13 +65,13 @@ $ git clone https://github.com/acse-jy220/SFC-CAE-Ready-to-use
 $ cd SFC-CAE-Ready-to-use
 ```
 3. Install the module:
-1) For `pip` install, just use 
+(1) For `pip` install, just use 
 ```sh
 $ pip install -e .
 ```
 It will compile the fortran library automatically, no matter you are on Windows or Linux.
 
-2) If you like to create a `conda` environment, just enter
+(2) If you like to create a `conda` environment, just enter
 ```sh
 $ conda env create -f environment.yml
 ```
@@ -83,7 +82,9 @@ On linux, type
 $ python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
 ```
 <br>
-On windows, install [MinGW](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/7.2.0/threads-posix/seh/) (I use version 7.2.0) and compile fortran use
+On windows, install [MinGW](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/7.2.0/threads-posix/seh/)
+ (I use version 7.2.0) and compile fortran use
+
 ```sh
 $ f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
 ```
