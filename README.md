@@ -41,7 +41,7 @@ This project contains a self-adjusting Space-filling curve Convolutional Autoenc
 ## Getting started
 ### Dependencies
 
-* Python 3.8.5
+* Python ~= 3.8.5
 * numpy >= 1.19.5
 * scipy >= 1.4.1
 * matplotlib ~= 3.2.2
@@ -64,7 +64,7 @@ $ git clone https://github.com/acse-jy220/SFC-CAE-Ready-to-use
 ```sh 
 $ cd SFC-CAE-Ready-to-use
 ```
-3. Install the module: <br>
+3. Install the module:
 (1) For `pip` install, just use 
 ```sh
 $ pip install -e .
