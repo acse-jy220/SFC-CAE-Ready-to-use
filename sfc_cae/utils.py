@@ -642,6 +642,7 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, var
             filename = F'{save_path}reconstructed_%d{file_format}' % i
             for j in range(len(vtu_fields)):
                 vtu_field = vtu_fields[j]
+                print(vtu_field)
                 field = vtu_file.point_data[vtu_field]
                 # see if last dimension is zero
                 if dimension == 2 and field.shape[-1] > 2: field = field[..., :-1]
