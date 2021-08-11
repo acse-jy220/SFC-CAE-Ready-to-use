@@ -7,7 +7,7 @@
 <br />
 <p align="center">
   <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use">
-    <img src="pics/first_version_cover.png" alt="Logo" width="1500" height="300">
+    <img src="pics/first_version_cover.png" alt="Logo" width="1000" height="200">
   </a>
 </p>
 
