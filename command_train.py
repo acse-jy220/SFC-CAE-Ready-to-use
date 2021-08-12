@@ -106,51 +106,36 @@ else:
    print(space_filling_orderings)
    print(invert_space_filling_orderings)
 
-if parameters['tk_file'] != 'None':
-   tk = torch.load(parameters['tk_file'])
-if parameters['tb_file'] != 'None':
-   tb = torch.load(parameters['tb_file']) 
 
+train_ratio = 15/17
+valid_ratio = 1/17
+test_ratio = 1/17
+train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
 
-if parameters['mode'] == 'train':
-   train_ratio = 15/17
-   valid_ratio = 1/17
-   test_ratio = 1/17 
-   train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
+if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
+   train_set = full_tensor[train_index].float()
+   valid_set = full_tensor[valid_index].float()
+   test_set = full_tensor[test_index].float()
+   # standardlisation
+   if parameters['activation'] == 'ReLU':
+      train_set, train_k, train_b = standardlize_tensor(train_set, lower = 0, upper = 1)
+      valid_set, valid_k, valid_b = standardlize_tensor(valid_set, lower = 0, upper = 1)
+      test_set, test_k, test_b = standardlize_tensor(test_set, lower = 0, upper = 1)
+   elif parameters['activation'] == 'Tanh':
+      train_set, train_k, train_b = standardlize_tensor(train_set, lower = -1, upper = 1)
+      valid_set, valid_k, valid_b = standardlize_tensor(valid_set, lower = -1, upper = 1)
+      test_set, test_k, test_b = standardlize_tensor(test_set, lower = -1, upper = 1)       
+elif parameters['data_type'] == 'tensors':
+     if parameters['activation'] == 'ReLU':
+        full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
+        train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
+     elif parameters['activation'] == 'Tanh':
+        full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
+        train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
 
-   if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
-      train_set = full_tensor[train_index].float()
-      valid_set = full_tensor[valid_index].float()
-      test_set = full_tensor[test_index].float()
-      # standardlisation
-      if parameters['activation'] == 'ReLU':
-         train_set, train_k, train_b = standardlize_tensor(train_set, lower = 0, upper = 1)
-         valid_set, valid_k, valid_b = standardlize_tensor(valid_set, lower = 0, upper = 1)
-         test_set, test_k, test_b = standardlize_tensor(test_set, lower = 0, upper = 1)
-      elif parameters['activation'] == 'Tanh':
-         train_set, train_k, train_b = standardlize_tensor(train_set, lower = -1, upper = 1)
-         valid_set, valid_k, valid_b = standardlize_tensor(valid_set, lower = -1, upper = 1)
-         test_set, test_k, test_b = standardlize_tensor(test_set, lower = -1, upper = 1)       
-   elif parameters['data_type'] == 'tensors':
-      if parameters['activation'] == 'ReLU':
-         if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, tk, tb)
-         else: full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
-         train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
-      elif parameters['activation'] == 'Tanh':
-         if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  -1, 1, tk, tb)
-         else: full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
-         train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
-      tk = full_set.tk
-      tb = full_set.tb
-
-   print('length of train set:', len(train_set), '\n')
-   print('length of valid set:',len(valid_set), '\n')
-   print('length of test set:',len(test_set), '\n')
-   train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
-   valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
-   test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
+print('length of train set:', len(train_set), '\n')
+print('length of valid set:',len(valid_set), '\n')
+print('length of test set:',len(test_set), '\n')
 
 # training parameters
 batch_size = int(parameters['batch_size'])
@@ -169,6 +154,10 @@ if parameters['save_path'] != 'None':
    save_path = parameters['save_path']
 else: save_path = None
 
+train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
+valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
+
 input_size = space_filling_orderings[0].shape[0]
 
 autoencoder = SFC_CAE(input_size,
@@ -183,8 +172,7 @@ autoencoder = SFC_CAE(input_size,
                       activation = activation,
                       variational = variational)
 
-if parameters['mode'] == 'train':
-   autoencoder = train_model(autoencoder, 
+autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,
                           valid_loader = valid_loader,
                           test_loader = test_loader,
@@ -196,18 +184,11 @@ if parameters['mode'] == 'train':
                           seed = seed,
                           visualize = visualize,
                           save_path = save_path)
-   
-else: 
-   autoencoder.load_state_dict(torch.load(state_load)['model_state_dict'])
-   device = torch.device("cpu")
-   print('------------------------------------\n')
-   print('Entering reconstruction mode......')
-   print('------------------------------------\n')
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if parameters['reconstructed_path'] != 'None':
-   result_vtu_to_vtu(parameters['vtu_dir'], parameters['reconstructed_path'], vtu_fields, autoencoder, tk = tk, tb = tb, start_index = reconstruct_start_index, end_index = reconstruct_end_index, model_device = device)
+   result_vtu_to_vtu(parameters['vtu_dir'], parameters['reconstructed_path'], vtu_fields, autoencoder, tk = full_set.tk, tb = full_set.tb, start_index = reconstruct_start_index, end_index = reconstruct_end_index, model_device = device)
 
 
 
