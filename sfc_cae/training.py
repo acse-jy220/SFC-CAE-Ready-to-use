@@ -133,7 +133,7 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
     if variational: return validation_loss / data_length, valid_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
     else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
 
-# main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
+# main function for training, returns a trained model as well as the final loss function value and accuracy for the train, valid, test sets.
 def train_model(autoencoder,
                 train_loader, 
                 valid_loader,
@@ -201,8 +201,12 @@ def train_model(autoencoder,
   for epoch in range(epoch_start, n_epochs):
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
-    train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
-    valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+    if variational:
+      train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader) 
+      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+    else:
+      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
+      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
 
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other.cpu().numpy()
@@ -234,7 +238,13 @@ def train_model(autoencoder,
     re_train_MSEs.append(train_MSE_re)
     re_valid_MSEs.append(valid_MSE_re)
 
-    print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
+    if variational:
+        print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| train MSE: %e' % real_train_MSE, '| train KL: %e' % train_KL, '\n       \t'  
+        '| valid loss: %e' % valid_MSE, '| valid MSE: %e' % real_valid_MSE, '| valid KL: %e' % valid_KL, 
+        '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
+          '\nEpoch %d use: %.2f second.\n' % (epoch, time_end - time_start))
+    else:
+        print('Epoch: ', epoch, '| train loss: %e' % train_MSE, '| valid loss: %e' % valid_MSE,
           '\n      \t| train loss (relative): %e' % train_MSE_re, '| valid loss (relative): %e' % valid_MSE_re,
           '\nEpoch %d use: %.2f second.\n' % (epoch, time_end - time_start))
     
@@ -255,7 +265,10 @@ def train_model(autoencoder,
       decrease_rate = 0
       old_loss = this_loss
   
-  test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader)
+  if variational:
+    test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader)
+  else:
+    test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader)
 
   if criterion_type == 'MSE':
     test_MSE_re = test_loss_other.cpu().numpy()
@@ -265,8 +278,11 @@ def train_model(autoencoder,
       test_MSE_re = test_loss.cpu().detach().numpy()
 
   total_time_end = time.time()
-
-  print('test MSE Error: %e' % test_MSE, '| relative MSE Error: %e' % test_MSE_re, '\n Total time used for training: %.2f hour.' % ((total_time_end - total_time_start)/3600)) 
+  
+  if variational:
+    print('test MSE Error: %e' % test_MSE, '| test MSE: %e' % real_test_MSE, '| test KL: %e' % test_KL, '| relative MSE Error: %e' % test_MSE_re, '\n Total time used for training: %.2f hour.' % ((total_time_end - total_time_start)/3600)) 
+  else:
+    print('test MSE Error: %e' % test_MSE, '| relative MSE Error: %e' % test_MSE_re, '\n Total time used for training: %.2f hour.' % ((total_time_end - total_time_start)/3600)) 
 
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
