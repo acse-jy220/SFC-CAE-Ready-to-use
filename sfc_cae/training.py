@@ -77,8 +77,8 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
         # print('KL divergence:', KL.item())
         MSE = criterion(batch, x_hat)
-        whole_KL += KL.item()
-        whole_MSE += MSE.item()
+        whole_KL += KL.item() * batch.size(0)
+        whole_MSE += MSE.item() * batch.size(0)
         Loss = MSE + KL # MSE loss plus KL divergence
         # print('MSE:', criterion(batch, x_hat).item())
       else:
@@ -115,8 +115,8 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
               # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
               # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
               MSE = criterion(batch, x_hat)
-              whole_KL += KL.item()
-              whole_MSE += MSE.item()
+              whole_KL += KL.item() * batch.size(0)
+              whole_MSE += MSE.item() * batch.size(0)
               Loss = MSE + KL # MSE loss plus KL divergence
             else:
               x_hat = autoencoder(batch)
