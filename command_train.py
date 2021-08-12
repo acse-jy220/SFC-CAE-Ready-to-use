@@ -201,7 +201,7 @@ else:
    autoencoder.load_state_dict(torch.load(state_load)['model_state_dict'])
    device = torch.device("cpu")
    print('------------------------------------\n')
-   print('Entering reconstruction mode......')
+   print('Entering Reconstruction mode......')
    print('------------------------------------\n')
 
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

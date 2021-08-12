@@ -63,6 +63,9 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path):
 def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
   autoencoder.train()
   train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  if variational: 
+     whole_KL = 0
+     whole_MSE = 0
   count = 0
   for batch in dataloader:
       count += batch.size(0)
@@ -73,29 +76,35 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
         # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
         # print('KL divergence:', KL.item())
-        MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
+        MSE = criterion(batch, x_hat)
+        whole_KL += KL.item()
+        whole_MSE += MSE.item()
+        Loss = MSE + KL # MSE loss plus KL divergence
         # print('MSE:', criterion(batch, x_hat).item())
       else:
         x_hat = autoencoder(batch)
-        MSE = criterion(batch, x_hat)  # Calculate MSE loss
+        Loss = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
-      MSE.backward()  # Back-propagate
+      Loss.backward()  # Back-propagate
     #   if torch.cuda.device_count() > 1: optimizer.step()
     #   else: optimizer.step()  # Step the optimiser
       optimizer.step()
-      train_loss += MSE * batch.size(0)
+      train_loss += Loss * batch.size(0)
       train_loss_other += other_MSE * batch.size(0)
       del x_hat
       del batch
-      del MSE
+      del Loss
       del other_MSE
-    #   print(count)
-
-  return train_loss / data_length, train_loss_other/ data_length  # Return MSE
+  #   print(count)
+  if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
+  else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
 def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
     autoencoder.eval()
     validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
+    if variational: 
+      whole_KL = 0
+      whole_MSE = 0
     count = 0
     for batch in dataloader:
         with torch.no_grad():
@@ -105,20 +114,24 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
               x_hat, KL = autoencoder(batch)
               # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
               # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
-              MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
+              MSE = criterion(batch, x_hat)
+              whole_KL += KL.item()
+              whole_MSE += MSE.item()
+              Loss = MSE + KL # MSE loss plus KL divergence
             else:
               x_hat = autoencoder(batch)
-              MSE = criterion(batch, x_hat)  # Calculate MSE loss
+              Loss = criterion(batch, x_hat)  # Calculate MSE loss
             other_MSE = other_metric(batch, x_hat)
-            validation_loss += MSE * batch.size(0)
+            validation_loss += Loss * batch.size(0)
             valid_loss_other += other_MSE * batch.size(0)
             del batch
             del x_hat
-            del MSE
+            del Loss
             del other_MSE
             # print('valid ', count)
 
-    return validation_loss / data_length, valid_loss_other / data_length   # Return MSE  
+    if variational: return validation_loss / data_length, valid_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
+    else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the validation set.
 def train_model(autoencoder,
