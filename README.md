@@ -127,9 +127,9 @@ and call the functions you want! Please have a look at the [instruction notebook
 <p align="middle">
   <p float="left">
      <img src="pics/original_ppm.gif">
-     <figcaption> Original CO2 PPM </figcaption>
+     <a href="pics/original_ppm.gif"><strong>Original CO2 PPM</strong></a>
      <img src="pics/reconstructed_3SFC_VCAE.gif">
-     <figcaption> Reconstructed by 3SFC-VCAE, 16 latent </figcaption>
+     <a href="pics/reconstructed_3SFC_VCAE.gif"><strong>Reconstructed by 3-SFC-VCAE-NN, 16 latent</strong></a>
   </p>
 </p>
 
