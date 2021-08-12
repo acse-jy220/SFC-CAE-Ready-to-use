@@ -609,7 +609,7 @@ def decompress_to_vtu(full_tensor, tamplate_vtu, save_path, vtu_fields, field_sp
     bar.finish()
     print('\n Finished decompressing vtu files.')
 
-def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, variational = False, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
+def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu')):
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -619,6 +619,8 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, var
     file_format = '.vtu'
     print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
     point_data = {''}
+    variational = autoencoder.encoder.variational
+    dimension = autoencoder.encoder.dimension
     cnt_progress = 0
     print("Write vtu Data......\n")
     bar=progressbar.ProgressBar(maxval=num_data)
@@ -657,7 +659,7 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, var
             tensor = tensor.to(model_device)
             if variational: reconsturcted_tensor = autoencoder(tensor)[0]
             else: reconsturcted_tensor = autoencoder(tensor)
-            print('error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
+            print('Reconstruction MSE error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
             reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
             for k in range(tensor.shape[-1]):
                 reconsturcted_tensor[...,k] -= tb[k]

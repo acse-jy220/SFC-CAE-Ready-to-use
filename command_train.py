@@ -188,7 +188,7 @@ autoencoder = train_model(autoencoder,
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if parameters['reconstructed_path'] != 'None':
-   result_vtu_to_vtu(parameters['vtu_dir'], parameters['reconstructed_path'], vtu_fields, autoencoder, tk = full_set.tk, tb = full_set.tb, variational = variational, start_index = reconstruct_start_index, end_index = reconstruct_end_index, model_device = device, dimension = dimension)
+   result_vtu_to_vtu(parameters['vtu_dir'], parameters['reconstructed_path'], vtu_fields, autoencoder, tk = full_set.tk, tb = full_set.tb, start_index = reconstruct_start_index, end_index = reconstruct_end_index, model_device = device)
 
 
 
