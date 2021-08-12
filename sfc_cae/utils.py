@@ -657,7 +657,7 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
                 tensor[...,k] *= tk[k]
                 tensor[...,k] += tb[k] 
             tensor = tensor.to(model_device)
-            if variational: reconsturcted_tensor = autoencoder(tensor)[0]
+            if variational: reconsturcted_tensor, _ = autoencoder(tensor)
             else: reconsturcted_tensor = autoencoder(tensor)
             print('Reconstruction MSE error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
             reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
