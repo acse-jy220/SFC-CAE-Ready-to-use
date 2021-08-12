@@ -6,8 +6,16 @@
 
 <br />
 <p align="center">
-  <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use">
-    <img src="pics/first_version_cover.png" alt="Logo">
+  <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/pics/structure_SFC_CAE.svg">
+    <img src="pics/structure_SFC_CAE.svg">
+    <figcaption>{{Achitechture of a Space-filling curve Convolutional Autoencoder}}</figcaption>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/pics/structure_SFC_VCAE.svg">
+    <img src="pics/structure_SFC_VCAE.svg">
+    <figcaption>{{Achitechture of a Space-filling curve Variational Convolutional Autoencoder}}</figcaption>
   </a>
 </p>
 
