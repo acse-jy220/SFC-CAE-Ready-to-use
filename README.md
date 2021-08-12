@@ -125,11 +125,14 @@ and call the functions you want! Please have a look at the [instruction notebook
 
 ### CO2
 <p align="middle">
-  <img src="pics/original_ppm.gif">
-  <figcaption> Original CO2 PPM </figcaption>
-  <img src="pics/reconstructed_3SFC_VCAE.gif">
-  <figcaption> Reconstructed by 3SFC-VCAE, 16 latent </figcaption>
+  <p float="left">
+     <img src="pics/original_ppm.gif">
+     <figcaption> Original CO2 PPM </figcaption>
+     <img src="pics/reconstructed_3SFC_VCAE.gif">
+     <figcaption> Reconstructed by 3SFC-VCAE, 16 latent </figcaption>
+  </p>
 </p>
+
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE.ipynb)
 
 ### Slugflow
