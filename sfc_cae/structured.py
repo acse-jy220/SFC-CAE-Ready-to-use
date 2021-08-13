@@ -186,7 +186,10 @@ def plot_trace_structured_2D(sfc_ordering, levels = 16):
     fig, ax = plt.subplots(figsize=(15, 15))
     cuts = np.linspace(0, len(sfc_ordering), levels + 1).astype(np.int32)
     for i in range(levels):
-        ax.plot(x_coords[cuts[i]:cuts[i+1]], y_coords[cuts[i]:cuts[i+1]], '-')
+        start = cuts[i]
+        end = cuts[i + 1]
+        if i != levels - 1: end += 1
+        ax.plot(x_coords[start: end], y_coords[start: end], '-')
     plt.axis('off')
     plt.show() 
 
