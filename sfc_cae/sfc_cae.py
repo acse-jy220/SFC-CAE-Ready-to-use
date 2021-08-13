@@ -498,6 +498,7 @@ class SFC_CAE(nn.Module):
       
       # Whether a variational encoder decide the cells in the middle
       if self.encoder.variational: 
+         layer_count += 1
          f.write('\\multicolumn{9}{|c|}{\\textbf{Variational Reparametrization}}\\\\\n')
          f.write('\\hline\n') 
          f.write(F'{layer_count}-FC-$\\sigma$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
@@ -505,7 +506,7 @@ class SFC_CAE(nn.Module):
          f.write(F'{layer_count}-FC-$\\mu$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
          f.write('\\hline\n') 
          layer_count += 1
-         f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 2 Variable (2 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & Identity\\\\\n')
+         f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 3 Variable (3 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & Identity\\\\\n')
          layer_count += 1
       else: 
          f.write(F'{layer_count}-FC & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n') 
