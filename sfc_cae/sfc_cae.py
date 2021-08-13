@@ -53,7 +53,7 @@ class SFC_CAE_Encoder(nn.Module):
     if dimension == 2: 
         self.kernel_size = 32
         self.stride = 4
-        self.num_final_channels = 8
+        self.num_final_channels = 16
     elif dimension == 3:
         self.kernel_size = 176
         self.stride = 8
