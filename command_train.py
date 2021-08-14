@@ -112,6 +112,20 @@ if parameters['tb_file'] != 'None':
    tb = torch.load(parameters['tb_file']) 
 
 
+# training parameters
+batch_size = int(parameters['batch_size'])
+lr = float(parameters['lr'])
+n_epoches = int(parameters['n_epoches'])
+seed = int(parameters['seed'])
+dimension = int(parameters['dimension'])
+if parameters['reconstruct_start_index'] != 'None':
+   reconstruct_start_index = int(parameters['reconstruct_start_index'])
+else: reconstruct_start_index = None
+if parameters['reconstruct_end_index'] != 'None':
+   reconstruct_end_index = int(parameters['reconstruct_end_index'])
+else: reconstruct_end_index = None
+
+
 if parameters['mode'] == 'train':
    train_ratio = 15/17
    valid_ratio = 1/17
@@ -152,19 +166,7 @@ if parameters['mode'] == 'train':
    valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
-# training parameters
-batch_size = int(parameters['batch_size'])
-lr = float(parameters['lr'])
-n_epoches = int(parameters['n_epoches'])
-seed = int(parameters['seed'])
-dimension = int(parameters['dimension'])
-if parameters['reconstruct_start_index'] != 'None':
-   reconstruct_start_index = int(parameters['reconstruct_start_index'])
-else: reconstruct_start_index = None
-if parameters['reconstruct_end_index'] != 'None':
-   reconstruct_end_index = int(parameters['reconstruct_end_index'])
-else: reconstruct_end_index = None
-
+# whether save the model
 if parameters['save_path'] != 'None':
    save_path = parameters['save_path']
 else: save_path = None
