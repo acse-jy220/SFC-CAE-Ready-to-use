@@ -53,23 +53,23 @@ class SFC_CAE_Encoder(nn.Module):
     if dimension == 2: 
         self.kernel_size = 32
         self.stride = 4
+        self.increase_multi = 2
         self.num_final_channels = 16
     elif dimension == 3:
         self.kernel_size = 176
         self.stride = 8
+        self.increase_multi = 4
         self.num_final_channels = 16
 
     self.padding = self.kernel_size//2
 
     self.structured = structured
     if self.structured: 
-       self.increase_multi = 2
        if activation is None:
           self.activate = nn.ReLU()
        else:
           self.activate = activation     
     else: 
-       self.increase_multi = 4 
        if activation is None:
           self.activate = nn.Tanh()
        else:
