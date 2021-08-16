@@ -306,15 +306,15 @@ class MyTensorDataset(Dataset):
 
 
     '''
-      def __init__(self, path_dataset, lower, upper, tk = None, tb = None):
-          self.dataset = path_dataset
-          self.length = len(path_dataset)
-          t_max = torch.load(self.dataset[0]).max(0).values.unsqueeze(0)
-          t_min = torch.load(self.dataset[0]).min(0).values.unsqueeze(0)
-          cnt_progress = 0
+    def __init__(self, path_dataset, lower, upper, tk = None, tb = None):
+        self.dataset = path_dataset
+        self.length = len(path_dataset)
+        t_max = torch.load(self.dataset[0]).max(0).values.unsqueeze(0)
+        t_min = torch.load(self.dataset[0]).min(0).values.unsqueeze(0)
+        cnt_progress = 0
 
-          # find tk and tb for the dataset.
-          if tk is None or tb is None:
+        # find tk and tb for the dataset.
+        if tk is None or tb is None:
             print("Computing min and max......\n")
             bar=progressbar.ProgressBar(maxval=self.length)
             bar.start()
@@ -328,18 +328,18 @@ class MyTensorDataset(Dataset):
             self.t_min = t_min.min(0).values
             self.tk = (upper - lower) / (self.t_max - self.t_min)
             self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
-          else: # jump that process, if we have got tk and tb.
+        else: # jump that process, if we have got tk and tb.
             self.tk = tk
             self.tb = tb
-          print('tk: ', self.tk, '\n')
-          print('tb: ', self.tb, '\n')
+        print('tk: ', self.tk, '\n')
+        print('tb: ', self.tb, '\n')
 
-      def __getitem__(self, index):
-          tensor = torch.load(self.dataset[index])
-          return (tensor * self.tk + self.tb).float()
+    def __getitem__(self, index):
+        tensor = torch.load(self.dataset[index])
+        return (tensor * self.tk + self.tb).float()
       
-      def __len__(self):
-          return self.length
+    def __len__(self):
+        return self.length
 
 ####################################################  Plotting functions for unstructured mesh ######################################################################      
 
