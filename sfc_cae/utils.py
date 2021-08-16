@@ -672,34 +672,34 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     inv_conv_start: [int] the size of the penultimate fully-connected layer, equals to size_fc[-2], just before dims_latent.
     np.array(output_paddings[::-1][1:]): [1d-array] the output_paddings, used for the Decoder.
     '''
-       channels = [input_channel]
-       output_paddings = [size % stride]
-       conv_size = [size]
+    channels = [input_channel]
+    output_paddings = [size % stride]
+    conv_size = [size]
 
-       # find size of convolutional layers 
-       while size * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
-          size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
-          conv_size.append(size)
-          if num_final_channels >= input_channel * increase_multi: 
-              input_channel *= increase_multi
-              output_paddings.append(size % stride)
-              channels.append(input_channel)
-          else: 
-              channels.append(num_final_channels)
-              output_paddings.append(size % stride)
+    # find size of convolutional layers 
+    while size * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
+        size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
+        conv_size.append(size)
+        if num_final_channels >= input_channel * increase_multi: 
+            input_channel *= increase_multi
+            output_paddings.append(size % stride)
+            channels.append(input_channel)
+        else: 
+            channels.append(num_final_channels)
+            output_paddings.append(size % stride)
        
-       # find size of fully-connected layers 
-       inv_conv_start = size
-       size *= sfc_nums * num_final_channels
-       size_fc = [size]
-       # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
-       while size // (stride ** 1.5) > dims_latent:  
-          size //= stride
-          if size * stride < 100 and size < 50: break # we do not not want more than two FC layers with size < 100, also we don't want too small size at the penultimate layer.
-          size_fc.append(size)
-       size_fc.append(dims_latent)
+    # find size of fully-connected layers 
+    inv_conv_start = size
+    size *= sfc_nums * num_final_channels
+    size_fc = [size]
+    # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
+    while size // (stride ** 1.5) > dims_latent:  
+        size //= stride
+        if size * stride < 100 and size < 50: break # we do not not want more than two FC layers with size < 100, also we don't want too small size at the penultimate layer.
+        size_fc.append(size)
+    size_fc.append(dims_latent)
 
-       return conv_size, len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
+    return conv_size, len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
 
 
 #################################################### Extension functions for data post-processing ######################################################################
