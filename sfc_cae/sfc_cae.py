@@ -1,3 +1,9 @@
+"""
+This module contains the main class of a space-filling convolutional autoencoder.
+Author: Jin Yu
+Github handle: acse-jy220
+"""
+
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
@@ -74,9 +80,10 @@ class SFC_CAE_Encoder(nn.Module):
           self.activate = nn.Tanh()
        else:
           self.activate = activation
-
+    
+    # find size of convolutional layers and fully-connected layers, see utils.py
     self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
-    = find_size_conv_layers_and_fc_layers(self.input_size, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
+    = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
     
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
@@ -449,7 +456,7 @@ class SFC_CAE(nn.Module):
          cell_end = '-Grid'
       else: 
          cell_11 = '1-FEM (ANN input)'
-         cell_end = '-FEM (ANN input)'
+         cell_end = '-FEM (ANN output)'
          type_m = 'FEM'
     
       first_line = F'{cell_11} & ({size}, {components}, {type_m}) & 1 Identity & {components} & 1 & 0 & 0 & ({size}, {components}, SFC$\\mathcal{{C}}$)  $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$ & Identity\\\\\n'

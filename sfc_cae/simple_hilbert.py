@@ -1,3 +1,9 @@
+"""
+This module contains simple implementation of Hilbert Curve generation on 2^n * 2^n structured grids.
+Author: Jin Yu
+Github handle: acse-jy220
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -66,18 +72,3 @@ def hilbert_space_filling_curve(num = 4, ver_bose = False, ver_bose_contour=Fals
 
 def inverse_ordering(order_index):
     return np.argsort(order_index)
-
-
-# index_hilbert = hilbert_space_filling_curve(8)
-
-# element64 = np.arange(1, 65) 
-
-
-# inverse_map = np.argsort(index_hilbert)
-# inverse_map
-
-# (element64[index_hilbert])[inverse_ordering(index_hilbert)]
-
-# Hilbert_ordering
-
-# Hilbert_ordering[inverse_map]

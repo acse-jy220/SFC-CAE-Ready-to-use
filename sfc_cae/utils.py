@@ -1,3 +1,9 @@
+"""
+This module contains extra functions for training.py/ sfc_cae.py as supplement.
+Author: Jin Yu
+Github handle: acse-jy220
+"""
+
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -19,6 +25,7 @@ import re
 # create an animation
 from matplotlib import animation
 from IPython.display import HTML
+# custom colormap
 import cmocean
 
 import torch  # Pytorch
@@ -26,14 +33,32 @@ import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
 from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorDataset, Dataset
 
+
+#################################################### Functions for data pre-processing / data loading ######################################################################
+
 def read_in_files(data_path, file_format='vtu', vtu_fields=None):
+    '''
+    This function reads in the vtu/txt files in a {data_path} as tensors, of shape [snapshots, number of Nodes, Channels]
+
+    Input:
+    ---
+    data_path: [string] the data_path which holds vtu/txt files, no other type of files are accepted!!!
+    file_format: [string] 'vtu' or 'txt', the format of the file.
+    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure']
+
+    Output:
+    ---
+    Case 1 - file_format='vtu': (3-tuple) [torch.FloatTensor] full_stage over times step, time along 0 axis; [torch.FloatTensor] coords of the mesh; [dictionary] cell_dict of the mesh.
+
+    Case 2 - file_format='txt': [torch.FloatTensor] full_stage over times step, time along 0 axis
+
+    '''
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[-2].split('_')
     file_prefix.pop(-1)
     if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
     else: file_prefix = file_prefix[0] + "_"
-    # file_format = data[0].split('.')[-1]
     file_format = '.' + file_format
     print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
     cnt_progress = 0
@@ -62,14 +87,12 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                 if not vtu_field in vtu_file.point_data.keys():
                    raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
                 field = vtu_file.point_data[vtu_field]
-                # if field.ndim > 1 and field[..., -1].max() - field[..., -1].min() < 1e-8: field = field[...,0:-1] # get rid of zero coords
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start] = field
                 else:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
                    data[i - start] = np.hstack((data[i - start], field))
-            # print(data[i - start].shape)
             cnt_progress +=1
             bar.update(cnt_progress)
         bar.finish()
@@ -97,9 +120,25 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         return torch.cat(data, -1)
 
 def get_simulation_index(num, simulation):
+    '''
+    This function returns the indexes for a square grid simulation that implemented in advection_block_analytical.py.
+
+    Input:
+    ---
+    num: [int] the number of the simulation.
+    simulation: [int] the run_simulation_advection class object defined in advection_block_analytical.py
+
+    Output:
+    ---
+    indexes: [1d-array] the indexes for a certain simulation
+    '''
     return np.arange(num * (simulation.steps + 1), (num + 1) * (simulation.steps + 1))
 
 def read_parameters(setting_file = 'parameters.ini'):
+    '''
+    This function reads all the parameter settings in a setting file 'parameters.ini', interact with command_train.py, used for command line training on HPC.
+    setting_file
+    '''
     f = open(setting_file, 'r')
     lines = f.readlines()
     # create a dicitionary to store the parameters
@@ -114,6 +153,18 @@ def read_parameters(setting_file = 'parameters.ini'):
     return list_p  
 
 def normalize_tensor(tensor):
+    '''
+    This function normalize a torch.tensor with the operation channel-wisely. x = (x - mu) / sigma, where mu is the mean, sigma is std.
+    
+    Input: 
+    ---
+    tensor: [torch.FloatTensor] tensor input, last dimension represents channel.
+
+    Output:
+    ---
+    3-tuple: [torch.FloatTensor] normalised tensor, [torch.FloatTensor] mean for each channel, [torch.FloatTensor] variance for each channel.
+
+    '''
     if tensor.ndim > 2:
        t_mean = torch.zeros(tensor.shape[-1])
        t_std = torch.zeros(tensor.shape[-1])
@@ -129,6 +180,19 @@ def normalize_tensor(tensor):
         return (tensor - t_mean)/t_std, t_mean, t_std
 
 def standardlize_tensor(tensor, lower = -1, upper = 1):
+    '''
+    This function maps a torch.tensor to a interval [lower, upper] channel-wisely.
+    
+    Input: 
+    ---
+    tensor: [torch.FloatTensor] tensor input, last dimension represents channel.
+
+    Output:
+    ---
+    3-tuple: [torch.FloatTensor] standardlized tensor, [torch.FloatTensor] tk for each channel, [torch.FloatTensor] tb for each channel.
+    where standardlized tensor is belong to [lower, upper] for each channel
+
+    '''
     if tensor.ndim > 2:
        tk = torch.zeros(tensor.shape[-1])
        tb = torch.zeros(tensor.shape[-1])
@@ -144,6 +208,19 @@ def standardlize_tensor(tensor, lower = -1, upper = 1):
         return tensor * tk + tb, tk, tb
 
 def denormalize_tensor(tensor, t_mean, t_std):
+    '''
+    This function denormalize a tensor from normalisation channel-wisely.
+
+    Input:
+    ---
+    tensor:  [torch.FloatTensor] tensor input, last dimension represents channel.
+    t_mean: [torch.FloatTensor] the mean value for each channel, got from function normalize_tensor()
+    t_std: [torch.FloatTensor] the variance value for each channel, got from function normalize_tensor()
+
+    Output:
+    ---
+    tensor: [torch.FloatTensor] denormalised tensor
+    '''
     if tensor.ndim > 2:
        for i in range(tensor.shape[-1]):
            tensor[...,i] *= t_std[i]
@@ -154,6 +231,19 @@ def denormalize_tensor(tensor, t_mean, t_std):
     return tensor
 
 def destandardlize_tensor(tensor, tk, tb):
+    '''
+    This function destandardlize a tensor from standardlisation channel-wisely.
+
+    Input:
+    ---
+    tensor:  [torch.FloatTensor] tensor input, last dimension represents channel.
+    tk: [torch.FloatTensor] the mean value for each channel, got from function standardlize_tensor()
+    tb: [torch.FloatTensor] the variance value for each channel, got from function standardlize_tensor()
+
+    Output:
+    ---
+    tensor: [torch.FloatTensor] destandardlized tensor
+    '''
     if tensor.ndim > 2:
        for i in range(tensor.shape[-1]):
            tensor[...,i] -= tb[i]
@@ -163,48 +253,19 @@ def destandardlize_tensor(tensor, tk, tb):
         tensor /= tk
     return tensor
 
-def find_min_and_max(data_path, only_get_names = False):
-    data = glob.glob(data_path + "*")
-    num_data = len(data)
-    print(num_data)
-    # file_prefix = data[0].split('.')[:-1]
-    # file_prefix = ''.join(file_prefix)
-    # file_prefix = file_prefix.split('_')[:-1]
-    # file_prefix = ''.join(file_prefix) + '_'
-    # file_format = data[0].split('.')[-1]
-    # file_format = '.' + file_format
-    # print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
-    cnt_progress = 0
-    print("Loading Data......\n")
-    bar=progressbar.ProgressBar(maxval=num_data)
-    bar.start()
-    # while(True):
-    #     if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
-    #         print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
-    #         start += 1
-    #     else: break
-    for i in range(num_data):
-        filename = data[i] # F'{file_prefix}%d{file_format}' % i
-        if not only_get_names:
-           tensor = torch.load(filename)
-           if i == 0:
-              t_min = tensor.min(0).values.unsqueeze(-1)
-              t_max = tensor.max(0).values.unsqueeze(-1)
-           else:
-              t_min = torch.cat((t_min, tensor.min(0).values.unsqueeze(-1)), -1)
-              t_max = torch.cat((t_max, tensor.max(0).values.unsqueeze(-1)), -1)
-        # data.append(filename)
-        cnt_progress +=1
-        bar.update(cnt_progress)
-    bar.finish()
-    if not only_get_names:
-        t_min = t_min.min(-1).values
-        t_max = t_max.max(-1).values        
-        np.savetxt('./t_max.txt', t_max)
-        np.savetxt('./t_min.txt', t_min)
-    return data
-
 def get_path_data(data_path, indexes):
+    '''
+    This function would return a path list for data with a arbitary indice.
+
+    Input:
+    ---
+    data_path: [string] the path for the data, vtu or txt files.
+    indexes: [1d-array] the indice we want to select for the data.
+
+    Output:
+    ---
+    path_list: [list of strings] the path list of corresponding data, used for np.loadtxt()/ meshio.read()
+    '''
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[:-1]
@@ -221,12 +282,38 @@ def get_path_data(data_path, indexes):
 
 
 class MyTensorDataset(Dataset):
+    '''
+    This class defines a custom dataset used for command line training, covert all your data to .pt files snapshot by snapshot before using it.
+
+    ___init__:
+       Input:
+       ---
+       path_dataset: [string] the data where holds the .pt files
+       lower: [float] the lower bound for standardlisation
+       upper: [float] the upper bound for standardlisation
+       tk: [torch.FloatTensor] pre-load tk numbers, if we have got it for the dataset, default is None.
+       tb: [torch.FloatTensor] pre-load tb numbers, if we have got it for the dataset, default is None.
+    
+    __getitem__(i):
+       Returns on call:
+       ---
+       self.dataset[i]: a single snapshot after standardlisation.
+
+    __len__:
+       Returns on call:
+       ---
+       len: [int] the length of dataset, equal number of time steps/ snapshots
+
+
+    '''
       def __init__(self, path_dataset, lower, upper, tk = None, tb = None):
           self.dataset = path_dataset
           self.length = len(path_dataset)
           t_max = torch.load(self.dataset[0]).max(0).values.unsqueeze(0)
           t_min = torch.load(self.dataset[0]).min(0).values.unsqueeze(0)
           cnt_progress = 0
+
+          # find tk and tb for the dataset.
           if tk is None or tb is None:
             print("Computing min and max......\n")
             bar=progressbar.ProgressBar(maxval=self.length)
@@ -241,7 +328,7 @@ class MyTensorDataset(Dataset):
             self.t_min = t_min.min(0).values
             self.tk = (upper - lower) / (self.t_max - self.t_min)
             self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
-          else:
+          else: # jump that process, if we have got tk and tb.
             self.tk = tk
             self.tb = tb
           print('tk: ', self.tk, '\n')
@@ -253,9 +340,23 @@ class MyTensorDataset(Dataset):
       
       def __len__(self):
           return self.length
-          
+
+####################################################  Plotting functions for unstructured mesh ######################################################################      
 
 def get_sfc_curves_from_coords(coords, num):
+    '''
+    This functions generate space-filling orderings for a coordinate input of a Discontinuous Galerkin unstructured mesh.
+
+    Input:
+    ---
+    coords: [2d-array] coordinates of mesh, read from meshio.read().points or vtktools.vtu().GetLocations(),  of shape(number of Nodes, 3)
+    num: [int] the number of (orthogonal) space-filling curves you want.
+
+    Output:
+    ---
+    curve_lists: [list of 1d-arrays] the list of space-filling curves, each element of shape [number of Nodes, ]
+    inv_lists: [list of 1d-arrays] the list of inverse space-filling curves, each element of shape [number of Nodes, ]
+    '''
     findm, colm, ncolm = sfc.form_spare_matric_from_pts(coords, coords.shape[0])
     colm = colm[:ncolm]
     curve_lists = []
@@ -271,7 +372,20 @@ def get_sfc_curves_from_coords(coords, num):
     return curve_lists, inv_lists
 
 def get_sfc_curves_from_coords_CG(coords, ncurves, template_vtu):
-    '''copied from Claire's Code'''
+    '''
+    get inspiration from Claire's Code, this functions generate space-filling orderings for a coordinate input of a Continuous Galerkin unstructured mesh.
+
+    Input:
+    ---
+    coords: [2d-array] coordinates of mesh, read from meshio.read().points or vtktools.vtu().GetLocations(),  of shape(number of Nodes, 3)
+    num: [int] the number of (orthogonal) space-filling curves you want.
+    template_vtu: [vtu file] a template vtu file, use for reading Node-connectivities.
+
+    Output:
+    ---
+    curve_lists: [list of 1d-arrays] the list of space-filling curves, each element of shape [number of Nodes, ]
+    inv_lists: [list of 1d-arrays] the list of inverse space-filling curves, each element of shape [number of Nodes, ]
+    '''
     ncolm=0
     colm=[]
     findm=[0]
@@ -300,6 +414,18 @@ def get_sfc_curves_from_coords_CG(coords, ncurves, template_vtu):
     return curve_lists, inv_lists
 
 def plot_trace_vtu_2D(coords, levels):
+    '''
+    This function plots the node connection of a 2D unstructured mesh based on a coordinate sequence.
+
+    Input:
+    ---
+    coords: [2d-array] of shape(number of Nodes, 2/3), suggest to combine it with space-filling orderings, e.g. coords[sfc_ordering].
+    levels: [int] the levels of colormap for the plot.
+
+    Output:
+    ---
+    NoneType: the plot.
+    '''
     x_left = coords[:, 0].min()
     x_right = coords[:, 0].max()
     y_bottom = coords[:, 1].min()
@@ -315,6 +441,21 @@ def plot_trace_vtu_2D(coords, levels):
     plt.show() 
 
 def countour_plot_vtu_2D(coords, levels, mask=True, values=None, cmap = None):
+    '''
+    This function plots the contour of a 2D unstructured mesh based on a coordinate sequence.
+
+    Input:
+    ---
+    coords: [2d-array] of shape(number of Nodes, 2/3), suggest to combine it with space-filling orderings, e.g. coords[sfc_ordering].
+    levels: [int] the levels of colormap for the plot.
+    mask: [bool] mask the cylinder, only turn it on for the 'Flow Past Cylinder' Case.
+    Values: [1d-array] of shape(number of Nodes, ), default is Node indexing, suggest you will use this for plotting scalar field? Not suggested, too slow.
+    cmap: [camp object] a custom cmap like 'cmocean.cm.ice' or an official colormap like 'inferno'.
+
+    Output:
+    ---
+    NoneType: the plot.
+    '''
     x = coords[:, 0]
     y = coords[:, 1]
     x_left = x.min()
@@ -344,6 +485,26 @@ def countour_plot_vtu_2D(coords, levels, mask=True, values=None, cmap = None):
     plt.show()  
 
 class anim_vtu_fields_2D():
+    '''
+    This class is implemented to generated to animate the fields on a 2D FPC case, but abandoned at last because of slow speed.
+
+    __init__:
+      Input:
+      ---
+      coords: [2d-array] of shape(number of Nodes, 2/3), suggest to combine it with space-filling orderings, e.g. coords[sfc_ordering].
+      levels: [int] the levels of colormap for the plot.
+      Values: [1d-array] of shape(number of Nodes, ), default is Node indexing.
+      cmap: [camp object] a custom cmap like 'cmocean.cm.ice' or an official colormap like 'inferno'.
+      steps: [int] the number of time levels/ snapshots for the simulation.
+
+    __update_grid__(step):
+      Updates the animation.
+
+    __generate_anime__:
+      Returns:
+      ---
+      A matplotlib.animation Object.
+    '''
     def __init__(self, coords, values=None, levels = 15, cmap = None, steps = None, min_radius = 0.05, mask_x = 0.2, mask_y = 0.2):
        # initialize location of mesh
        self.x = coords[:, 0]
@@ -374,35 +535,88 @@ class anim_vtu_fields_2D():
        self.triang.set_mask(mask)
        self.image = self.ax.tricontourf(self.triang, self.values[0], levels = self.levels, cmap = self.cmap)    
        self.ax.axis('off')
-       # plt.show() 
 
     def update_grid(self, n_step: int):
-       # self.image.set_array(self.values[n_step])
        self.image = self.ax.tricontourf(self.triang, self.values[n_step], levels = self.levels, cmap = self.cmap)
-    #    print(n_step, self.values[n_step])
        print('frame %d saved.' % n_step)
        return self.image,
    
     def generate_anime(self):
-       # anim = animation.FuncAnimation(self.fig, self.update_grid, frames = np.arange(0, self.steps))
        return animation.FuncAnimation(self.fig, self.update_grid, frames = np.arange(0, self.steps))
 
+
+#################################################### Extension functions for SFC_CAE module ######################################################################
+
 def find_plus_neigh(ordering):
+    '''
+    This function returns the upper neighbour for a sfc ordering, see thesis
+
+    Input:
+    ---
+    ordering: [1d-array] the (sfc) ordering of the Nodes.
+    
+    Return:
+    ---
+    plus_neigh: [1d-array] the upper-neighbour ordering.
+    '''
     plus_neigh = np.zeros_like(ordering)
     plus_neigh[:-1] = ordering[1:]
     plus_neigh[-1] = ordering[-1]
     return plus_neigh
 
 def find_minus_neigh(ordering):
+    '''
+    This function returns the lower neighbour for a sfc ordering, see thesis
+
+    Input:
+    ---
+    ordering: [1d-array] the (sfc) ordering of the Nodes.
+    
+    Return:
+    ---
+    minus_neigh: [1d-array] the lower-neighbour ordering.
+    '''
     minus_neigh = np.zeros_like(ordering)
     minus_neigh[1:] = ordering[:-1]
     minus_neigh[0] = ordering[0]
     return minus_neigh
 
 def ordering_tensor(tensor, ordering):
+    '''
+    This function orders the tensor in the 0-axis with a provided ordering.
+
+    Input:
+    ---
+    tensor: [torch.FloatTensor] the simulation tensor, of shape [number of time steps, number of Nodes, number of channels]
+    ordering: [1d-array] the (sfc) ordering of the Nodes.
+
+    Output:
+    ---
+    tensor: [torch.FloatTensor] the ordered simulation tensor.
+    '''
     return tensor[:, ordering]
 
 class NearestNeighbouring(nn.Module):
+    '''
+    This class defines a custom Pytorch Layer, known as "Neareast Neighbouring", see Thesis
+    
+    __init__:
+      Input:
+      ---
+      size: [int] the number of Nodes of each snapshot
+      initial_weight: [int] the initial weights for w, w+, and w-, an intuiative value is defined in sfc_cae.py
+      num_neigh: [int] the number of neighbours plus self, default is 3, but can be a larger number if self_concat > 1.
+
+    __forward__(tensor_list):
+      Input:
+      ---
+      tensor_list: [torch.FloatTensor] the concat list of our variable x and its neighbours, concatenate at the last dimension, 
+                   of shape [number of time steps, number of Nodes, number of channels, number of neighbours]
+
+      Returns:
+      ---
+      The element-wise (hadamard) product and addition: (w^-) * (x^-) + w * x + (w^+) * (x^+) + b
+    '''
     def __init__(self, size, initial_weight, num_neigh = 3):
         super().__init__()
         self.size = size
@@ -415,18 +629,56 @@ class NearestNeighbouring(nn.Module):
         return tensor_list.sum(-1) + self.bias
 
 def expend_SFC_NUM(sfc_ordering, partitions):
+    '''
+    This function construct a extented_sfc for components > 1.
+
+    Input:
+    ---
+    sfc_ordering: [1d-array] the (sfc) ordering of the Nodes.  
+    partitions: [int] the number of components/channels we have, equal to x.shape[-1]
+
+    Output:
+    ---
+    sfc_ext: [int] the extended sfc ordering.
+    '''
     size = len(sfc_ordering)
     sfc_ext = np.zeros(size * partitions, dtype = 'int')
     for i in range(partitions):
         sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
     return sfc_ext
 
-def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
+def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
+    '''
+    This function contains the algorithm for finding 1D convolutional layers and fully-connected layers depend on the input, see thesis
+
+    Input:
+    ---
+    size: [int] the number of Nodes in each snapshot.
+    kernel_size: [int] the constant kernel size throughout all filters.
+    padding: [int] the constant padding throughout all filters.
+    stride: [int] the constant stride throughout all filters.
+    dims_latent: [int] the dimension of latent varible we are compressed to.
+    sfc_nums: [int] the number of space-filling curves we use.
+    input_channel: [int] the number of input_channels of the tensor, equals to components * self_concat, see 'sfc_cae.py'
+    increase_multi: [int] an muliplication factor we have for consecutive 1D Conv Layers.
+    num_final_channels: [int] the maximum number we defined for all Layers.
+
+    Output:
+    ---
+    conv_size: [1d-array] the shape n_H at the 0-axis of training tensor x after each 1D Conv layer, first one is original shape.
+    len(channels) - 1: [int] the number of 1D Conv layers
+    size_fc: [1d-array] the sizes of the fully-connected layers
+    channels: [1d-array] the number of channels/filters in each layer, first one is input_channel.
+    inv_conv_start: [int] the size of the penultimate fully-connected layer, equals to size_fc[-2], just before dims_latent.
+    np.array(output_paddings[::-1][1:]): [1d-array] the output_paddings, used for the Decoder.
+    '''
        channels = [input_channel]
        output_paddings = [size % stride]
        conv_size = [size]
-       while size * num_final_channels * sfc_nums > 4000:
-          size = size // stride + 1
+
+       # find size of convolutional layers 
+       while size * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
+          size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
           conv_size.append(size)
           if num_final_channels >= input_channel * increase_multi: 
               input_channel *= increase_multi
@@ -435,20 +687,45 @@ def find_size_conv_layers_and_fc_layers(size, stride, dims_latent, sfc_nums, inp
           else: 
               channels.append(num_final_channels)
               output_paddings.append(size % stride)
-    
+       
+       # find size of fully-connected layers 
        inv_conv_start = size
        size *= sfc_nums * num_final_channels
        size_fc = [size]
-       while size // (stride ** 1.5) > dims_latent: 
+       # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
+       while size // (stride ** 1.5) > dims_latent:  
           size //= stride
-          if size * stride < 100 and size < 50: break
+          if size * stride < 100 and size < 50: break # we do not not want more than two FC layers with size < 100, also we don't want too small size at the penultimate layer.
           size_fc.append(size)
        size_fc.append(dims_latent)
 
        return conv_size, len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
 
 
-def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_spliters):
+#################################################### Extension functions for data post-processing ######################################################################
+
+
+def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu')):
+    '''
+    This function would compress the specified fields of vtu files based on a trained SFC_CAE Autoencoder defined in sfc_cae.py, 
+    to .pt files snapshot by snapshot.
+    
+    Input:
+    ---
+    data_path: [string] the path (with '/') for the vtu datas.
+    save_path: [string] the saving path (no '/') for the compressed variables (.pt files)
+    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure']
+    autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+    tk: [torch.FloatTensor] the tk coeffcients for the dataset of standardlisation, of shape [number of components,]
+    tb: [torch.FloatTensor] the tb coeffcients for the dataset of standardlisation, of shape [number of components,]
+    start_index: [int] the start_index of the time level, default None, will be set as the first snapshot.
+    end_index: [int] the end_index of the time level, default None, will be set as the last snapshot.
+    model_device: [torch.device] compute the autoencoder on GPU or CPU.
+
+    Output:
+    ---
+    Compressed .pt files in {save_path}.
+    '''
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -458,41 +735,8 @@ def result_to_vtu_unadapted(data_path, coords, cells, tensor, vtu_fields, field_
     file_format = '.vtu'
     print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
     point_data = {''}
-    cnt_progress = 0
-    print("Write vtu Data......\n")
-    bar=progressbar.ProgressBar(maxval=num_data)
-    bar.start()
-    start = 0
-    while(True):
-        if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
-            print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
-            start += 1
-        else: break
-    for i in range(start, num_data + start):
-            point_data = {}
-            filename = F'../reconstructed/reconstructed_%d{file_format}' % i
-            for j in range(len(vtu_fields)):
-                vtu_field = vtu_fields[j]
-                field = tensor[i][..., field_spliters[j] : field_spliters[j + 1]].detach().numpy()
-                point_data.update({vtu_field: field})
-            mesh = meshio.Mesh(coords, cells, point_data)
-            mesh.write(filename)
-            cnt_progress +=1
-            bar.update(cnt_progress)
-    bar.finish()
-    print('\n Finished writing vtu files.')
-
-
-def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, variational = False, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
-    data = glob.glob(data_path + "*")
-    num_data = len(data)
-    file_prefix = data[0].split('.')[0].split('_')
-    file_prefix.pop(-1)
-    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
-    else: file_prefix = file_prefix[0] + "_"
-    file_format = '.vtu'
-    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
-    point_data = {''}
+    variational = autoencoder.encoder.variational
+    dimension = autoencoder.encoder.dimension
     cnt_progress = 0
     print("Compressing vtu Data......\n")
     bar=progressbar.ProgressBar(maxval=num_data)
@@ -540,6 +784,19 @@ def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, variatio
     print('\n Finished compressing vtu files.')
 
 def read_in_compressed_tensors(data_path, start_index = None, end_index = None):
+    '''
+    This function would read the compressed variables from the outcome of vtu_compress(),  to a tensor. 
+    It is implemented for experiments over the latent space e.g. Noise experiments, create t-SNE plots. 
+    
+    Input:
+    ---
+    data_path: [string] the path (with '/') for the vtu datas.
+    start_index: [int] the start_index of the time level, default None, will be set as the first snapshot.
+
+    Output:
+    ---
+    latent_tensor: [torch.FloatTensor] tensor of all latent variables, of shape [number of snapshots, dims_latent]
+    '''
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -572,11 +829,34 @@ def read_in_compressed_tensors(data_path, start_index = None, end_index = None):
     bar.finish() 
     return full_tensor  
 
-def decompress_to_vtu(full_tensor, tamplate_vtu, save_path, vtu_fields, field_spliter, autoencoder, tk, tb, variational = False, start_index = None, end_index = None, model_device = torch.device('cpu'), dimension = 3):
+def decompress_to_vtu(full_tensor, tamplate_vtu, save_path, vtu_fields, field_spliter, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu')):
+    '''
+    This function would decompress the full latent-variables to vtu files based on a trained SFC_CAE Autoencoder defined in sfc_cae.py, snapshot by snapshot.
+    
+    Input:
+    ---
+    full_tensor: [torch.FloatTensor] tensor of all latent variables, of shape [number of snapshots, dims_latent]
+    tamplate_vtu: [vtu file] a tamplate vtu file from the {data_path} to read the coords and cell_dict from.
+    save_path: [string] the saving path (no '/') for the compressed variables (.pt files)
+    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure']    
+    field_spliter: [1d-array] the start point of different vtu_fields, similar to Intptr() of a CSRMatrix, see doc of Scipy.Sparse.CSRMatrix.
+    autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+    tk: [torch.FloatTensor] the tk coeffcients for the dataset of standardlisation, of shape [number of components,]
+    tb: [torch.FloatTensor] the tb coeffcients for the dataset of standardlisation, of shape [number of components,]
+    start_index: [int] the start_index of the time level, default None, will be set as the first snapshot.
+    end_index: [int] the end_index of the time level, default None, will be set as the last snapshot.
+    model_device: [torch.device] compute the autoencoder on GPU or CPU.
+
+    Output:
+    ---
+    Deompressed .vtu files in {save_path}.
+    '''
     file_format = '.vtu'
     point_data = {''}
     coords = tamplate_vtu.points
     cells = tamplate_vtu.cells_dict 
+    variational = autoencoder.encoder.variational
+    dimension = autoencoder.encoder.dimension
     cnt_progress = 0
     print("Write vtu Data......\n")
     bar=progressbar.ProgressBar(maxval=full_tensor.shape[0])
@@ -611,6 +891,26 @@ def decompress_to_vtu(full_tensor, tamplate_vtu, save_path, vtu_fields, field_sp
     print('\n Finished decompressing vtu files.')
 
 def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu')):
+    '''
+    This function provides a simple reconstruction with a trained autoencoder directly to .vtu files, 
+    especially useful for experiment purpose: directly view the reconstruction performance.
+    
+    Input:
+    ---
+    data_path: [string] the path (with '/') for the vtu datas.
+    save_path: [string] the saving path (no '/') for the compressed variables (.pt files)
+    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure']    
+    autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+    tk: [torch.FloatTensor] the tk coeffcients for the dataset of standardlisation, of shape [number of components,]
+    tb: [torch.FloatTensor] the tb coeffcients for the dataset of standardlisation, of shape [number of components,]
+    start_index: [int] the start_index of the time level, default None, will be set as the first snapshot.
+    end_index: [int] the end_index of the time level, default None, will be set as the last snapshot.
+    model_device: [torch.device] compute the autoencoder on GPU or CPU.
+
+    Output:
+    ---
+    Reconstructed .vtu files in {save_path}.
+    '''
     data = glob.glob(data_path + "*")
     num_data = len(data)
     file_prefix = data[0].split('.')[0].split('_')
@@ -676,4 +976,4 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
             cnt_progress +=1
             bar.update(cnt_progress)
     bar.finish()
-    print('\n Finished writing vtu files.')
+    print('\n Finished reconstructing vtu files.')
