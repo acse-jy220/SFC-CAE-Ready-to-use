@@ -9,6 +9,10 @@ import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
 from sfc_cae.utils import *
 
+
+
+###############################################################   Encoder Part ###################################################################
+
 class SFC_CAE_Encoder(nn.Module): 
   def __init__(self, 
                input_size,
@@ -24,6 +28,29 @@ class SFC_CAE_Encoder(nn.Module):
                force_initialising_param):
     '''
     Class contains the Encoder (snapshot -> latent).
+
+    Input:
+    ---
+    input_size: [int] the number of Nodes in each snapshot.
+    dimension: [int] the dimension of the problem, 2 for 2D and 3 for 3D.
+    components: [int] the number of components we are compressing.
+    structured: [bool] whether the mesh is structured or not.
+    self_concat: [int] a channel copying operation, of which the input_channel of the 1D Conv Layers would be components * self_concat
+    nearest_neighbouring: [bool] whether the sparse layers are added to the ANN or not.
+    dims_latent: [int] the dimension of (number of nodes in) the mean-field gaussian latent variable
+    space_filling_orderings: [list of 1D-arrays] the space-filling curves, of shape [number of curves, number of Nodes]
+    activation: [torch.nn.functional] the activation function, ReLU() and Tanh() are usually used.
+    variational: [bool] whether this is a variational autoencoder or not.
+    force_initialising_param: [1d-array or 1d-list] a interval to initialize the parameters of the 1D Conv/TransConv, Fully-connected Layers, e.g. [a, b]
+
+    Output:
+    ---
+    CASE -- (SFC-CAE): 
+         x: the compressed latent variable, of shape (dims_latent, )
+
+    CASE-- (SFC-VCAE):
+         x: the compressed latent variable, of shape (dims_latent, )
+         kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
 
     super(SFC_CAE_Encoder, self).__init__()
@@ -60,14 +87,13 @@ class SFC_CAE_Encoder(nn.Module):
         self.kernel_size = 32
         self.stride = 4
         self.increase_multi = 2
-        self.num_final_channels = 16
     elif dimension == 3:
         self.kernel_size = 176
         self.stride = 8
         self.increase_multi = 4
-        self.num_final_channels = 16
 
     self.padding = self.kernel_size//2
+    self.num_final_channels = 16
 
     self.structured = structured
     if self.structured: 
@@ -81,13 +107,14 @@ class SFC_CAE_Encoder(nn.Module):
        else:
           self.activate = activation
     
-    # find size of convolutional layers and fully-connected layers, see utils.py
+    # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
     self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
     = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
     
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
     self.convs = []
+
     #If NN, add a sparse layer 
     if self.NN: self.sps = []
     for i in range(self.sfc_nums):
@@ -135,18 +162,18 @@ class SFC_CAE_Encoder(nn.Module):
       return tensor_list
 
 
-  def forward(self, x):  # Custom pytorch modules should follow this structure 
+  def forward(self, x):
     '''
     x: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''
-    # print(x.size())
     xs = []
     if self.components > 1: 
         x = x.permute(0, -1, -2)
         x = x.reshape(-1, x.shape[-2] * x.shape[-1])
     if self.self_concat > 1: x = torch.cat([x] * self.self_concat, -1)
-
+    
+    # 1D Conv Layers
     for i in range(self.sfc_nums):
         if self.NN:
            tt_list = self.get_concat_list(x, i)
@@ -159,17 +186,17 @@ class SFC_CAE_Encoder(nn.Module):
         if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
         else: a = a.unsqueeze(1)
         for j in range(self.size_conv):
-            # print(a.shape)
             a = self.activate(self.convs[i][j](a))
         xs.append(a.view(-1, a.size(1)*a.size(2)))
         del a
-        # print(xs[i].shape)
     del x
     if self.sfc_nums > 1: x = torch.cat(xs, -1)
     else: x = xs[0]
     for i in range(self.sfc_nums): del xs[0] # clear memory 
+
     # fully connect layers
     for i in range(len(self.fcs)): x = self.activate(self.fcs[i](x))
+
     # variational sampling
     if self.variational:
       mu = self.layerMu(x)
@@ -180,18 +207,43 @@ class SFC_CAE_Encoder(nn.Module):
       return x, kl_div
     else: return x
 
+
+###############################################################   Decoder Part ###################################################################
+
+
 class SFC_CAE_Decoder(nn.Module): 
   def __init__(self, encoder, inv_space_filling_orderings, output_linear = False):
     '''
-    Class contains the Decoder (snapshot -> latent).
+    Class contains the Decoder for SFC_CAE (latent -> reconstructed snapshot).
+
+    Input:
+    ---
+    encoder: [SFC_CAE_Encoder object] the SFC_CAE_Encoder class, we want to nearly 'invert' the operation, so we just inherit most parameters from the Encoder.
+    inv_space_filling_orderings: [list of 1D-arrays] the inverse space-filling curves, of shape [number of curves, number of Nodes]
+    output_linear: [bool] default is false, if turned on, a linear activation will be applied at the output.
+
+    Output:
+    ---
+    CASE -- (SFC-CAE): 
+         z: the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
+
+    CASE-- (SFC-VCAE):
+         z: the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
+         kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
 
     super(SFC_CAE_Decoder, self).__init__()
+
+    # pass parameters from the encoder
     self.NN = encoder.NN
     self.variational = encoder.variational
     self.activate = encoder.activate
     self.dims_latent = encoder.dims_latent
     self.dimension = encoder.dimension
+    self.kernel_size = encoder.kernel_size
+    self.stride = encoder.stride
+    self.padding = encoder.padding
+    self.increase_multi = encoder.increase_multi
     self.input_size = encoder.input_size
     self.components = encoder.components
     self.self_concat = encoder.self_concat
@@ -200,6 +252,8 @@ class SFC_CAE_Decoder(nn.Module):
     self.size_conv = encoder.size_conv
     self.inv_conv_start = encoder.inv_conv_start
     self.input_channel = self.components * self.self_concat
+
+    # initialize sfc_orderings/ neighbours
     self.orderings = []
     self.sfc_plus = []
     self.sfc_minus = []
@@ -216,17 +270,6 @@ class SFC_CAE_Decoder(nn.Module):
            self.orderings.append(inv_space_filling_orderings[i])
            self.sfc_plus.append(find_plus_neigh(inv_space_filling_orderings[i]))
            self.sfc_minus.append(find_minus_neigh(inv_space_filling_orderings[i]))          
-       
-
-    if self.dimension == 2: 
-        self.kernel_size = 32
-        self.stride = 4
-    elif self.dimension == 3:
-        self.kernel_size = 176
-        self.stride = 8
-    self.padding = self.kernel_size//2
-    if encoder.structured: self.increase_multi = 2
-    else: self.increase_multi = 4
     
     self.fcs = []
     # set up fully-connected layers
@@ -298,18 +341,14 @@ class SFC_CAE_Decoder(nn.Module):
         x = self.activate(self.fcs[i](x))
     
     x = x.view(-1, self.split, self.sfc_nums)
-    # print(x.shape)
     zs = []
     for i in range(self.sfc_nums):
         b = x[..., i].view(-1, self.num_final_channels, self.inv_conv_start)
         for j in range(self.size_conv):
             b = self.activate(self.convTrans[i][j](b))
-            # print(b.shape)
         b = b.view(-1, self.input_size * self.input_channel)
-        # print(b.shape)
         if self.NN:
            tt_list = self.get_concat_list(b, i)
-        #    print(tt_list.shape)
            tt_nn = self.sps[i](tt_list)
            b = self.activate(tt_nn)
            del tt_list
@@ -317,7 +356,6 @@ class SFC_CAE_Decoder(nn.Module):
         else:
            if self.self_concat > 1:
               b = ordering_tensor(b, self.orderings[i]).view(-1, self.self_concat, self.components * self.input_size).permute(0, -1, -2)
-            #   print(tt_list.shape)
               b = self.activate(self.sps[i](b))
            else:
               b = ordering_tensor(b, self.orderings[i])
@@ -352,6 +390,8 @@ class SFC_CAE_Decoder(nn.Module):
         return z
 
 
+###############################################################   AutoEncoder Wrapper ###################################################################
+
 class SFC_CAE(nn.Module):
   def __init__(self,
                size,
@@ -368,9 +408,32 @@ class SFC_CAE(nn.Module):
                force_initialising_param = None,
                output_linear = False):
     '''
-    Class combines the Encoder and the Decoder with an Autoencoder latent space.
+    SFC_CAE Class combines the SFC_CAE_Encoder and the SFC_CAE_Decoder with an Autoencoder latent space.
 
+    Input:
+    ---
+    size: [int] the number of Nodes in each snapshot.
+    dimension: [int] the dimension of the problem, 2 for 2D and 3 for 3D.
+    components: [int] the number of components we are compressing.
+    structured: [bool] whether the mesh is structured or not.
+    self_concat: [int] a channel copying operation, of which the input_channel of the 1D Conv Layers would be components * self_concat
+    nearest_neighbouring: [bool] whether the sparse layers are added to the ANN or not.
     dims_latent: [int] the dimension of (number of nodes in) the mean-field gaussian latent variable
+    space_filling_orderings: [list of 1D-arrays] the space-filling curves, of shape [number of curves, number of Nodes]
+    invert_space_filling_orderings: [list of 1D-arrays] the inverse space-filling curves, of shape [number of curves, number of Nodes]
+    activation: [torch.nn.functional] the activation function, ReLU() and Tanh() are usually used.
+    variational: [bool] whether this is a variational autoencoder or not.
+    force_initialising_param: [1d-array or 1d-list] a interval to initialize the parameters of the 1D Conv/TransConv, Fully-connected Layers, e.g. [a, b]
+    output_linear: [bool] default is false, if turned on, a linear activation will be applied at the output.
+
+    Output:
+    ---
+    CASE -- (SFC-CAE): 
+         self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
+
+    CASE-- (SFC-VCAE):
+         self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
+         kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
 
     super(SFC_CAE, self).__init__()
@@ -423,6 +486,14 @@ class SFC_CAE(nn.Module):
            self.decoder.sfc_minus.append(find_minus_neigh(isfcs[i]))
 
   def output_structure(self):
+    '''
+    This function is a automated LaTeX table generater for the autoencoder.
+
+    Usage:
+    ---
+    Once the SFC_CAE object is initialized, you could simply type 'autoencoder.parameters' to see the layers in Python, 
+    Or you can type 'autoencoder.output_structure()', which calls this function, and a table in LaTeX format will be writed in 'LatexTable.txt'.
+    '''
     with open('LatexTable.txt', 'w') as f:
       f.write('\\begin{table}[!htbp]\n')
       f.write('\\resizebox{\\columnwidth}{!}{%\n')
@@ -503,7 +574,7 @@ class SFC_CAE(nn.Module):
             f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
         f.write('\\hline\n')
       
-      # Whether a variational encoder decide the cells in the middle
+      # Whether variational decide the format in the middle
       if self.encoder.variational: 
          layer_count += 1
          f.write('\\multicolumn{9}{|c|}{\\textbf{Variational Reparametrization}}\\\\\n')
@@ -566,11 +637,12 @@ class SFC_CAE(nn.Module):
     '''
     x - [Torch.Tensor.float] A batch of fluid snapshots from the data-loader
     '''
-    
-    if self.encoder.variational:
-      z, kl_div = self.encoder(x)
+   # return value for VAE 
+   if self.encoder.variational:
+      z, kl_div = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}, as well as record the KL divergence.
       return self.decoder(z), kl_div
-    else:
+   # return value for normal AE
+   else:
       z = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}.
       return self.decoder(z)  # Return the output of the decoder (1-D, the predicted image)
 
