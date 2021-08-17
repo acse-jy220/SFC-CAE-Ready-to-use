@@ -5,10 +5,10 @@ on:
   pull_request:
     branches: [ main ]
 
-# This job installs dependencies and runs pytests for three kinds of operating systems
+# This job installs dependencies and runs pytests for both ubuntu and windows.
 jobs:
 
-  pytest-unbuntu:
+  pytest-ubuntu:
     
     runs-on: ubuntu-latest
     steps:
