@@ -1,3 +1,9 @@
+"""
+This script contains the main functions for loading/training/saving the autoencoder.
+Author: Jin Yu
+Github handle: acse-jy220
+"""
+
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
