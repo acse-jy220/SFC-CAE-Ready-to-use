@@ -188,6 +188,7 @@ class run_simulation_advection():
     def time_update_exact(self):
         cnt_progress = 0
         bar=progressbar.ProgressBar(maxval=self.steps + 1)
+        bar.start()
         for i in range(self.steps + 1):
             self.x0 += self.U * self.dt
             self.y0 += self.V * self.dt

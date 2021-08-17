@@ -25,7 +25,7 @@ jobs:
 
       # run pytests      
       - name: Test with pytest
-        run: python -m pytest tests/ --doctest-modules -v 
+        run: python -m pytest tests/tests.py --doctest-modules -v 
 
   pytest-windows:
     
@@ -47,4 +47,4 @@ jobs:
 
       # run pytests      
       - name: Test with pytest
-        run: python -m pytest tests/ --doctest-modules -v
+        run: python -m pytest tests/tests.py --doctest-modules -v
