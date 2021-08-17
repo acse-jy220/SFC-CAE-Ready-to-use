@@ -61,6 +61,27 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path):
     print('model_dict saved to', model_dictname)
 
 def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
+  '''
+  This function is implemented for training the model.
+
+  Input:
+  ---
+  autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+  variational: [bool] whether this is a variational autoencoder or not.
+  optimizer: [torch.optim.Optimizer] Pytorch optimizer object for the model
+  criterion: [torch.nn.MSELoss() or other] the obejctive function for training.
+  other_metric: [reMSELoss() or other] other metric for evaluation
+  dataloader: [torch.utils.data.DataLoader] the dataloader for evaluation.
+
+  Output:
+  ---
+  train_loss / data_length: [torch.float with no grad] train loss for the batch
+  train_loss_other/ data_length:  [torch.float with no grad] other metric train loss for the batch
+
+  (variational Optional)
+  whole_MSE/ data_length: [torch.float with no grad] MSE loss for the batch
+  whole_KL/ data_length: [torch.float with no grad] KL divergence loss for the batch
+  '''
   autoencoder.train()
   train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
   if variational: 
@@ -73,21 +94,15 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
       optimizer.zero_grad()  # Set optimiser grad to 0
       if variational:
         x_hat, KL = autoencoder(batch)
-        # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
-        # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
-        # print('KL divergence:', KL.item())
         MSE = criterion(batch, x_hat)
         whole_KL += KL.item() * batch.size(0)
         whole_MSE += MSE.item() * batch.size(0)
         Loss = MSE + KL # MSE loss plus KL divergence
-        # print('MSE:', criterion(batch, x_hat).item())
       else:
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
       Loss.backward()  # Back-propagate
-    #   if torch.cuda.device_count() > 1: optimizer.step()
-    #   else: optimizer.step()  # Step the optimiser
       optimizer.step()
       train_loss += Loss * batch.size(0)
       train_loss_other += other_MSE * batch.size(0)
@@ -95,43 +110,60 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
       del batch
       del Loss
       del other_MSE
-  #   print(count)
   if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
   else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
 def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
-    autoencoder.eval()
-    validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
-    if variational: 
-      whole_KL = 0
-      whole_MSE = 0
-    count = 0
-    for batch in dataloader:
-        with torch.no_grad():
-            count += batch.size(0)
-            batch = batch.to(device)  # Send batch of images to the GPU
-            if variational:
-              x_hat, KL = autoencoder(batch)
-              # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
-              # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
-              MSE = criterion(batch, x_hat)
-              whole_KL += KL.item() * batch.size(0)
-              whole_MSE += MSE.item() * batch.size(0)
-              Loss = MSE + KL # MSE loss plus KL divergence
-            else:
-              x_hat = autoencoder(batch)
-              Loss = criterion(batch, x_hat)  # Calculate MSE loss
-            other_MSE = other_metric(batch, x_hat)
-            validation_loss += Loss * batch.size(0)
-            valid_loss_other += other_MSE * batch.size(0)
-            del batch
-            del x_hat
-            del Loss
-            del other_MSE
-            # print('valid ', count)
+  '''
+  This function is implemented for validating the model.
 
-    if variational: return validation_loss / data_length, valid_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
-    else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
+  Input:
+  ---
+  autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+  variational: [bool] whether this is a variational autoencoder or not.
+  optimizer: [torch.optim.Optimizer] Pytorch optimizer object for the model
+  criterion: [torch.nn.MSELoss() or other] the obejctive function for training.
+  other_metric: [reMSELoss() or other] other metric for evaluation
+  dataloader: [torch.utils.data.DataLoader] the dataloader for evaluation.
+
+  Output:
+  ---
+  validation_loss / data_length: [torch.float with no grad] validation loss for the batch
+  valid_loss_other/ data_length:  [torch.float with no grad] other metric validation loss for the batch
+
+  (variational Optional)
+  whole_MSE/ data_length: [torch.float with no grad] MSE loss for the batch
+  whole_KL/ data_length: [torch.float with no grad] KL divergence loss for the batch
+  '''
+  autoencoder.eval()
+  validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  if variational: 
+    whole_KL = 0
+    whole_MSE = 0
+  count = 0
+  for batch in dataloader:
+    with torch.no_grad():
+      count += batch.size(0)
+      batch = batch.to(device)  # Send batch of images to the GPU
+        if variational:
+          x_hat, KL = autoencoder(batch)
+          MSE = criterion(batch, x_hat)
+          whole_KL += KL.item() * batch.size(0)
+          whole_MSE += MSE.item() * batch.size(0)
+          Loss = MSE + KL # MSE loss plus KL divergence
+        else:
+          x_hat = autoencoder(batch)
+          Loss = criterion(batch, x_hat)  # Calculate MSE loss
+      other_MSE = other_metric(batch, x_hat)
+      validation_loss += Loss * batch.size(0)
+      valid_loss_other += other_MSE * batch.size(0)
+      del batch
+      del x_hat
+      del Loss
+      del other_MSE
+
+  if variational: return validation_loss / data_length, valid_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
+  else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the train, valid, test sets.
 def train_model(autoencoder,
@@ -149,6 +181,32 @@ def train_model(autoencoder,
                 visualize = True, 
                 seed = 41,
                 save_path = None):
+  '''
+  This function is main function for loading, training, and saving the model.
+
+  Input:
+  ---
+  autoencoder: [SFC_CAE object] the untrained SFC_(V)CAE.
+  train_loader: [torch.utils.data.DataLoader] the DataLoader for train set.
+  valid_loader: [torch.utils.data.DataLoader] the DataLoader for valid set.
+  test_loader: [torch.utils.data.DataLoader] the DataLoader for test set.
+  optimizer: [string] 'Adam' or 'Adamax', the optimizer for the model
+  state_load: [string] the state_dict for the SFC_(V)CAE object.
+  n_epochs: [int] total number of epoches to train.
+  varying_lr: [bool] if turned on, the learning rate will automatically decrease if
+              a detection of 'stucking' happenes. 
+  check_gap: [int] the number of initial check gap of 'varying_lr'.
+  lr: [float] the initial learning rate 
+  weight_decay: [float] the coefficient for L2 regularization.
+  criterion_type: [string] 'MSE' or 'relative_MSE'
+  visualize: [bool] whether do a liveloss plot.
+  seed: [int] the random seed from cuda kernels
+  save_path: [string] the path to save the training txt files and model/model_dict.
+
+  Output:
+  ---
+  autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.  
+  '''
   set_seed(seed)
   variational = autoencoder.encoder.variational
   
@@ -170,8 +228,6 @@ def train_model(autoencoder,
   
   if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   elif optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  # if torch.cuda.device_count() > 1:
-  #    optimizer = torch.nn.DataParallel(optimizer)
 
   if criterion_type == 'MSE': 
       criterion = nn.MSELoss()
