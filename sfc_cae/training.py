@@ -145,13 +145,13 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
     with torch.no_grad():
       count += batch.size(0)
       batch = batch.to(device)  # Send batch of images to the GPU
-        if variational:
+      if variational:
           x_hat, KL = autoencoder(batch)
           MSE = criterion(batch, x_hat)
           whole_KL += KL.item() * batch.size(0)
           whole_MSE += MSE.item() * batch.size(0)
           Loss = MSE + KL # MSE loss plus KL divergence
-        else:
+      else:
           x_hat = autoencoder(batch)
           Loss = criterion(batch, x_hat)  # Calculate MSE loss
       other_MSE = other_metric(batch, x_hat)

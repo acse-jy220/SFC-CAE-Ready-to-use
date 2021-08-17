@@ -634,9 +634,9 @@ class SFC_CAE(nn.Module):
       print("The LaTeX script for the table structure of the SFC-CAE has been written to 'LatexTable.txt', please copy it to a LaTeX compiler environment, e.g. overleaf.")
 
   def forward(self, x):
-    '''
-    x - [Torch.Tensor.float] A batch of fluid snapshots from the data-loader
-    '''
+   '''
+   x - [Torch.Tensor.float] A batch of fluid snapshots from the data-loader
+   '''
    # return value for VAE 
    if self.encoder.variational:
       z, kl_div = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}, as well as record the KL divergence.
