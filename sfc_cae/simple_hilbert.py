@@ -1,5 +1,5 @@
 """
-This module contains simple implementation of Hilbert Curve generation on 2^n * 2^n structured grids.
+This module contains simple implementation of Hilbert Curve generation on (2^n * 2^n) structured grids.
 Author: Jin Yu
 Github handle: acse-jy220
 """
@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def rotation(grid_in, pattern = 1):
+    '''
+    Some useful rotating/flipping operation for hilbert_space_filling_curve()
+    '''
     if pattern == 1:
        return grid_in.T
     elif pattern == 2:
@@ -15,6 +18,22 @@ def rotation(grid_in, pattern = 1):
 
 
 def hilbert_space_filling_curve(num = 4, ver_bose = False, ver_bose_contour=False):
+    '''
+    This function generates Hilbert space-filling curve on a (2^n * 2^n) by recursive.
+
+    ver_bose:
+
+    Input:
+    ---
+    num: [int] the size of the square grid.
+    ver_bose: [bool] If true, return a plot, view the space-filling curve directly.
+    ver_bose_contour: [bool]  If true, return a contour plot of the indexing of the space-filling curve directly.
+
+    Output:
+    ---
+    np.argsort(grid_1.flatten()): [1d-array] of shape (2^(2n), ) the flattened 1d-array of the Hilbert Space-filling curve on a structured grid.
+
+    '''
     
     n_level = np.log2(num)
     if n_level // 1 != n_level:
@@ -69,6 +88,3 @@ def hilbert_space_filling_curve(num = 4, ver_bose = False, ver_bose_contour=Fals
         plt.show()
        
     return np.argsort(grid_1.flatten())
-
-def inverse_ordering(order_index):
-    return np.argsort(order_index)

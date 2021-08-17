@@ -30,8 +30,28 @@ from IPython.display import HTML
 
 
 def square_wave_pseudo(center_x, center_y, dx, dy, d, grid_need, n, sigma, Lx = 10, Ly = 10):
-    center_grid_X = center_x // dx
-    center_grid_Y = center_y // dy
+    '''
+    This function would help to update the position of a 'pseudo' square_wave on a square grid.
+
+    Input:
+    ---
+    center_x: [float] the center (numerical) of the block on x-axis.
+    center_y: [float] the center (numerical) of the block on y-axis.
+    dx: [float] the numerical length of each grid on x-axis.
+    dy: [float] the numerical length of each grid on y-axis.
+    d: [float] the length of the Block.
+    grid_need: [int] the number of the grids needed for the block.
+    n: [int] number of grids of the whole grid.
+    sigma: [float] the variance for the Gaussian, use in another function.
+    Lx: [float] length of the whole region.
+    Ly: [float] width of the whole region.
+
+    Output:
+    ---
+    grid_temp: [2d-array] shape of (n, n), an updated image.
+    '''
+    center_grid_X = center_x // dx # return the index center of the block on x-axis.
+    center_grid_Y = center_y // dy # return the index center of the block on y-axis.
     grid_temp = np.zeros((n, n))
     half = grid_need // 2
     if grid_need % 2 == 0:
@@ -49,6 +69,26 @@ def square_wave_pseudo(center_x, center_y, dx, dy, d, grid_need, n, sigma, Lx = 
     return grid_temp
     
 def gaussian_wave(center_x, center_y, dx, dy, d, grid_need, n, sigma, Lx = 10, Ly = 10):
+    '''
+    This function would help to update the position of a gaussian_wave on a square grid.
+
+    Input:
+    ---
+    center_x: [float] the center (numerical) of the block on x-axis.
+    center_y: [float] the center (numerical) of the block on y-axis.
+    dx: [float] the numerical length of each grid on x-axis, use in another function.
+    dy: [float] the numerical length of each grid on y-axis, use in another function.
+    d: [float] the length of the Block.
+    grid_need: [int] the number of the grids needed for the block.
+    n: [int] number of grids of the whole grid.
+    sigma: [float] the variance for the Gaussian.
+    Lx: [float] length of the whole region.
+    Ly: [float] width of the whole region.
+
+    Output:
+    ---
+    dist: [2d-array] shape of (n, n), an updated image.
+    '''
     xx, yy = np.meshgrid(np.linspace(0, Lx, n), np.linspace(0, Ly, n))
     dist = (xx - center_x) ** 2 + (yy - center_y) **2
     dist /= sigma
@@ -56,6 +96,75 @@ def gaussian_wave(center_x, center_y, dx, dy, d, grid_need, n, sigma, Lx = 10, L
     return dist
 
 class run_simulation_advection():
+    '''
+    This is the main class for the 2D-advection simulation, with any appropiated initial condition 'init_func' chosen, 
+    it could advecting it with the analytical solution in 2D.
+
+    __init__:
+      Input:
+      ---
+      Lx: [float] length of the whole region.
+      Ly: [float] width of the whole region. 
+      d: [float] the length of the block
+      n: [int] the number of the grids on the edge of the square.
+      t_end: [float] simulation end time.
+      dt: [float] simulation output time gap.
+      init_func: [function] a initial condition, normally is an updating function which returns a (n, n) image.
+
+      Output: 
+      ---
+      None
+
+    __time_update_exact__(self):
+      Input:
+      ---
+      None
+
+      Output:
+      ---
+      Iterating over all timesteps to produce the analytical solution in 2D.
+
+    __call__(self):
+       Input:
+       ---
+       None
+
+       Output:
+       ---
+       A self-criteria to adjust the center/speed to avoid the block going out of the region at some time steps.
+       then call __time_update_exact__() to generate the simulation.
+
+    __update_grid__(self):
+       Input:
+       ---
+       None
+
+       Output:
+       ---
+       Update the image for generating the animation.
+
+    __generate_anime__(self):
+       Input:
+       ---
+       None
+
+       Output:
+       ---
+       Generating the animation for a simulation.
+
+    __show_step__ (self, step):
+
+      Use plt.show() to show the snapshot of a certain time step of the simulation.
+
+    __clear_run_times(self)__:
+      
+      Set self.simulation_times = 0
+
+    __output_snapshots(self)__:
+      
+      Output the simulation to {./output/simulation_%d/step_%d.txt}.
+
+    '''
     def __init__(self, Lx = 10, Ly = 10, d = 2.5, n = 128, t_end = 0.4, dt = 0.01, init_func = square_wave_pseudo):
         self.dx = Lx / n
         self.dy = Ly / n
@@ -71,7 +180,6 @@ class run_simulation_advection():
         self.t_end = t_end
         self.dt = dt
         self.simulation_times = 0
-        # self.cmap = cmocean.tools.crop_by_percent(cmocean.cm.ice, 5, which='min', N=None)
         self.cmap = cmocean.cm.ice
         self.sigma = 2 * (np.random.random(1) + 1) ** 2
         self.full_stage = np.zeros((self.steps + 1, self.n, self.n))
@@ -88,7 +196,7 @@ class run_simulation_advection():
             bar.update(cnt_progress)
         bar.finish()
         
-    def __call__(self, view_anime = True):
+    def __call__(self):
         self.simulation_times += 1
         print("simulation %d starting..."%self.simulation_times)
         self.x0, self.y0 = np.random.rand(2) * (self.Lx - self.d) + self.d/2
