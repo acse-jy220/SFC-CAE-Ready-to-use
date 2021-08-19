@@ -773,7 +773,7 @@ def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_in
                 tensor[...,k] *= tk[k]
                 tensor[...,k] += tb[k] 
             tensor = tensor.to(model_device)
-            if variational: compressed_tensor = autoencoder.encoder(tensor)[0]
+            if variational: compressed_tensor, _ = autoencoder.encoder(tensor)
             else: compressed_tensor = autoencoder.encoder(tensor)
             compressed_tensor = compressed_tensor.to('cpu') 
             print('compressing snapshot %d, shape:' % i, compressed_tensor.shape)
