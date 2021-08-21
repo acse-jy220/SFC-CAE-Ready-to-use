@@ -50,7 +50,7 @@ jobs:
         run: 
           md FPC_Re3900_CG_new
           C:\msys64\usr\bin\wget.exe https://www.dropbox.com/sh/aid0yv2685nln51/AADmtVChECW_B85M8O2cDmR0a
-          7z x AADmtVChECW_B85M8O2cDmR0a -o FPC_Re3900_CG_new/
+          7z x AADmtVChECW_B85M8O2cDmR0a -oFPC_Re3900_CG_new
           del AADmtVChECW_B85M8O2cDmR0a
           C:\msys64\usr\bin\wget.exe https://www.dropbox.com/s/x4earqswako7bf5/Variational_False_Changelr_False_Latent_16_Nearest_neighbouring_False_SFC_nums_2_startlr_0.0001_n_epoches_2000_dict.pth
           C:\msys64\usr\bin\wget.exe https://www.dropbox.com/s/m8jceafgej6xzo7/Variational_True_Changelr_False_Latent_16_Nearest_neighbouring_False_SFC_nums_2_startlr_0.0001_n_epoches_2000_dict.pth
