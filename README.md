@@ -147,7 +147,7 @@ Some basic tests for the module are avaliable in [tests/](https://github.com/acs
 ```sh
 $ python3 -m pytest tests/tests.py --doctest-modules -v
 ```
-at the root of the repository. a [github workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml) is built to run those tests on github.
+at the root of the repository, by running it, you will automatically download the **FPC_CG** data and two pretrained model (one SFC-CAE, one SFC-VCAE) for that problem and the MSELoss() / KL_div will be evaluated. A [github workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml) is also built to run those tests on github.
 
 ## Contact
 * Jin Yu jin.yu20@imperial.ac.uk or yu19832059@gmail.com
