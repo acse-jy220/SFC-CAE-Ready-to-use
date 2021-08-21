@@ -1,6 +1,5 @@
 """
 This module contains the tests of the sfc_cae module.
-You could execute them locally by 'python -m pytest tests/ --doctest-modules -v' at the root of the repository.
 
 Author: Jin Yu
 Github handle: acse-jy220
@@ -315,6 +314,201 @@ class TestStructured(object):
         assert((edge_16 == np.array(csr_16_edges)).all())
 
 
-#################################################### test for sfc_cae.py ######################################################
+#################################################### test for sfc_cae.py/ utils.py ######################################################
+@fixture(scope='module')
+def autoenocoder_FPC_CG():
+    """
+    Intialize SFC_CAE for the advection FPC-CG case
+    """
+    # first download dataset for the following advanced tests
+    os.system('bash get_FPC_data_CG.sh')
+    
+    # parameters for intialising
+    input_size = 3571
+    dimension = 2
+    components = 2
+    self_concat = 2
+    structured = False
+    nearest_neighbouring = False
+    dims_latent = 16
+    activation = nn.Tanh()
+    variational = False
+    space_filling_orderings = torch.load('fpc_cg_sfc_2.pt')
+    invert_space_filling_orderings = torch.load('fpc_cg_invsfc_2.pt')
+
+    autoencoder = SFC_CAE(input_size,
+                          dimension,
+                          components,
+                          structured,
+                          self_concat,
+                          nearest_neighbouring,
+                          dims_latent,
+                          space_filling_orderings, 
+                          invert_space_filling_orderings,
+                          activation,
+                          variational = variational)
+
+    return autoencoder
+
+@fixture(scope='module')
+def autoenocoder_FPC_CG_VCAE():
+    """
+    Intialize SFC_VCAE for the advection FPC-CG case
+    """
+    input_size = 3571
+    dimension = 2
+    components = 2
+    self_concat = 2
+    structured = False
+    nearest_neighbouring = False
+    dims_latent = 16
+    activation = nn.Tanh()
+    variational = True
+    space_filling_orderings = torch.load('fpc_cg_sfc_2.pt')
+    invert_space_filling_orderings = torch.load('fpc_cg_invsfc_2.pt')
+
+    autoencoder = SFC_CAE(input_size,
+                          dimension,
+                          components,
+                          structured,
+                          self_concat,
+                          nearest_neighbouring,
+                          dims_latent,
+                          space_filling_orderings, 
+                          invert_space_filling_orderings,
+                          activation,
+                          variational = variational)
+
+    return autoencoder
+
+@fixture(scope='module')
+def model_dict_CAE_FPC_CG():
+    """
+    Model dict of a trained 2-SFC-CAE on FPC-CG
+    """
+    SFC_CAE_pathname = 'Variational_False_Changelr_False_Latent_16_Nearest_neighbouring_False_SFC_nums_2_startlr_0.0001_n_epoches_2000_dict.pth' 
+    # local_path = 'C:\\Users\ROG\Desktop\FPC_CG_tsne/'
+    # local_path += SFC_CAE_pathname
+
+    model_dict = torch.load(SFC_CAE_pathname)['model_state_dict']
+
+    return model_dict
+
+@fixture(scope='module')
+def model_dict_VCAE_FPC_CG():
+    """
+    Model dict of a trained 2-SFC-VCAE on FPC-CG
+    """
+    SFC_VCAE_pathname = 'Variational_True_Changelr_False_Latent_16_Nearest_neighbouring_False_SFC_nums_2_startlr_0.0001_n_epoches_2000_dict.pth'
+    # local_path = 'C:\\Users\ROG\Desktop\FPC_CG_tsne/'
+    # local_path += SFC_VCAE_pathname
+
+    model_dict = torch.load(SFC_VCAE_pathname)['model_state_dict']
+
+    return model_dict
+
+@fixture(scope='module')
+def FPC_CG_tensor():
+    """
+    Load FPC_CG data, 2000 snapshots.
+    """
+    # data_path = 'C:\\Users\ROG\Desktop\Results\FPC_new/FPC_Re3900_CG_new/'
+    data_path = 'FPC_Re3900_CG_new/'
+    vtu_fields = ['Velocity']
+    full_tensor, coords, cells = read_in_files(data_path, vtu_fields = vtu_fields)
+
+    return full_tensor
+
+
+class Test_SFC_CAE_initialization_and_evaluation(object):
+    '''
+    Test for functions in sfc_cae.py / utils.py
+    '''
+    @pytest.mark.parametrize('FPC_CG_channels, FPC_CG_nH, FPC_CG_FC', 
+    [(
+        [4, 8, 16, 16], [3571, 893, 224, 57], [1824, 456, 114, 16]
+    )])
+
+    def test_network_layers_FPC_CG(self, autoenocoder_FPC_CG, FPC_CG_channels, FPC_CG_nH, FPC_CG_FC, FPC_CG_tensor):
+        ''' 
+        test the autoencoder has the correct structure.
+        '''
+        assert autoenocoder_FPC_CG.encoder.channels == FPC_CG_channels
+        assert autoenocoder_FPC_CG.encoder.conv_size == FPC_CG_nH
+        assert autoenocoder_FPC_CG.encoder.size_fc == FPC_CG_FC
+
+    def test_load_state_dict_SFC_CAE(self, autoenocoder_FPC_CG, model_dict_CAE_FPC_CG):
+        '''
+        Test the ability to correctly load model_dict for SFC_CAE.
+        '''
+        try:
+          autoenocoder_FPC_CG.load_state_dict(model_dict_CAE_FPC_CG)
+        except AssertionError as error_msg:
+          print(error_msg)
+
+    def test_load_state_dict_SFC_VCAE(self, autoenocoder_FPC_CG_VCAE, model_dict_VCAE_FPC_CG):
+        '''
+        Test the ability to correctly load model_dict for SFC_VCAE.
+        '''
+        try:
+          autoenocoder_FPC_CG_VCAE.load_state_dict(model_dict_VCAE_FPC_CG)
+        except AssertionError as error_msg:
+          print(error_msg)
+
+    def test_load_data_from_vtu(self, FPC_CG_tensor):
+        '''
+        Test the FPC_CG data has been corrected loaded from vtu files.
+        '''
+        assert FPC_CG_tensor.shape == (2000, 3571, 2)
+
+    def test_standardlization(self, FPC_CG_tensor):
+        ''' 
+        test standardlization function, the tensor has been scaled to [-1, 1] for all components.
+        '''
+        full_set, tk, tb = standardlize_tensor(FPC_CG_tensor, lower = -1, upper = 1)
+
+        for i in range(full_set.shape[-1]):
+           assert (full_set[..., i].max().detach().numpy() == 1)
+           assert (full_set[..., i].min().detach().numpy() == -1)
+
+    def test_accuracy_SFC_CAE(self, autoenocoder_FPC_CG, FPC_CG_tensor):
+        '''
+        test the accuracy of the loaded SFC_CAE, as well as the latent has the correct shape
+        '''
+
+        # test latent variables have correct shape.
+        latent_tensor = autoenocoder_FPC_CG.encoder(FPC_CG_tensor)
+        assert latent_tensor.shape == (2000, 16)
+          
+
+        # test model accuracy.
+        full_reconstructed = autoenocoder_FPC_CG.decoder(latent_tensor)
+        assert np.allclose(nn.MSELoss()(FPC_CG_tensor, full_reconstructed).item(), 7e-5, atol= 1e-5)
+
+    def test_accuracy_SFC_VCAE(self, autoenocoder_FPC_CG_VCAE, FPC_CG_tensor):
+        '''
+        test the accuracy of the loaded SFC_VCAE, as well as the latent has the correct shape
+        '''
+
+        # test latent variables have correct shape.
+        latent_tensor, KL = autoenocoder_FPC_CG_VCAE.encoder(FPC_CG_tensor)
+        assert latent_tensor.shape == (2000, 16)
+          
+
+        # test model accuracy and KL.
+        full_reconstructed = autoenocoder_FPC_CG_VCAE.decoder(latent_tensor)
+        assert np.allclose(nn.MSELoss()(FPC_CG_tensor, full_reconstructed).item(), 0.00045, atol = 5e-5)
+        assert np.allclose(KL.item(), 0.0016152136959, atol = 1e-5)
+
+
+
+
+
+
+
+
+# autoenocoder_FPC_CG_VCAE
+
+
 
 
