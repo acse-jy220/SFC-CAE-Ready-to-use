@@ -390,7 +390,7 @@ def model_dict_CAE_FPC_CG():
     # local_path = 'C:\\Users\ROG\Desktop\FPC_CG_tsne/'
     # local_path += SFC_CAE_pathname
 
-    model_dict = torch.load(SFC_CAE_pathname)['model_state_dict']
+    model_dict = torch.load(SFC_CAE_pathname, map_location=torch.device('cpu'))['model_state_dict']
 
     return model_dict
 
@@ -403,7 +403,7 @@ def model_dict_VCAE_FPC_CG():
     # local_path = 'C:\\Users\ROG\Desktop\FPC_CG_tsne/'
     # local_path += SFC_VCAE_pathname
 
-    model_dict = torch.load(SFC_VCAE_pathname)['model_state_dict']
+    model_dict = torch.load(SFC_VCAE_pathname, map_location=torch.device('cpu'))['model_state_dict']
 
     return model_dict
 
