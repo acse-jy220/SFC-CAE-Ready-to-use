@@ -321,7 +321,7 @@ def autoenocoder_FPC_CG():
     Intialize SFC_CAE for the advection FPC-CG case
     """
     # first download dataset for the following advanced tests
-    os.system('bash get_FPC_data_CG.sh')
+    if sys.platform == 'linux' or sys.platform == 'linux2': os.system('bash get_FPC_data_CG.sh')
     
     # parameters for intialising
     input_size = 3571
