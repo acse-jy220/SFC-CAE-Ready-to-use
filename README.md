@@ -143,7 +143,11 @@ and call the functions you want! Please have a look at the [instruction notebook
 Distributed under the [Apache 2.0](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/LICENSE) License.
 
 ## Testing 
-Some basic tests for the module are avaliable in [tests/](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/tests/) folder, a [github workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml) is built to run those tests.
+Some basic tests for the module are avaliable in [tests/](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/tests/) folder, you could execute them locally by 
+```sh
+$ python3 -m pytest tests/tests.py --doctest-modules -v
+```
+at the root of the repository. a [github workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml) is built to run those tests on github.
 
 ## Contact
 * Jin Yu jin.yu20@imperial.ac.uk or yu19832059@gmail.com
