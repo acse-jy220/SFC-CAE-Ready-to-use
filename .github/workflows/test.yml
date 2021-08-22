@@ -47,7 +47,7 @@ jobs:
 
       # download CG dataset for testing
       - name: Download FPC CG Dataset
-        run: 
+        run: |
           md FPC_Re3900_CG_new
           C:\msys64\usr\bin\wget.exe https://www.dropbox.com/sh/aid0yv2685nln51/AADmtVChECW_B85M8O2cDmR0a
           7z x AADmtVChECW_B85M8O2cDmR0a -oFPC_Re3900_CG_new
