@@ -153,7 +153,7 @@ $ python3 tSNE.py
 ```
 at the root of this directory.
 <p align="center">
-  <p float="left">
+  <p float="middle">
      <img src="pics/t-SNE-AE-CG-16-latent.png" width="400">
      <a href="pics/t-SNE-AE-CG-16-latent.png"><strong>t-SNE for SFC-CAE</strong></a>
      <img src="pics/t-SNE-VAE-CG-16-latent.png" width="400">
