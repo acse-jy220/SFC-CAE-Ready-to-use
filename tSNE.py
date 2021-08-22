@@ -21,7 +21,7 @@ tsne = manifold.TSNE(n_components=2, init='pca', random_state=3, perplexity=10, 
 # define Gaussian noise, we use a fixed example here
 Gaussian_noise = torch.tensor([-0.6622,  2.2681,  1.3811, -0.2305, -0.5013,  0.5346,  0.1032,  1.7119,
          1.3086, -0.6927, -1.2516, -0.4273,  0.1774, -1.0925,  1.5616,  0.3671]).unsqueeze(0)
-Gaussian_noise = torch.cat([Gaussian_noise] * latent_tensor.shape[0], 0)
+Gaussian_noise = torch.cat([Gaussian_noise] * full_set.shape[0], 0)
 
 
 ################################################  t-SNE for SFC-CAE  ################################################################
@@ -71,7 +71,8 @@ plt.figure(figsize=(8, 8))
 plt.scatter(X_norm[:, 0], X_norm[:, 1], c = 'xkcd:sky blue', label = 'Real Latent Variables')
 plt.scatter(X_norm[-1, 0], X_norm[-1, 1], c = 'red', label = 'Fabricated Latent Variable')
 leg = plt.legend(loc = 'upper right')
-plt.savefig('t-SNE-AE-CG-16-latent.png', dpi = 400)
+plt.savefig('t-SNE-AE-CG-16-latent.png', dpi = 200)
+print('t-SNE plot for SFC-CAE saved.')
 
 ################################################  t-SNE for SFC-VCAE  ################################################################
 variational = True
@@ -95,7 +96,7 @@ model_dict = torch.load(model_dict, map_location = torch.device('cpu'))['model_s
 
 autoencoder.load_state_dict(model_dict)
 
-latent_tensor = autoencoder.encoder(full_set)
+latent_tensor, KL = autoencoder.encoder(full_set)
 
 fake_latent = latent_tensor  + Gaussian_noise
 
@@ -108,4 +109,5 @@ plt.figure(figsize=(8, 8))
 plt.scatter(X_norm[:, 0], X_norm[:, 1], c = 'xkcd:sky blue', label = 'Real Latent Variables')
 plt.scatter(X_norm[-1, 0], X_norm[-1, 1], c = 'red', label = 'Fabricated Latent Variable')
 leg = plt.legend(loc = 'upper right')
-plt.savefig('t-SNE-VAE-CG-16-latent.png', dpi = 400)
+plt.savefig('t-SNE-VAE-CG-16-latent.png', dpi = 200)
+print('t-SNE plot for SFC-VCAE saved.')

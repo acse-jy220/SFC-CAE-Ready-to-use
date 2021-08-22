@@ -42,6 +42,7 @@
         <li><a href="#Slugflow"> Slugflow - DG mesh (1706 snapshots, 1342756 Nodes, 4 components)</a></li>
       </ul>   
     </li>
+    <li><a href="#tSNE-Plots">t-SNE plots</a></li>
     <li><a href="#License">License</a></li>
     <li><a href="#Testing">Testing</a></li>
     <li><a href="#Contact">Contact</a></li>
@@ -137,6 +138,28 @@ and call the functions you want! Please have a look at the [instruction notebook
 
 ### Slugflow
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_Slugflow.ipynb)
+
+## tSNE plots
+The creation of t-SNE plots in the Thesis are offered,
+
+After you get FPC-CG data as well as sfcs by
+```sh
+$ bash get_FPC_data_CG.sh 
+```
+
+run  
+```sh
+$ python3 tSNE.py
+```
+at the root of this directory.
+<p align="center">
+  <p float="left">
+     <img src="pics/t-SNE-AE-CG-16-latent.png">
+     <a href="pics/t-SNE-AE-CG-16-latent.png"><strong>t-SNE for SFC-CAE</strong></a>
+     <img src="pics/t-SNE-VAE-CG-16-latent.png">
+     <a href="pics/t-SNE-VAE-CG-16-latent.png"><strong>t-SNE for SFC-VCAE</strong></a>
+  </p>
+</p>
 
 ## License
 
