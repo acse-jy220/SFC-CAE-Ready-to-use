@@ -272,7 +272,7 @@ class run_simulation_advection():
         ax.yaxis.set_major_formatter(plt.FixedFormatter(y_label))
         self.cax = ax.imshow(self.full_stage[step].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower', vmin = max(np.min(self.full_stage[step]) - 0.001, -1e-5), vmax = min(np.max(self.full_stage[step]) + 0.001, 1 + 1e-5))
         cb = fig.colorbar(self.cax)
-        if save_step: plt.savefig('step %d'% step, dpi = 400)
+        if save_step: plt.savefig('step_%d'% step, dpi = 250)
         else: plt.show()
     
     
