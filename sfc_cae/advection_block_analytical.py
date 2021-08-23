@@ -264,15 +264,16 @@ class run_simulation_advection():
         j_loc = [ele_j * i for i in range(5)]
         i_loc.append(self.n - 1)
         j_loc.append(self.n - 1)
-        fig, ax = plt.subplots(figsize=(10,8))
+        fig, ax = plt.subplots(figsize=(8,8))
         # ax.set_title("advection on a %d * %d square grid" % (self.n, self.n), fontsize = 25)
         ax.xaxis.set_major_locator(plt.FixedLocator(i_loc))
         ax.xaxis.set_major_formatter(plt.FixedFormatter(x_label))
         ax.yaxis.set_major_locator(plt.FixedLocator(j_loc))
         ax.yaxis.set_major_formatter(plt.FixedFormatter(y_label))
         self.cax = ax.imshow(self.full_stage[step].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower', vmin = max(np.min(self.full_stage[step]) - 0.001, -1e-5), vmax = min(np.max(self.full_stage[step]) + 0.001, 1 + 1e-5))
-        cb = fig.colorbar(self.cax)
-        if save_step: plt.savefig('step_%d'% step, dpi = 250)
+        ax.axis('off')
+        # cb = fig.colorbar(self.cax)
+        if save_step: plt.savefig('step_%d'% step, dpi = 400)
         else: plt.show()
     
     
