@@ -250,7 +250,7 @@ class run_simulation_advection():
         anim = animation.FuncAnimation(fig, self.update_grid, frames = np.arange(1, self.steps + 1))
         return anim
         
-    def show_step(self, step):
+    def show_step(self, step, save_step = False):
         # set label and locator
         ele_x = int(self.Lx / 5)
         ele_y = int(self.Ly / 5)
@@ -272,7 +272,8 @@ class run_simulation_advection():
         ax.yaxis.set_major_formatter(plt.FixedFormatter(y_label))
         self.cax = ax.imshow(self.full_stage[step].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower', vmin = max(np.min(self.full_stage[step]) - 0.001, -1e-5), vmax = min(np.max(self.full_stage[step]) + 0.001, 1 + 1e-5))
         cb = fig.colorbar(self.cax)
-        plt.show()
+        if save_step: plt.savefig('step %d'% step, dpi = 200)
+        else: plt.show()
     
     
     def clear_run_times(self):
