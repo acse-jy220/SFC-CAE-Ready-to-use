@@ -120,9 +120,9 @@ and call the functions you want! Please have a look at the [instruction notebook
 
 <p align="center">
   <p float="left">
-     <img src="pics/original_block.gif">
+     <img src="pics/original_block.gif" width="500">
      <a href="pics/original_block.gif"><strong>Original Velocity Magnitude</strong></a>
-     <img src="pics/reconstructed_block.gif">
+     <img src="pics/reconstructed_block.gif" width="500">
      <a href="pics/reconstructed_block.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 8 latent</strong></a>
   </p>
 </p>
