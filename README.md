@@ -118,6 +118,15 @@ and call the functions you want! Please have a look at the [instruction notebook
 ### Advecting Block
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_Advecting.ipynb)
 
+<p align="center">
+  <p float="left">
+     <img src="pics/original_block.gif">
+     <a href="pics/original_block.gif"><strong>Original Velocity Magnitude</strong></a>
+     <img src="pics/reconstructed_block.gif">
+     <a href="pics/reconstructed_block.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 8 latent</strong></a>
+  </p>
+</p>
+
 ### FPC-DG
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_FPC_DG.ipynb)
 
