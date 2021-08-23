@@ -121,10 +121,21 @@ and call the functions you want! Please have a look at the [instruction notebook
 ### FPC-DG
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_FPC_DG.ipynb)
 
+<p align="center">
+  <p float="left">
+     <img src="pics/original_FPC.gif">
+     <a href="pics/original_FPC.gif"><strong>Original Velocity Magnitude</strong></a>
+     <img src="pics/reconstructed_FPC.gif">
+     <a href="pics/reconstructed_FPC.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 8 latent</strong></a>
+  </p>
+</p>
+
 ### FPC-CG
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_FPC_CG.ipynb)
 
 ### CO2
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_CO2.ipynb)
+
 <p align="center">
   <p float="left">
      <img src="pics/original_ppm.gif">
@@ -134,7 +145,6 @@ and call the functions you want! Please have a look at the [instruction notebook
   </p>
 </p>
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_CO2.ipynb)
 
 ### Slugflow
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_Slugflow.ipynb)
