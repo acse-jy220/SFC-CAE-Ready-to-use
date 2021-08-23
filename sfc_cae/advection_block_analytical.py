@@ -273,7 +273,7 @@ class run_simulation_advection():
         self.cax = ax.imshow(self.full_stage[step].reshape((self.n, self.n)), cmap = self.cmap, origin = 'lower', vmin = max(np.min(self.full_stage[step]) - 0.001, -1e-5), vmax = min(np.max(self.full_stage[step]) + 0.001, 1 + 1e-5))
         ax.axis('off')
         # cb = fig.colorbar(self.cax)
-        if save_step: plt.savefig('step.%04d.png'% step, dpi = 400)
+        if save_step: plt.savefig('step.%04d.png'% step, dpi = 200)
         else: plt.show()
     
     
