@@ -230,7 +230,7 @@ def train_model(autoencoder,
      epoch_start = state_load['epoch_start']
      if torch.cuda.device_count() > 1: autoencoder.module.load_state_dict(state_load['model_state_dict'])
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
-     optimizer_state_dict = state_load['optimizer_state_dict']
+    #  optimizer_state_dict = state_load['optimizer_state_dict']
   else: epoch_start = 0
   
   if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
