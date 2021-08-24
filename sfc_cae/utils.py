@@ -293,6 +293,7 @@ class MyTensorDataset(Dataset):
        upper: [float] the upper bound for standardlisation
        tk: [torch.FloatTensor] pre-load tk numbers, if we have got it for the dataset, default is None.
        tb: [torch.FloatTensor] pre-load tb numbers, if we have got it for the dataset, default is None.
+       set_bound: [1d-array of list] of shape (2,) used for volume_fraction for slugflow dataset, bound [0, 1]
     
     __getitem__(i):
        Returns on call:
@@ -306,9 +307,10 @@ class MyTensorDataset(Dataset):
 
 
     '''
-    def __init__(self, path_dataset, lower, upper, tk = None, tb = None):
+    def __init__(self, path_dataset, lower, upper, tk = None, tb = None, set_bound = False):
         self.dataset = path_dataset
         self.length = len(path_dataset)
+        self.bounded = set_bound
         t_max = torch.load(self.dataset[0]).max(0).values.unsqueeze(0)
         t_min = torch.load(self.dataset[0]).min(0).values.unsqueeze(0)
         cnt_progress = 0
@@ -336,7 +338,11 @@ class MyTensorDataset(Dataset):
 
     def __getitem__(self, index):
         tensor = torch.load(self.dataset[index])
-        return (tensor * self.tk + self.tb).float()
+        tensor = (tensor * self.tk + self.tb).float()
+        if self.bounded: 
+           tensor[..., 0][tensor[..., 0] > 1] = 1
+           tensor[..., 0][tensor[..., 0] < 0] = 0
+        return tensor
       
     def __len__(self):
         return self.length
