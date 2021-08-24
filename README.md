@@ -30,6 +30,7 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#Dependencies">Prerequisites & Dependencies</a></li>
+         <li><a href="#Contribution-of-Codes">Clearance of contribution of codes</a></li>
         <li><a href="#Installation">Installation</a></li>
       </ul>
     </li>
@@ -71,6 +72,14 @@ This project contains a self-adjusting Space-filling curve Convolutional Autoenc
 * progressbar2 ~= 3.38.0
 * (Optional) GPU/multi GPUs with CUDA
 
+### Contribution of Codes
+External Libraries:
+* space_filling_decomp_new.f90
+A domian decompositon method for unstructured mesh, developed by Prof. Christopher Pain, for detail please see [Paper](https://doi.org/10.1002/(SICI)1097-0207(19990220)44:5<593::AID-NME516>3.0.CO;2-0).
+* vtktools.py
+The Python wrappers for vtu file I/O, from [FluidityProject](https://github.com/FluidityProject/fluidity/blob/main/python/vtktools.py)
+
+Other Codes are implemented by myself.
 ### Installation
 1. Clone the repository:
 ```sh
