@@ -226,7 +226,7 @@ def train_model(autoencoder,
   if state_load is not None:
      state_load = torch.load(state_load)
      check_gap = state_load['check_gap']
-     #  lr = state_load['lr']
+     lr = state_load['lr']
      epoch_start = state_load['epoch_start']
      if torch.cuda.device_count() > 1: autoencoder.module.load_state_dict(state_load['model_state_dict'])
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
@@ -236,7 +236,7 @@ def train_model(autoencoder,
   if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   elif optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
 
-  if state_load is not None: optimizer.load_state_dict(optimizer_state_dict)
+  # if state_load is not None: optimizer.load_state_dict(optimizer_state_dict)
 
   if criterion_type == 'MSE': 
       criterion = nn.MSELoss()
