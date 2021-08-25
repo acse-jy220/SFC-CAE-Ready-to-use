@@ -53,7 +53,8 @@
 
 ## Project Description
 
-This project contains a self-adjusting Space-filling curve Convolutional Autoencoder (SFC-CAE), of which the methodlogy is based on the work of previous year https://arxiv.org/abs/2011.14820, this new tool automatically generates a SFC-CAE network for unadapted mesh examples, a simple variational autoencoder is also included.
+This project contains a self-adjusting Space-filling curve Convolutional Autoencoder (SFC-CAE), of which the methodlogy is based on the work of previous year 
+[![DOI:2011.14820](http://img.shields.io/badge/math.NA-DOI-2011.14820-B31B1B.svg)](https://arxiv.org/abs/2011.14820), this new tool automatically generates a SFC-CAE network for unadapted mesh examples, a simple variational autoencoder is also included.
 
 ## Getting started
 ### Dependencies
@@ -147,14 +148,14 @@ The meaning of each parameters are:
 * dimension: [int] the dimension of the problem, 2 for 2D and 3 for 3D.
 * components: [int] the number of components we are compressing.
 * structured: [bool] whether the mesh is structured or not.
-* self\_concat: [int] a channel copying operation, of which the input\_channel of the 1D Conv Layers would be components $\times$ self\_concat
+* self\_concat: [int] a channel copying operation, of which the input\_channel of the 1D Conv Layers would be components * self\_concat.
 * nearest\_neighbouring: [bool] whether the sparse layers are added to the ANN or not.
 * dims\_latent: [int] the dimension of the latent variable
 * space\_filling\_orderings: [list of 1D-arrays or 2D-array] the space-filling curves, of shape [number of curves, number of Nodes]
 * activation: [torch.nn.functional] the activation function, ReLU() and Tanh() are usually used.
 * variational: [bool] whether this is a variational autoencoder or not.
 
-For advance training options, lease have a look at the [instruction notebooks](#Template-Notebooks)
+For advance training options, please have a look at the [instruction notebooks](#Template-Notebooks)
 
 ## Template Notebooks
 ### Advecting Block
