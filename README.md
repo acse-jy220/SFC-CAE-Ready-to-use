@@ -54,7 +54,7 @@
 ## Project Description
 
 This project contains a self-adjusting Space-filling curve Convolutional Autoencoder (SFC-CAE), of which the methodlogy is based on the work of previous year 
-[![DOI:2011.14820](http://img.shields.io/badge/math.NA-DOI-2011.14820-B31B1B.svg)](https://arxiv.org/abs/2011.14820), this new tool automatically generates a SFC-CAE network for unadapted mesh examples, a simple variational autoencoder is also included.
+[![DOI:2011.14820](https://img.shields.io/badge/math.CO-arXiv%2011.14820-B31B1B.svg)](https://arxiv.org/abs/2011.14820), this new tool automatically generates a SFC-CAE network for unadapted mesh examples, a simple variational autoencoder is also included.
 
 ## Getting started
 ### Dependencies
