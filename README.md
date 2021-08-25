@@ -205,6 +205,19 @@ For advance training options, please have a look at the [instruction notebooks](
 ### Slugflow
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/acse-jy220/SFC-CAE-Ready-to-use/blob/main/Colab_Notebooks/Instruction_SFC_CAE_Slugflow.ipynb)
 
+<p align="center">
+  <p float="middle">
+     <p float="middle">
+     <img src="pics/original_slugflow.gif">
+     <p float="middle">
+     <a href="pics/original_slugflow.gif"><strong>Original Volume Fraction of the Slugflow</strong></a>
+     <p float="middle">
+     <img src="pics/reconstructed_slugflow.gif">
+     <p float="middle">
+     <a href="pics/reconstructed_slugflow.gif"><strong>Reconstructed by 3-SFC-CAE-NN, 64 latent</strong></a>
+  </p>
+</p>
+
 ## tSNE plots
 The creation of t-SNE plots in the Thesis are offered,
 
