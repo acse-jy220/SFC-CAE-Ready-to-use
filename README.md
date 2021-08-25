@@ -126,7 +126,35 @@ $ f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mi
 ```python
 from sfc_cae import *
 ```
-and call the functions you want! Please have a look at the [instruction notebooks](#Template-Notebooks)
+and call the functions you want! 
+
+5. Initializing the autoencoder by passing the following arguments:
+```python
+autoencoder = SFC_CAE(input_size,
+                      dimension,
+                      components,
+                      structured,
+                      self_concat,
+                      nearest_neighbouring,
+                      dims_latent,
+                      space_filling_orderings, 
+                      invert_space_filling_orderings,
+                      activation,
+                      variational = variational)
+```
+The meaning of each parameters are:
+* input\_size: [int] the number of Nodes in each snapshot.
+* dimension: [int] the dimension of the problem, 2 for 2D and 3 for 3D.
+* components: [int] the number of components we are compressing.
+* structured: [bool] whether the mesh is structured or not.
+* self\_concat: [int] a channel copying operation, of which the input\_channel of the 1D Conv Layers would be components $\times$ self\_concat
+* nearest\_neighbouring: [bool] whether the sparse layers are added to the ANN or not.
+* dims\_latent: [int] the dimension of the latent variable
+* space\_filling\_orderings: [list of 1D-arrays or 2D-array] the space-filling curves, of shape [number of curves, number of Nodes]
+* activation: [torch.nn.functional] the activation function, ReLU() and Tanh() are usually used.
+* variational: [bool] whether this is a variational autoencoder or not.
+
+For advance training options, lease have a look at the [instruction notebooks](#Template-Notebooks)
 
 ## Template Notebooks
 ### Advecting Block
