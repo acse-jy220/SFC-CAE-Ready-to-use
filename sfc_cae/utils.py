@@ -444,7 +444,7 @@ def plot_trace_vtu_2D(coords, levels, save = False):
     for i in range(levels):
         ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-')
     plt.axis('off')
-    if save: plt.savefig('curve_vtu_fields_2D.png', dpi = 250)
+    if save: plt.savefig('curve_vtu_fields_2D.png', dpi = 200)
     else:
       plt.show()
 
