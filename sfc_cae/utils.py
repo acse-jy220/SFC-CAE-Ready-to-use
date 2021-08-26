@@ -419,7 +419,7 @@ def get_sfc_curves_from_coords_CG(coords, ncurves, template_vtu):
 
     return curve_lists, inv_lists
 
-def plot_trace_vtu_2D(coords, levels):
+def plot_trace_vtu_2D(coords, levels, save = False):
     '''
     This function plots the node connection of a 2D unstructured mesh based on a coordinate sequence.
 
@@ -444,9 +444,11 @@ def plot_trace_vtu_2D(coords, levels):
     for i in range(levels):
         ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-')
     plt.axis('off')
-    plt.show() 
+    if save: plt.savefig('curve_vtu_fields_2D.png', dpi = 250)
+    else:
+      plt.show()
 
-def countour_plot_vtu_2D(coords, levels, mask=True, values=None, cmap = None):
+def countour_plot_vtu_2D(coords, levels, mask=True, values=None, cmap = None, save = False):
     '''
     This function plots the contour of a 2D unstructured mesh based on a coordinate sequence.
 
@@ -488,7 +490,9 @@ def countour_plot_vtu_2D(coords, levels, mask=True, values=None, cmap = None):
     
     plt.tricontourf(triang, values, levels = levels, cmap = cmap)    
     plt.axis('off')
-    plt.show()  
+    if save: plt.savefig('contour_vtu_fields_2D.png', dpi = 250)
+    else:
+      plt.show()  
 
 class anim_vtu_fields_2D():
     '''
