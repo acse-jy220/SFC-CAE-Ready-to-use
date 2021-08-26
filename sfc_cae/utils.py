@@ -419,7 +419,7 @@ def get_sfc_curves_from_coords_CG(coords, ncurves, template_vtu):
 
     return curve_lists, inv_lists
 
-def plot_trace_vtu_2D(coords, levels, save = False):
+def plot_trace_vtu_2D(coords, levels, save = False, width = None):
     '''
     This function plots the node connection of a 2D unstructured mesh based on a coordinate sequence.
 
@@ -442,7 +442,8 @@ def plot_trace_vtu_2D(coords, levels, save = False):
     ax.set_ylim(y_bottom, y_top)
     cuts = np.linspace(0, coords.shape[0], levels + 1).astype(np.int32)
     for i in range(levels):
-        ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-')
+        if width is not None: ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-', linewidth = width)
+        else: ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-')
     plt.axis('off')
     if save: plt.savefig('curve_vtu_fields_2D.png', dpi = 200)
     else:
