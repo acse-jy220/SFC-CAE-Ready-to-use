@@ -1,13 +1,13 @@
 ## Decompressing Examples
 ### Reconstructing snapshots from latent variables. (of course error introduced)
 
-* CO2 (337Kb compressed data + 150MB model_dict/ sfcs -> 5.96GB raw data)
+* CO2 (337Kb compressed data + 150MB model_dict/ sfcs -> 5.96GB vtu files [455 snapshots, 148906 Nodes, 4 components])
 ```sh
 $ bash decompressing_CO2.sh 
 ```
 reconstructed vtu files will be in `reconstrcuted_CO2_letent_4`.
 
-* Slugflow (1.65Mb compressed data + 1.03GB model_dict/ sfcs -> 132GB vtu files)
+* Slugflow (1.65Mb compressed data + 1.03GB model_dict/ sfcs -> 132GB vtu files [1706 snapshots, 1342756 Nodes, 4 components])
 ```sh
 $ bash decompressing_slugflow.sh
 ```

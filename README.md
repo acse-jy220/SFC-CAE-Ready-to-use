@@ -44,6 +44,8 @@
       </ul>   
     </li>
     <li><a href="#tSNE-Plots">t-SNE plots</a></li>
+    <li><a href="#Decompressing-Examples">Decompressing Examples</a></li>
+    <li><a href="#Training-on-HPC">Training on HPC</a></li>
     <li><a href="#License">License</a></li>
     <li><a href="#Testing">Testing</a></li>
     <li><a href="#Contact">Contact</a></li>
@@ -239,6 +241,20 @@ at the root of this directory.
      <a href="pics/t-SNE-VAE-CG-16-latent.png"><strong>t-SNE for SFC-VCAE</strong></a>
   </p>
 </p>
+
+## Decompressing Examples
+I have attached the compressing variables for the CO2 and Slugflow data in [decompressing_examples/](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/decompressing_examples/), scripts for downloading pretrained models/ decompressing `vtu` files are introduced in that folder.
+
+## Training on HPC
+I wroted a (not very smart) simple script to do training using command line, simply do:
+```python
+$ python3 command_train.py
+```
+will do training based on the configuration file `parameters.ini`, all parameters goes there for training on the College HPC.
+You could also write a custom configuration file, say `my_config.ini`, and training w.r.t that, by passing argument:
+```python
+$ python3 command_train.py my_config.ini
+```
 
 ## License
 
