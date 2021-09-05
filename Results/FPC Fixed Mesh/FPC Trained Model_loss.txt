@@ -1,0 +1,2 @@
+train loss: 2.993825e-03 | valid loss: 2.878910e-03 
+      	| train loss (relative): 3.503196e-02 | valid loss (relative): 3.329173e-02 

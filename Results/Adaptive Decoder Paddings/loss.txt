@@ -1,0 +1,2 @@
+Epoch:  117 | train loss: 1.358817e-02 | valid loss: 1.412515e-02 
+      	| train loss (relative): 1.131180e+03 | valid loss (relative): 3.264251e-01 

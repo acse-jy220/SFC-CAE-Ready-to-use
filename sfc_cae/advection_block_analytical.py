@@ -1,7 +1,5 @@
 """
 This module contains an analytical solver of the advecting block/gaussian problem on a structured grid, as well as animation functions.
-Author: Jin Yu
-Github handle: acse-jy220
 """
 
 import os

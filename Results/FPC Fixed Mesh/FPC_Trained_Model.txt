@@ -1,0 +1,52 @@
+\begin{table}[!htbp]
+\resizebox{\columnwidth}{!}{%
+\small%
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\hline
+layers & input size \& ordering & kernel size & channels & stride & padding & output padding & output size \& ordering & activation\\
+\hline
+1-FEM (ANN input) & (3571, 2, FEM) & 1 Identity & 2 & 1 & 0 & 0 & (3571, 2, SFC$\mathcal{C}$)  $\forall \; \mathcal{C} \in \{1, 2\}$ & Identity\\
+\hline
+\multicolumn{9}{|c|}{\textbf{Encoder}}\\
+\hline
+\multicolumn{9}{|c|}{Flatten (3571, 2, SFC$\mathcal{C}$) to 1D $\forall \; \mathcal{C} \in \{1, 2\}$} \\
+\hline
+2-ExpandNN-SFC$\mathcal{C}$ & (7142, 1, SFC$\mathcal{C}$) & 3 Variable (3 $\times$ 7142) & 1 & 1 & 0 & 0 & (7142, 1, SFC$\mathcal{C}$) & Tanh\\
+\hline
+\multicolumn{9}{|c|}{Reshape (7142, 1, SFC$\mathcal{C}$) to form (3571, 2, SFC$\mathcal{C}$)} \\
+\hline
+3-Conv1d-SFC$\mathcal{C}$ & (3571, 2, SFC$\mathcal{C}$) & 32 & 8 & 6 & 16 & 0 & (596, 8, SFC$\mathcal{C}$) & Tanh\\
+\hline
+4-Conv1d-SFC$\mathcal{C}$ & (596, 8, SFC$\mathcal{C}$) & 32 & 32 & 6 & 16 & 0 & (100, 32, SFC$\mathcal{C}$) & Tanh\\
+\hline
+5-Conv1d-SFC$\mathcal{C}$ & (100, 32, SFC$\mathcal{C}$) & 32 & 32 & 6 & 16 & 0 & (17, 32, SFC$\mathcal{C}$) & Tanh\\
+\hline
+6-FC & 1088 ($= 17 \times 32 \times 2$) & \multicolumn{5}{c|}{} & 181 & Tanh\\
+\hline
+6-FC & 181 & \multicolumn{5}{c|}{} & 64 & Tanh\\
+\hline
+\multicolumn{9}{|c|}{\textbf{Decoder}}\\
+\hline
+8-FC & 64 & \multicolumn{5}{c|}{} & 181 & Tanh\\
+\hline
+9-FC & 181 & \multicolumn{5}{c|}{} & 1088 & Tanh\\
+\hline
+\multicolumn{9}{|c|}{Split the data into 2 sequences as the input of layer 10-TransConv1d-SFC$\mathcal{C}$ $\forall \; \mathcal{C} \in \{1, 2\}$, convert from 544 to (17, 32)} \\
+\hline
+10-TransConv1d-SFC$\mathcal{C}$ & (17, 32, SFC$\mathcal{C}$) & 32 & 32 & 6 & 16 & 4 & (100, 32, SFC$\mathcal{C}$) & Tanh\\
+\hline
+11-TransConv1d-SFC$\mathcal{C}$ & (100, 32, SFC$\mathcal{C}$) & 32 & 32 & 6 & 16 & 2 & (596, 8, SFC$\mathcal{C}$) & Tanh\\
+\hline
+12-TransConv1d-SFC$\mathcal{C}$ & (596, 8, SFC$\mathcal{C}$) & 32 & 8 & 6 & 16 & 1 & (3571, 2, SFC$\mathcal{C}$) & Tanh\\
+\hline
+\multicolumn{9}{|c|}{Apply inverse SFC orderings to (3571, 2, SFC$\mathcal{C}$) $\forall \; \mathcal{C} \in \{1, 2\}$,  flatten into (7142, 1, FEM$\mathcal{C}$)} \\
+\hline
+13-ExpandNN-FEM$\mathcal{C}$ & (7142, 1, FEM$\mathcal{C}$) & 3 Variable (3 $\times$ 7142) & 1 & 1 & 0 & 0 & (7142, 1, FEM$\mathcal{C}$) & Tanh\\
+\hline
+\multicolumn{9}{|c|}{Reshape (7142, 1, FEM$\mathcal{C}$), and separate self-concat channels, to form (3571, 2, FEM$\mathcal{C}$) $\times$ 1} \\
+\hline
+14-FEM (ANN output) & (3571, 2, FEM$\mathcal{C}$) $\times$ 2 & $\sum\limits_{i = 1}^{2} \; $FEM$i$ & 2 & 1 & 0 & 0 & (3571, 2, FEM$\mathcal{C}$) & Tanh \\
+\hline
+\end{tabular}%
+}
+\end{table}

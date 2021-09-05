@@ -1,7 +1,5 @@
 """
 This module contains simple implementation of Hilbert Curve generation on (2^n * 2^n) structured grids.
-Author: Jin Yu
-Github handle: acse-jy220
 """
 
 import numpy as np

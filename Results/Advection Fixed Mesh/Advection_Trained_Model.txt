@@ -1,0 +1,48 @@
+\begin{table}[!htbp]
+\resizebox{\columnwidth}{!}{%
+\small%
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\hline
+layers & input size \& ordering & kernel size & channels & stride & padding & output padding & output size \& ordering & activation\\
+\hline
+1-Grid & (16384, 1, Grid) & 1 Identity & 1 & 1 & 0 & 0 & (16384, 1, SFC$\mathcal{C}$)  $\forall \; \mathcal{C} \in \{1\}$ & Identity\\
+\hline
+\multicolumn{9}{|c|}{\textbf{Encoder}}\\
+\hline
+\multicolumn{9}{|c|}{Flatten (16384, 1, SFC$\mathcal{C}$) to 1D $\forall \; \mathcal{C} \in \{1\}$} \\
+\hline
+2-ExpandNN-SFC$\mathcal{C}$ & (16384, 1, SFC$\mathcal{C}$) & 3 Variable (3 $\times$ 16384) & 1 & 1 & 0 & 0 & (16384, 1, SFC$\mathcal{C}$) & ReLU\\
+\hline
+\multicolumn{9}{|c|}{Reshape (16384, 1, SFC$\mathcal{C}$) to form (16384, 1, SFC$\mathcal{C}$)} \\
+\hline
+3-Conv1d-SFC$\mathcal{C}$ & (16384, 1, SFC$\mathcal{C}$) & 32 & 6 & 8 & 16 & 0 & (2049, 6, SFC$\mathcal{C}$) & ReLU\\
+\hline
+4-Conv1d-SFC$\mathcal{C}$ & (2049, 6, SFC$\mathcal{C}$) & 32 & 32 & 8 & 16 & 0 & (257, 32, SFC$\mathcal{C}$) & ReLU\\
+\hline
+5-Conv1d-SFC$\mathcal{C}$ & (257, 32, SFC$\mathcal{C}$) & 32 & 32 & 8 & 16 & 0 & (33, 32, SFC$\mathcal{C}$) & ReLU\\
+\hline
+5-FC & 1056 & \multicolumn{5}{c|}{} & 64 & ReLU\\
+\hline
+\multicolumn{9}{|c|}{\textbf{Decoder}}\\
+\hline
+7-FC & 64 & \multicolumn{5}{c|}{} & 1056 & ReLU\\
+\hline
+\multicolumn{9}{|c|}{Split the data into 1 sequences as the input of layer 8-TransConv1d-SFC$\mathcal{C}$ $\forall \; \mathcal{C} \in \{1\}$, convert from 1056 to (33, 32)} \\
+\hline
+8-TransConv1d-SFC$\mathcal{C}$ & (33, 32, SFC$\mathcal{C}$) & 32 & 32 & 8 & 16 & 1 & (257, 32, SFC$\mathcal{C}$) & ReLU\\
+\hline
+9-TransConv1d-SFC$\mathcal{C}$ & (257, 32, SFC$\mathcal{C}$) & 32 & 32 & 8 & 16 & 1 & (2049, 6, SFC$\mathcal{C}$) & ReLU\\
+\hline
+10-TransConv1d-SFC$\mathcal{C}$ & (2049, 6, SFC$\mathcal{C}$) & 32 & 6 & 8 & 16 & 0 & (16384, 1, SFC$\mathcal{C}$) & ReLU\\
+\hline
+\multicolumn{9}{|c|}{Apply inverse SFC orderings to (16384, 1, SFC$\mathcal{C}$) $\forall \; \mathcal{C} \in \{1\}$,  flatten into (16384, 1, Grid$\mathcal{C}$)} \\
+\hline
+11-ExpandNN-Grid$\mathcal{C}$ & (16384, 1, Grid$\mathcal{C}$) & 3 Variable (3 $\times$ 16384) & 1 & 1 & 0 & 0 & (16384, 1, Grid$\mathcal{C}$) & ReLU\\
+\hline
+\multicolumn{9}{|c|}{Reshape (16384, 1, Grid$\mathcal{C}$), and separate self-concat channels, to form (16384, 1, Grid$\mathcal{C}$) $\times$ 1} \\
+\hline
+12-Grid & (16384, 1, Grid$\mathcal{C}$) $\times$ 1 & $\sum\limits_{i = 1}^{1} \; $Grid$i$ & 1 & 1 & 0 & 0 & (16384, 1, Grid$\mathcal{C}$) & ReLU \\
+\hline
+\end{tabular}%
+}
+\end{table}

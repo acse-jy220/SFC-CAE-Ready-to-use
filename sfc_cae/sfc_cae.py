@@ -1,7 +1,7 @@
 """
 This module contains the main class of a space-filling convolutional autoencoder.
-Author: Jin Yu
-Github handle: acse-jy220
+Author: Andrea Pozzetti
+Github handle: acse-ap2920
 """
 
 import torch  # Pytorch
@@ -9,7 +9,12 @@ import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
 from sfc_cae.utils import *
 
-
+def sparsify(n,sparse):
+  ratio = round(n/sparse)
+  indices = [i*ratio for i in range(sparse)]
+  if indices[-1] >= n:
+    indices[-1] = (n-1)
+  return indices
 
 ###############################################################   Encoder Part ###################################################################
 
@@ -25,7 +30,17 @@ class SFC_CAE_Encoder(nn.Module):
                space_filling_orderings,
                activation,
                variational,
-               force_initialising_param):
+               force_initialising_param,
+               nfclayers,
+               verbose,
+               coords,
+               coption,
+               coordslayers,
+               smoothinglayers,
+               feedcoordsfc,
+               feedcoordsoption,
+               samefilter,
+               paramlist):
     '''
     Class contains the Encoder (snapshot -> latent).
 
@@ -42,7 +57,16 @@ class SFC_CAE_Encoder(nn.Module):
     activation: [torch.nn.functional] the activation function, ReLU() and Tanh() are usually used.
     variational: [bool] whether this is a variational autoencoder or not.
     force_initialising_param: [1d-array or 1d-list] a interval to initialize the parameters of the 1D Conv/TransConv, Fully-connected Layers, e.g. [a, b]
-
+    nfclayers: [int] number of fully connected layers to implement at the end of the encoder.
+    verbose: [bool] whether the size of the tensors should be printed as they go through hidden layers
+    coords: [torch.Tensor] tensor containing the ndimensional coordinates of size input_size of the fixed mesh of interest
+    coption: [int] If ==0, no coordinates are fed to the coordslayers. If == 1, straight up coordinates are fed. If == 2, distances of each point to its neighbours on the sfc are fed
+    coordslayers: [list] a list of two ints eg: [1,3], decides how many layers at the beginning of the encoder and at the end of decoder are fed coordinates
+    smoothinglayers: [list] a list of two lists [[],[]], which can be filled with (channels,kernel_size) tuples to create smoothing layers at the beginnig or at the end of the autoencoder's structure. Consult readme.
+    feedcoordsfc: [bool] whether to feed cordinates to the first of the fully connected layers
+    feedcoordsoption: [int] same as coption
+    samefilter: [bool] whether to use the same filter on all curves provided to the SFC-CAE.
+    paramlist: [list] list of [kernel_size, increase_multi, stride, num_final_channels, activation] parameters to provide to the set_parameters() method
     Output:
     ---
     CASE -- (SFC-CAE): 
@@ -71,95 +95,194 @@ class SFC_CAE_Encoder(nn.Module):
     else:
       self.init_param = force_initialising_param
 
-    for i in range(self.sfc_nums):
-        if self.input_channel > 1:
-           self.orderings.append(expend_SFC_NUM(space_filling_orderings[i], self.input_channel))
-           if self.NN:
-              self.sfc_plus.append(expend_SFC_NUM(find_plus_neigh(space_filling_orderings[i]), self.input_channel))
-              self.sfc_minus.append(expend_SFC_NUM(find_minus_neigh(space_filling_orderings[i]), self.input_channel))
-        else:
-           self.orderings.append(space_filling_orderings[i])
-           self.sfc_plus.append(find_plus_neigh(space_filling_orderings[i]))
-           self.sfc_minus.append(find_minus_neigh(space_filling_orderings[i]))          
-       
-
-    if dimension == 2: 
-        self.kernel_size = 32
-        self.stride = 4
-        self.increase_multi = 2
-    elif dimension == 3:
-        self.kernel_size = 176
-        self.stride = 8
-        self.increase_multi = 4
-
-    self.padding = self.kernel_size//2
-    self.num_final_channels = 16
 
     self.structured = structured
-    if self.structured: 
-       if activation is None:
-          self.activate = nn.ReLU()
-       else:
-          self.activate = activation     
-    else: 
-       if activation is None:
-          self.activate = nn.Tanh()
-       else:
-          self.activate = activation
+    self.activate = activation
+
+    self.nfclayers = nfclayers
+    self.verbose = verbose
+    self.coords = coords
+    self.ctoa = {}
+    self.coption = coption
+    self.coordslayers = coordslayers
+    self.smoothinglayers = smoothinglayers
+    self.feedcoordsfc = feedcoordsfc
+    self.feedcoordsoption = feedcoordsoption
+    self.samefilter = samefilter
     
+    self.paramlist = paramlist
+
+    #Build the structure now
+
+    #If a correctly sized list has been provided, set the parameters from there
+    if len(self.paramlist) == 5:
+      self.setparameters(*self.paramlist)
+    else:
+      self.setparameters()
+
+    #Finding the structure of the autoencoder based on the input size and other parameters
+    self.findlayers()
+    
+    #Setting the space filling curves
+    self.set_sfcs(space_filling_orderings)
+    
+    #Setting the modules: building from the blueprint provided by findlayers() and building the actual pytorch modules.
+    self.setmodules()
+  
+  def set_sfcs(self,space_filling_orderings):
+  
+    self.orderings = []
+    self.sfc_plus = []
+    self.sfc_minus = []
+
+    for i in range(self.sfc_nums):
+      if self.input_channel > 1:
+        self.orderings.append(expend_SFC_NUM(space_filling_orderings[i], self.input_channel))
+        if self.NN:
+            self.sfc_plus.append(expend_SFC_NUM(find_plus_neigh(space_filling_orderings[i]), self.input_channel))
+            self.sfc_minus.append(expend_SFC_NUM(find_minus_neigh(space_filling_orderings[i]), self.input_channel))
+      else:
+        self.orderings.append(space_filling_orderings[i])
+        self.sfc_plus.append(find_plus_neigh(space_filling_orderings[i]))
+        self.sfc_minus.append(find_minus_neigh(space_filling_orderings[i]))
+    
+      if self.coordslayers[0]+self.coordslayers[1]>0:
+        #We create the coordinates to append at each layer so that we dont have to build them every single time.
+        self.ctoa[i] = {}
+
+        indices = self.orderings[i][:len(self.orderings[i])//self.input_channel]
+        
+        coords2 = self.coords[:,indices]
+        
+        #Since it is a symmetrical disposition in terms of length of the tensors, we build for the convolutional size of the maximum number of hidden layers we are feeding coords to
+        for j in range(max(self.coordslayers[0],self.coordslayers[1])+1):
+          if self.coption == 2:
+            sparsifiedindices = sparsify(len(self.orderings[i])//self.input_channel,self.conv_size[j])
+            tosub = coords2[:,sparsifiedindices].to("cuda")
+            scalefactor = torch.Tensor([1]).to("cuda") #torch.Tensor([1/(0.007874*self.stride**j)]).to("cuda")
+            difference = (tosub[:,1:] - tosub[:,:-1]).mul(scalefactor)
+            difference2 = (tosub[:,:-1] - tosub[:,1:]).mul(scalefactor)
+            toappend1 = torch.cat((difference, torch.Tensor([[0],[0]]).to("cuda")),1)
+            toappend2 =  torch.cat((torch.Tensor([[0],[0]]).to("cuda"), difference2),1)
+            self.ctoa[i][self.conv_size[j]] = [toappend1,toappend2]
+          
+          if self.coption == 1:
+            sparsifiedindices = sparsify(len(self.orderings[i])//self.sfc_nums,self.conv_size[j])
+            toapp = coords2[:,sparsifiedindices].to("cuda")
+            self.ctoa[i][self.conv_size[j]] = [toapp]
+
+  def setparameters(self, kernel_size = None, stride = None, increase_multi = None, num_final_channels = None, activate = None):
+    if self.dimension == 2: 
+      self.kernel_size = 32
+      self.stride = 4
+      self.increase_multi = 8
+    elif self.dimension == 3:
+      self.kernel_size = 176
+      self.stride = 8
+      self.increase_multi = 4
+
+    if self.structured: 
+      if self.activate is None:
+        self.activate = nn.ReLU() #nn.Hardtanh()    
+    else: 
+      if self.activate is None:
+        self.activate = nn.Tanh()
+
+    #Just in case we have set them
+    if kernel_size != None: self.kernel_size = kernel_size
+    if stride != None: self.stride = stride
+    if increase_multi != None: self.increase_multi = increase_multi
+    if num_final_channels != None: self.num_final_channels = num_final_channels
+    if activate != None: self.activate = activate
+
+    self.padding = self.kernel_size//2
+    self.num_final_channels = 32
+  
+
+  def findlayers(self):
     # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
     self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
-    = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
-    
-    # set up convolutional layers, fully-connected layers and sparse layers
+    = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels, self.nfclayers)
+
+  def setmodules(self):
+  # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
     self.convs = []
 
     #If NN, add a sparse layer 
     if self.NN: self.sps = []
-    for i in range(self.sfc_nums):
-       self.convs.append([])
-       for j in range(self.size_conv):
-           self.convs[i].append(nn.Conv1d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
-           if self.init_param is not None: 
-              self.convs[i][j].weight.data.uniform_(self.init_param[0], self.init_param[1])
-              self.convs[i][j].bias.data.fill_(0.001)
-       self.convs[i] = nn.ModuleList(self.convs[i])
-       if self.NN:
-          self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
+
+    numbertoloopthrough = self.sfc_nums
+
+    if self.samefilter: numbertoloopthrough = 1
+
+    for i in range(numbertoloopthrough):
+
+      self.convs.append([])
+
+      #Keeping track of the number of channels, starting from the number of input components
+      currentchannels = self.channels[0]
+      #Adding the smoothing layer channels
+      for j in range(len(self.smoothinglayers[0])):
+        self.convs[i].append(nn.Conv1d(currentchannels, self.smoothinglayers[0][j][0], kernel_size=self.smoothinglayers[0][j][1], stride=1, padding=self.smoothinglayers[0][j][1]//2)) #Kernel size has to be an odd number!
+        currentchannels = self.smoothinglayers[0][j][0]
+
+      #Adding the convolutional layers with stride>1
+      for j in range(self.size_conv):
+        self.convs[i].append(nn.Conv1d(currentchannels, self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+        currentchannels = self.channels[j+1]
+        if self.init_param is not None: 
+          self.convs[i][j].weight.data.uniform_(self.init_param[0], self.init_param[1])
+          self.convs[i][j].bias.data.fill_(0.001)
+      
+      #Updating the input channels size for the convolutional layers for coordinate feeding:
+      for j in range(self.coordslayers[0]):
+        self.convs[i][j] = nn.Conv1d(self.convs[i][j].in_channels + self.dimension*self.coption, self.convs[i][j].out_channels, self.convs[i][j].kernel_size, stride=self.convs[i][j].stride, padding=self.convs[i][j].padding)
+    
+      self.convs[i] = nn.ModuleList(self.convs[i])
+
+      if self.NN:
+        self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
+    
     self.convs = nn.ModuleList(self.convs)
     if self.NN: self.sps = nn.ModuleList(self.sps)
+    
     for i in range(len(self.size_fc) - 2):
-       self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
-       if self.init_param is not None: 
-            self.fcs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
-            self.fcs[i].bias.data.fill_(0.001)
+      if self.feedcoordsfc and i==0:
+        self.fcs.append(nn.Linear(self.size_fc[i]*2, self.size_fc[i+1]))
+      else:
+        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
+      if self.init_param is not None: 
+        self.fcs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
+        self.fcs[i].bias.data.fill_(0.001)
     
     if self.variational:
-       self.layerMu = nn.Linear(self.size_fc[-2], self.size_fc[-1])
-       self.layerSig = nn.Linear(self.size_fc[-2], self.size_fc[-1])
-       self.Normal01 = torch.distributions.Normal(0, 1)
-       if self.init_param is not None: 
-            self.layerMu.weight.data.uniform_(self.init_param[0], self.init_param[1])
-            self.layerMu.bias.data.fill_(0.001)
-            self.layerSig.weight.data.uniform_(self.init_param[0], self.init_param[1])
-            self.layerSig.bias.data.fill_(0.001)
+      self.layerMu = nn.Linear(self.size_fc[-2], self.size_fc[-1])
+      self.layerSig = nn.Linear(self.size_fc[-2], self.size_fc[-1])
+      self.Normal01 = torch.distributions.Normal(0, 1)
+      if self.init_param is not None: 
+        self.layerMu.weight.data.uniform_(self.init_param[0], self.init_param[1])
+        self.layerMu.bias.data.fill_(0.001)
+        self.layerSig.weight.data.uniform_(self.init_param[0], self.init_param[1])
+        self.layerSig.bias.data.fill_(0.001)
     else:
-       self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
-       if self.init_param is not None: 
-            self.fcs[-1].weight.data.uniform_(self.init_param[0], self.init_param[1])
-            self.fcs[-1].bias.data.fill_(0.001)
+      if self.nfclayers>0:
+        self.fcs.append(nn.Linear(self.size_fc[-2], self.size_fc[-1]))
+        if self.init_param is not None: 
+          self.fcs[-1].weight.data.uniform_(self.init_param[0], self.init_param[1])
+          self.fcs[-1].bias.data.fill_(0.001)
+    
     self.fcs = nn.ModuleList(self.fcs)
 
   def get_concat_list(self, x, num_sfc):
-      self_t = ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1)
-      minus_neigh = ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1)
-      plus_neigh = ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)
-      tensor_list = torch.cat((minus_neigh, self_t, plus_neigh), -1)
-      del self_t
-      del minus_neigh
-      del plus_neigh
-      return tensor_list
+    self_t = ordering_tensor(x, self.orderings[num_sfc]).unsqueeze(-1)
+    minus_neigh = ordering_tensor(x, self.sfc_minus[num_sfc]).unsqueeze(-1)
+    plus_neigh = ordering_tensor(x, self.sfc_plus[num_sfc]).unsqueeze(-1)
+    tensor_list = torch.cat((minus_neigh, self_t, plus_neigh), -1)
+    del self_t
+    del minus_neigh
+    del plus_neigh
+    return tensor_list
 
 
   def forward(self, x):
@@ -167,35 +290,92 @@ class SFC_CAE_Encoder(nn.Module):
     x: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''
+
+    if self.verbose: print("ENCODER. Input size", x.shape)
+
     xs = []
-    if self.components > 1: 
-        x = x.permute(0, -1, -2)
-        x = x.reshape(-1, x.shape[-2] * x.shape[-1])
+
+    if self.components > 1:
+      print(x.shape)
+      x = x.permute(0, -1, -2)
+      print(x.shape)
+      x = x.reshape(-1, x.shape[-2] * x.shape[-1])
+      print(x.shape)
     if self.self_concat > 1: x = torch.cat([x] * self.self_concat, -1)
+    
+    if self.verbose: print("ENCODER. After some weird stuff:", x.shape)
+
+    
+    toloopthrough = self.sfc_nums
+
+    if self.samefilter:
+      toloopthrough = 1
     
     # 1D Conv Layers
     for i in range(self.sfc_nums):
-        if self.NN:
-           tt_list = self.get_concat_list(x, i)
-           tt_nn = self.sps[i](tt_list)
-           a = self.activate(tt_nn)
-           del tt_list
-           del tt_nn
-        else:
-           a = ordering_tensor(x, self.orderings[i])
-        if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
-        else: a = a.unsqueeze(1)
-        for j in range(self.size_conv):
-            a = self.activate(self.convs[i][j](a))
-        xs.append(a.view(-1, a.size(1)*a.size(2)))
-        del a
+      if self.NN:
+        tt_list = self.get_concat_list(x, i)
+        if self.verbose: print("ENCODER. Before nn, curve", str(i) + ":", tt_list.shape)
+        tt_nn = self.sps[i](tt_list)
+        if self.verbose: print("ENCODER. After nn, curve", str(i) + ":", tt_list.shape)
+        a = self.activate(tt_nn)
+        del tt_list
+        del tt_nn
+      else:
+        if self.verbose: print("ENCODER. Before ordering:", x.shape, "curve", str(i))
+        a = ordering_tensor(x, self.orderings[i])
+        if self.verbose: print("ENCODER. After ordering:", a.shape, "curve", str(i))
+      if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
+      else: a = a.unsqueeze(1)
+      for j in range(self.size_conv+len(self.smoothinglayers[0])):
+          if self.verbose: print("ENCODER. Before going through convolutional layer " + str(j), "curve", str(i) + ":", a.shape)
+          
+          #If the coordinate option is 2 and the layer we are going through is within the coordlayers of the encoder, we concatenate to the difference
+          #ctoa stands for coordinates to append
+          if self.coption == 2 and j < self.coordslayers[0]:
+            a = torch.cat((a,self.ctoa[i][a.shape[2]][0].repeat(a.shape[0],1,1),self.ctoa[i][a.shape[2]][1].repeat(a.shape[0],1,1)),1)
+            if self.verbose: print("ENCODER. After having coords added on convolutional layer " + str(j), "curve", str(i) + ":", a.shape)
+          
+          #If the coordinate option is 2 and the layer we are going through is within the coordlayers of the encoder, we concatenate to the coordinates
+          #ctoa stands for coordinates to append
+          if self.coption == 1 and j < self.coordslayers[0]:
+            a = torch.cat((a,self.ctoa[i][a.shape[2]][0].repeat(a.shape[0],1,1)),1)
+            if self.verbose: print("ENCODER. After having coords added on convolutional layer " + str(j), "curve", str(i) + ":", a.shape) 
+          
+          if self.samefilter: a = self.activate(self.convs[0][j](a))
+          else: a = self.activate(self.convs[i][j](a))
+          if self.verbose: print("ENCODER. After going through convolutional layer " + str(j), "curve", str(i) + ":", a.shape)
+      xs.append(a.view(-1, a.size(1)*a.size(2)))
+      del a
     del x
     if self.sfc_nums > 1: x = torch.cat(xs, -1)
     else: x = xs[0]
     for i in range(self.sfc_nums): del xs[0] # clear memory 
 
     # fully connect layers
-    for i in range(len(self.fcs)): x = self.activate(self.fcs[i](x))
+    for i in range(len(self.fcs)):
+      if self.verbose: print("ENCODER. Before going through fully connected layer " + str(i) + ":", x.shape)
+      
+      if self.feedcoordsfc and i==0:
+        coords2 = self.coords[:,self.orderings[i][:len(self.orderings[i])//2]]
+        sparsifiedindices = sparsify(len(self.orderings[i])//2,x.shape[1]//2)
+        tosub = coords2[:,sparsifiedindices].to("cuda").view(-1,x.shape[1]).repeat(x.shape[0],1)
+        if self.feedcoordsoption == 0:
+          x = torch.cat((x, tosub),1)
+        
+        #Similarly to the coordslayers, if we have turned on the feedcoordsoption to the fully connected layers, we feed either the coords directly or their difference
+        if self.feedcoordsoption == 1:
+          subtracted = torch.cat((tosub[:,1:] - tosub[:,:1],torch.Tensor([0]).to("cuda")),0)
+          x = torch.cat((x, subtracted),0)
+        
+        if self.feedcoordsoption == 2:
+          normalize_tensor(subtracted)
+          x = torch.cat((x, normalise_tensor(subtracted)),0)
+
+        if self.verbose: print("ENCODER. After having coords added on fully connected layer " + str(i), x.shape) 
+
+      x = self.activate(self.fcs[i](x))
+      if self.verbose: print("ENCODER. Before going through fully connected layer " + str(i) + ":", x.shape)
 
     # variational sampling
     if self.variational:
@@ -205,7 +385,9 @@ class SFC_CAE_Encoder(nn.Module):
       x = mu + sigma * sample
       kl_div = ((sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()) / (mu.shape[0] * self.input_size * self.components)
       return x, kl_div
-    else: return x
+    else:
+      if self.verbose: print("ENCODER. Output size", x.shape)
+      return x
 
 
 ###############################################################   Decoder Part ###################################################################
@@ -258,56 +440,113 @@ class SFC_CAE_Decoder(nn.Module):
     self.sfc_plus = []
     self.sfc_minus = []
     self.sfc_nums = len(inv_space_filling_orderings)
+
+    self.structured = encoder.structured
+    self.activate = encoder.activate
+    self.output_linear = output_linear
+
+    self.size_fc = encoder.size_fc
+    self.size_conv = encoder.size_conv
+    self.conv_size = encoder.conv_size
+    self.init_param = encoder.init_param
+    self.channels = encoder.channels
+    self.output_paddings = encoder.output_paddings
+
+    self.verbose = encoder.verbose
+    # self.coords = encoder.coords
+    self.coption = encoder.coption
+    self.ctoa = encoder.ctoa
+    self.coordslayers = encoder.coordslayers
+    self.smoothinglayers = encoder.smoothinglayers
+    self.samefilter = encoder.samefilter
+
+    self.set_sfcs(inv_space_filling_orderings)
+  
+    #These were already done with the encoder
+    # self.setparameters()
+    # self.findlayers()
+
+    self.setmodules()
     
+  def set_sfcs(self, inv_space_filling_orderings):
+    
+    self.orderings = []
+    self.sfc_plus = []
+    self.sfc_minus = []
+
     # expend sfc_indexs
     for i in range(self.sfc_nums):
         if self.input_channel > 1:
-           self.orderings.append(expend_SFC_NUM(inv_space_filling_orderings[i], self.input_channel))
-           if self.NN:
+          self.orderings.append(expend_SFC_NUM(inv_space_filling_orderings[i], self.input_channel))
+          if self.NN:
               self.sfc_plus.append(expend_SFC_NUM(find_plus_neigh(inv_space_filling_orderings[i]), self.input_channel))
               self.sfc_minus.append(expend_SFC_NUM(find_minus_neigh(inv_space_filling_orderings[i]), self.input_channel))
         else:
-           self.orderings.append(inv_space_filling_orderings[i])
-           self.sfc_plus.append(find_plus_neigh(inv_space_filling_orderings[i]))
-           self.sfc_minus.append(find_minus_neigh(inv_space_filling_orderings[i]))          
-    
+          self.orderings.append(inv_space_filling_orderings[i])
+          self.sfc_plus.append(find_plus_neigh(inv_space_filling_orderings[i]))
+          self.sfc_minus.append(find_minus_neigh(inv_space_filling_orderings[i]))          
+  
+  def setmodules(self):
     self.fcs = []
     # set up fully-connected layers
-    for k in range(1, len(encoder.size_fc)):
-       self.fcs.append(nn.Linear(encoder.size_fc[-k], encoder.size_fc[-k-1]))
-       if encoder.init_param is not None: 
-            self.fcs[k - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
+    for k in range(1, len(self.size_fc)):
+      self.fcs.append(nn.Linear(self.size_fc[-k], self.size_fc[-k-1]))
+      if self.init_param is not None: 
+            self.fcs[k - 1].weight.data.uniform_(self.init_param[0], self.init_param[1])
             self.fcs[k - 1].bias.data.fill_(0.001) 
     self.fcs = nn.ModuleList(self.fcs)
 
     # set up convolutional layers, fully-connected layers and sparse layers
     self.convTrans = []
     self.sps = []
-    for i in range(self.sfc_nums):
-       self.convTrans.append([])
-       for j in range(1, encoder.size_conv + 1):
-           self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = encoder.output_paddings[j - 1]))
-           if encoder.init_param is not None: 
-              self.convTrans[i][j - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
-              self.convTrans[i][j - 1].bias.data.fill_(0.001)       
-       self.convTrans[i] = nn.ModuleList(self.convTrans[i])
-       if self.NN:
+    
+    numbertoloopthrough = self.sfc_nums
+
+    if self.samefilter: numbertoloopthrough = 1
+
+    for i in range(numbertoloopthrough):
+      self.convTrans.append([])
+
+      for j in range(1, self.size_conv + 1):
+          self.convTrans[i].append(nn.ConvTranspose1d(self.channels[-j], self.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=self.kernel_size//2, output_padding = self.output_paddings[j - 1]))
+          if self.init_param is not None: 
+              self.convTrans[i][j - 1].weight.data.uniform_(self.init_param[0], self.init_param[1])
+              self.convTrans[i][j - 1].bias.data.fill_(0.001)   
+      
+      #If the length of the current whatever is bigger than 0, that means we have to change the output channels to the channels of our first smoothing layer
+      if len(self.smoothinglayers[1])>0:
+        self.convTrans[i][-1] = nn.ConvTranspose1d(self.convTrans[i][-1].in_channels, self.smoothinglayers[1][0][0], self.convTrans[i][-1].kernel_size, stride=self.convTrans[i][-1].stride, padding=self.convTrans[i][-1].padding, output_padding = self.convTrans[i][-1].output_padding)
+
+      #Adding the smoothing layer channels up until the final one
+      for j in range(len(self.smoothinglayers[1])-1):
+        self.convTrans[i].append(nn.ConvTranspose1d(self.smoothinglayers[1][j][0], self.smoothinglayers[1][j+1][0], kernel_size=self.smoothinglayers[1][j][1], stride=1, padding=self.smoothinglayers[1][j][1]//2)) #Kernel size has to be an odd number!
+      
+      #And then adding the final one
+      if len(self.smoothinglayers[1])>0:
+        self.convTrans[i].append(nn.ConvTranspose1d(self.smoothinglayers[1][-1][0], self.components, kernel_size=self.smoothinglayers[1][-1][1], stride=1, padding=self.smoothinglayers[1][-1][1]//2)) #Kernel size has to be an odd number!
+
+      #Updating the input channels size for the convolutional layers for coordinate feeding:
+      for j in range(self.coordslayers[1]):
+        self.convTrans[i][-j-1] = nn.ConvTranspose1d(self.convTrans[i][-j-1].in_channels + self.dimension*self.coption, self.convTrans[i][-j-1].out_channels, self.convTrans[i][-j-1].kernel_size, stride=self.convTrans[i][-j-1].stride, padding=self.convTrans[i][-j-1].padding)
+
+      self.convTrans[i] = nn.ModuleList(self.convTrans[i])
+      if self.NN:
           self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= (1/3) / self.self_concat, num_neigh = 3 * self.self_concat))  
-       else:
+      else:
           if self.self_concat > 1:
-             self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.self_concat, num_neigh = self.self_concat))
+            self.sps.append(NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.self_concat, num_neigh = self.self_concat))
 
     self.convTrans = nn.ModuleList(self.convTrans)
     self.sps = nn.ModuleList(self.sps)         
 
-    self.split = encoder.size_fc[0] // self.sfc_nums
+    self.split = self.size_fc[0] // self.sfc_nums
 
     # final sparse layer combining SFC outputs, those two approaches are not as good as the simple [tensor_list].sum(-1)
     # if self.sfc_nums > 1: self.final_sp = nn.Parameter(torch.ones(self.sfc_nums) / self.sfc_nums)
     # if self.sfc_nums > 1: self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
 
     # final linear activate (shut down it if you have standardlized your data first)
-    if output_linear:
+    if self.output_linear:
       self.out_linear_weights = []
       self.out_linear_bias = []
       for i in range(self.components):
@@ -337,30 +576,53 @@ class SFC_CAE_Decoder(nn.Module):
     z: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''
+    
+    if self.verbose: print("DECODER. Input size", x.shape)
+    
     for i in range(len(self.fcs)):
-        x = self.activate(self.fcs[i](x))
+      if self.verbose: print("DECODER. Before going through fully connected layer " + str(i) + ":", x.shape)
+      x = self.activate(self.fcs[i](x))
+      if self.verbose: print("DECODER. Before going through fully connected layer " + str(i) + ":", x.shape)
     
     x = x.view(-1, self.split, self.sfc_nums)
     zs = []
     for i in range(self.sfc_nums):
-        b = x[..., i].view(-1, self.num_final_channels, self.inv_conv_start)
-        for j in range(self.size_conv):
-            b = self.activate(self.convTrans[i][j](b))
-        b = b.view(-1, self.input_size * self.input_channel)
-        if self.NN:
-           tt_list = self.get_concat_list(b, i)
-           tt_nn = self.sps[i](tt_list)
-           b = self.activate(tt_nn)
-           del tt_list
-           del tt_nn
+      b = x[..., i].view(-1, self.num_final_channels, self.inv_conv_start)
+      
+      for j in range(self.size_conv+len(self.smoothinglayers[1])):
+        if self.verbose: print("DECODER. Before going through convolutional layer " + str(j), "curve", str(i) + ":", b.shape)
+
+        #If the coordinate option is 2 and the layer we are going through is within the coordlayers of the encoder, we concatenate to the difference
+        #ctoa stands for coordinates to append
+        if self.coption == 2 and self.size_conv + len(self.smoothinglayers[1]) - j <= self.coordslayers[1]:
+          b = torch.cat((b,self.ctoa[i][b.shape[2]][0].repeat(b.shape[0],1,1),self.ctoa[i][b.shape[2]][1].repeat(b.shape[0],1,1)),1)
+          if self.verbose: print("DECODER. After having coords added on convolutional layer " + str(j), "curve", str(i) + ":", b.shape)
+        
+        #If the coordinate option is 2 and the layer we are going through is within the coordlayers of the encoder, we concatenate to the coordinates
+        #ctoa stands for coordinates to append
+        if self.coption == 1 and self.size_conv + len(self.smoothinglayers[1]) - j <= self.coordslayers[1]:
+          b = torch.cat((b,self.ctoa[i][b.shape[2]][0].repeat(b.shape[0],1,1)),1)
+          if self.verbose: print("DECODER. After having coords added on convolutional layer " + str(j), "curve", str(i) + ":", b.shape) 
+        
+        if self.samefilter: b = self.activate(self.convTrans[0][j](b))
+        else: b = self.activate(self.convTrans[i][j](b))
+
+        if self.verbose: print("DECODER. After going through convolutional layer " + str(j), "curve", str(i) + ":", b.shape)
+      b = b.view(-1, self.input_size * self.input_channel)
+      if self.NN:
+        tt_list = self.get_concat_list(b, i)
+        tt_nn = self.sps[i](tt_list)
+        b = self.activate(tt_nn)
+        del tt_list
+        del tt_nn
+      else:
+        if self.self_concat > 1:
+          b = ordering_tensor(b, self.orderings[i]).view(-1, self.self_concat, self.components * self.input_size).permute(0, -1, -2)
+          b = self.activate(self.sps[i](b))
         else:
-           if self.self_concat > 1:
-              b = ordering_tensor(b, self.orderings[i]).view(-1, self.self_concat, self.components * self.input_size).permute(0, -1, -2)
-              b = self.activate(self.sps[i](b))
-           else:
-              b = ordering_tensor(b, self.orderings[i])
-        zs.append(b.unsqueeze(-1))
-        del b
+          b = ordering_tensor(b, self.orderings[i])
+      zs.append(b.unsqueeze(-1))
+      del b
     del x
     if self.sfc_nums > 1: 
         tt_list = torch.cat(zs, -1).sum(-1)
@@ -383,10 +645,12 @@ class SFC_CAE_Decoder(nn.Module):
                 ts.append(t.unsqueeze(-1))
             z = torch.cat(ts, -1)
             del ts
+        if self.verbose: print("DECODER. Output size", z.shape)
         return z
     else: 
         if self.output_linear:
             z = self.out_linear_weights[0] * z + self.out_linear_bias[0]
+        if self.verbose: print("DECODER. Output size", z.shape)
         return z
 
 
@@ -406,7 +670,17 @@ class SFC_CAE(nn.Module):
                activation = None,
                variational = False,
                force_initialising_param = None,
-               output_linear = False):
+               output_linear = False,
+               nfclayers = 0,
+               verbose = False,
+               coords = None,
+               coption = 0,
+               coordslayers = [0,0],
+               smoothinglayers = [[],[]],
+               feedcoordsfc = False,
+               feedcoordsoption = 0,
+               samefilter = False,
+               paramlist = []):
     '''
     SFC_CAE Class combines the SFC_CAE_Encoder and the SFC_CAE_Decoder with an Autoencoder latent space.
 
@@ -425,6 +699,16 @@ class SFC_CAE(nn.Module):
     variational: [bool] whether this is a variational autoencoder or not.
     force_initialising_param: [1d-array or 1d-list] a interval to initialize the parameters of the 1D Conv/TransConv, Fully-connected Layers, e.g. [a, b]
     output_linear: [bool] default is false, if turned on, a linear activation will be applied at the output.
+    nfclayers: [int] number of fully connected layers to implement at the end of the encoder.
+    verbose: [bool] whether the size of the tensors should be printed as they go through hidden layers
+    coords: [torch.Tensor] tensor containing the ndimensional coordinates of size input_size of the fixed mesh of interest
+    coption: [int] If ==0, no coordinates are fed to the coordslayers. If == 1, straight up coordinates are fed. If == 2, distances of each point to its neighbours on the sfc are fed
+    coordslayers: [list] a list of two ints eg: [1,3], decides how many layers at the beginning of the encoder and at the end of decoder are fed coordinates
+    smoothinglayers: [list] a list of two lists [[],[]], which can be filled with (channels,kernel_size) tuples to create smoothing layers at the beginnig or at the end of the autoencoder's structure. Consult readme.
+    feedcoordsfc: [bool] whether to feed cordinates to the first of the fully connected layers
+    feedcoordsoption: [int] same as coption
+    samefilter: [bool] whether to use the same filter on all curves provided to the SFC-CAE.
+    paramlist: [list] list of [kernel_size, increase_multi, stride, num_final_channels, activation] parameters to provide to the set_parameters() method
 
     Output:
     ---
@@ -435,6 +719,10 @@ class SFC_CAE(nn.Module):
          self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
+
+    #If we are asking for coordslayers without 
+    if coordslayers[0]+coordslayers[1] > 0 and coption > 0 and coords == None:
+      raise ValueError('You have to provide coordinates for coordinates to be fed')
 
     super(SFC_CAE, self).__init__()
     self.encoder = SFC_CAE_Encoder(size,
@@ -447,9 +735,24 @@ class SFC_CAE(nn.Module):
                           space_filling_orderings,
                           activation,
                           variational,
-                          force_initialising_param)
+                          force_initialising_param,
+                          nfclayers,
+                          verbose,
+                          coords,
+                          coption,
+                          coordslayers,
+                          smoothinglayers,
+                          feedcoordsfc,
+                          feedcoordsoption,
+                          samefilter,
+                          paramlist)
+    
     self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
 
+  def set_sfcs(self, sfcs, isfcs):
+    self.encoder.set_sfcs(sfcs)
+    self.decoder.set_sfcs(isfcs)
+  
   def output_structure(self):
     '''
     This function is a automated LaTeX table generater for the autoencoder.
@@ -602,6 +905,7 @@ class SFC_CAE(nn.Module):
    '''
    x - [Torch.Tensor.float] A batch of fluid snapshots from the data-loader
    '''
+
    # return value for VAE 
    if self.encoder.variational:
       z, kl_div = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}, as well as record the KL divergence.

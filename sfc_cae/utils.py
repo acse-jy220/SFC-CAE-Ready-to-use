@@ -1,13 +1,14 @@
 """
 This module contains extra functions for training.py/ sfc_cae.py as supplement.
-Author: Jin Yu
-Github handle: acse-jy220
+Author: Pozzetti Andrea
+Github handle: acse-ap2920
 """
 
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 import space_filling_decomp_new as sfc
+import x_conv_fixed_length as sfc_interpolate
 import sys
 import vtk
 import vtktools
@@ -21,6 +22,7 @@ import matplotlib.colors as colors
 import matplotlib.tri as tri
 import meshio
 import re
+import wandb
 
 # create an animation
 from matplotlib import animation
@@ -119,6 +121,51 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
         bar.finish()
         return torch.cat(data, -1)
 
+def read_in_files_adaptive(data_path, file_format='vtu', vtu_fields=["Velocity"]):
+  data = os.listdir(data_path) #glob.glob(data_path + "*")
+  num_data = len(data)
+  file_prefix = data_path + "fpc_cg_"
+  file_format = '.vtu'
+  print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+  cnt_progress = 0
+  if (file_format == ".vtu"):
+      print("Read in vtu Data......\n")
+      bar=progressbar.ProgressBar(maxval=num_data)
+      bar.start()
+      data = []
+      coords = [0]
+      cells = []
+      start = 0
+      while(True):
+          if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+              print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+              start += 1
+          else: break
+      for i in range(start, num_data + start):
+          data.append([])
+          print(F'{file_prefix}%d{file_format}' % i)
+          vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
+          if not np.array_equal(coords[-1],vtu_file.points):
+              coords.append(vtu_file.points)
+              cells.append(vtu_file.cells_dict)
+              print('mesh adapted at snapshot %d' % i)
+          for j in range(len(vtu_fields)):
+              vtu_field = vtu_fields[j]
+              if not vtu_field in vtu_file.point_data.keys():
+                  raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
+              field = vtu_file.point_data[vtu_field]
+              if j == 0:
+                  if field.ndim == 1: field = field.reshape(field.shape[0], 1)
+                  print(field.shape,coords[i+1][:,0].shape)
+                  data[i - start] = torch.from_numpy(np.concatenate((field[:,:2],coords[i+1][:,:2]),axis=1)).permute((1,0))
+          # print(data[i - start].shape)
+          cnt_progress +=1
+          bar.update(cnt_progress)
+      bar.finish()
+      coords.pop(0)
+  return data, coords, cells
+
+
 def get_simulation_index(num, simulation):
     '''
     This function returns the indexes for a square grid simulation that implemented in advection_block_analytical.py.
@@ -206,6 +253,41 @@ def standardlize_tensor(tensor, lower = -1, upper = 1):
         tk = (upper - lower) / (tensor.max() - tensor.min())
         tb = (tensor.max() * lower - tensor.min() * upper) / (tensor.max() - tensor.min())
         return tensor * tk + tb, tk, tb
+
+def standardlize_listoftensors_adaptive(tensors, lower = -1, upper = 1):
+    '''
+    This function maps a torch.tensor to a interval [lower, upper] channel-wisely.
+    
+    Input: 
+    ---
+    tensor: [torch.FloatTensor] tensor input, last dimension represents channel.
+
+    Output:
+    ---
+    3-tuple: [torch.FloatTensor] standardlized tensor, [torch.FloatTensor] tk for each channel, [torch.FloatTensor] tb for each channel.
+    where standardlized tensor is belong to [lower, upper] for each channel
+
+    '''
+    
+    tk = torch.zeros(4)
+    tb = torch.zeros(4)
+    for i in range(4):
+      currentmax = 0
+      currentmin = 0
+      for j in range(len(tensors)):
+        tmax = tensors[j][i,...].max()
+        tmin = tensors[j][i,...].min()
+        if currentmax<tmax:
+          currentmax = tmax
+        if currentmin>tmin:
+          currentmin = tmin
+      tk[i] = (upper - lower) /(currentmax - currentmin)
+      tb[i] = (currentmax * lower - currentmin * upper) /(currentmax - currentmin)
+      for j in range(len(tensors)):     
+        tensors[j][i,...] *= tk[i]
+        tensors[j][i,...] += tb[i]
+    
+    return tensors, tk, tb
 
 def denormalize_tensor(tensor, t_mean, t_std):
     '''
@@ -635,6 +717,9 @@ class NearestNeighbouring(nn.Module):
         self.weights = nn.Parameter(torch.ones(size, num_neigh) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(size))
 
+    def __repr__(self):
+      return "NearestNeighbouring(Size="+str(self.size)+", num_neigh="+str(self.num_neigh)+")"
+
     def forward(self, tensor_list):
         tensor_list *= self.weights
         return tensor_list.sum(-1) + self.bias
@@ -658,7 +743,7 @@ def expend_SFC_NUM(sfc_ordering, partitions):
         sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
     return sfc_ext
 
-def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
+def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels, nfclayers = 0):
     '''
     This function contains the algorithm for finding 1D convolutional layers and fully-connected layers depend on the input, see thesis
 
@@ -687,9 +772,23 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     output_paddings = [size % stride]
     conv_size = [size]
 
+    intval = dims_latent
+
+    if nfclayers>0:
+      intval = min(4000, (stride**0.5)*dims_latent*((stride)**(nfclayers)))
+    
+    if num_final_channels * sfc_nums > intval:
+      intval = num_final_channels * sfc_nums
+      print("Compression to", dims_latent, "variables was not possible through convolutional layers alone! Stopping at", intval , "dims")
+
     # find size of convolutional layers 
-    while size * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
+    while size * num_final_channels * sfc_nums > intval: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
+        # print("target:", intval)
+        # print("size:", size)
+        # print("actual size:", size * num_final_channels * sfc_nums)
         size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
+        # print("after size:", size)
+        # print("after actual size:", size * num_final_channels * sfc_nums)
         conv_size.append(size)
         if num_final_channels >= input_channel * increase_multi: 
             input_channel *= increase_multi
@@ -698,20 +797,23 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
         else: 
             channels.append(num_final_channels)
             output_paddings.append(size % stride)
-       
+        
     # find size of fully-connected layers 
-    inv_conv_start = size
-    size *= sfc_nums * num_final_channels
-    size_fc = [size]
-    # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
-    while size // (stride ** 1.5) > dims_latent:  
-        size //= stride
-        if size * stride < 100 and size < 50: break # we do not not want more than two FC layers with size < 100, also we don't want too small size at the penultimate layer.
-        size_fc.append(size)
-    size_fc.append(dims_latent)
+    if nfclayers>0:
+      inv_conv_start = size
+      size *= sfc_nums * num_final_channels
+      size_fc = [size]
+      # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
+      while size // (stride ** 1.5) > dims_latent:  
+          size //= stride
+          if size * stride < 100 and size < 50: break # we do not not want more than two FC layers with size < 100, also we don't want too small size at the penultimate layer.
+          size_fc.append(size)
+      size_fc.append(dims_latent)
+    else:
+      size_fc = [size*sfc_nums*num_final_channels]
+      inv_conv_start = size
 
     return conv_size, len(channels) - 1, size_fc, channels, inv_conv_start, np.array(output_paddings[::-1][1:])
-
 
 #################################################### Extension functions for data post-processing ######################################################################
 
@@ -970,7 +1072,9 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
                 tensor[...,k] += tb[k] 
             tensor = tensor.to(model_device)
             if variational: reconsturcted_tensor, _ = autoencoder(tensor)
-            else: reconsturcted_tensor = autoencoder(tensor)
+            else:
+              print(tensor.shape)
+              reconsturcted_tensor = autoencoder(tensor)
             print('Reconstruction MSE error for snapshot %d: %f' % (i, nn.MSELoss()(tensor, reconsturcted_tensor).item()))
             reconsturcted_tensor = reconsturcted_tensor.to('cpu') 
             for k in range(tensor.shape[-1]):
@@ -988,3 +1092,14 @@ def result_vtu_to_vtu(data_path, save_path, vtu_fields, autoencoder, tk, tb, sta
             bar.update(cnt_progress)
     bar.finish()
     print('\n Finished reconstructing vtu files.')
+
+def interpolate(x, conc, nonods_l):
+  nscalar = conc.shape[0]
+  nonods = conc.shape[1]
+  ndim = x.shape[0]
+  x_l = torch.zeros((2,4000))
+  conc_l =  torch.zeros((2,4000))
+  
+  x_l,conc_l = sfc_interpolate.x_conv_fixed_length(x,conc,nonods_l,nonods,ndim,nscalar)
+
+  return x_l, conc_l

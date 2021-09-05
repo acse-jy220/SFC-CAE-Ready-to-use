@@ -1,9 +1,6 @@
 """
 This module contains useful funtions for advection block/gaussian problems on structured grid, e.g. generating space-filling curves on structured grids,
 the Framework could be passed to any similar fiuld simulations on a structured grid.
-
-Author: Jin Yu
-Github handle: acse-jy220
 """
 
 from sfc_cae.simple_hilbert import *

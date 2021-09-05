@@ -1,7 +1,7 @@
 """
 This script contains the main functions for loading/training/saving the autoencoder.
-Author: Jin Yu
-Github handle: acse-jy220
+Author: Pozzetti Andrea
+Github handle: acse-ap2920
 """
 
 import torch  # Pytorch
@@ -90,6 +90,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   '''
   autoencoder.train()
   train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+
   if variational: 
      whole_KL = 0
      whole_MSE = 0
@@ -119,7 +120,150 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
   else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
-def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
+def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader, valshuffle = False, sfcs = [], isfcs = []):
+  '''
+  This function is implemented for validating the model.
+
+  Input:
+  ---
+  autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+  variational: [bool] whether this is a variational autoencoder or not.
+  optimizer: [torch.optim.Optimizer] Pytorch optimizer object for the model
+  criterion: [torch.nn.MSELoss() or other] the obejctive function for training.
+  other_metric: [reMSELoss() or other] other metric for evaluation
+  dataloader: [torch.utils.data.DataLoader] the dataloader for evaluation.
+  valshuffle: [bool] if we are going to shuffle through validation curves instead of using the autoencoder's preset one
+  sfcs: [list] of space filling orderings to shuffle through in case valshuffle is True
+  isfcs: [list] of inverse space filling orderings to shuffle through
+
+  Output:
+  ---
+  validation_loss / data_length: [torch.float with no grad] validation loss for the batch
+  valid_loss_other/ data_length:  [torch.float with no grad] other metric validation loss for the batch
+
+  (variational Optional)
+  whole_MSE/ data_length: [torch.float with no grad] MSE loss for the batch
+  whole_KL/ data_length: [torch.float with no grad] KL divergence loss for the batch
+  '''
+  autoencoder.eval()
+  validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  if variational: 
+    whole_KL = 0
+    whole_MSE = 0
+  count = 0
+  for batch in dataloader:
+    if valshuffle:
+      indices = [random.randint(0,len(sfcs)-1) for i in range(autoencoder.encoder.sfc_nums)]
+      autoencoder.set_sfcs([sfcs[i] for i in indices],[isfcs[i] for i in indices])
+    
+    with torch.no_grad():
+      count += batch.size(0)
+      batch = batch.to(device)  # Send batch of images to the GPU
+      if variational:
+          x_hat, KL = autoencoder(batch)
+          MSE = criterion(batch, x_hat)
+          whole_KL += KL.item() * batch.size(0)
+          whole_MSE += MSE.item() * batch.size(0)
+          Loss = MSE + KL # MSE loss plus KL divergence
+      else:
+          x_hat = autoencoder(batch)
+          Loss = criterion(batch, x_hat)  # Calculate MSE loss
+      other_MSE = other_metric(batch, x_hat)
+      validation_loss += Loss * batch.size(0)
+      valid_loss_other += other_MSE * batch.size(0)
+      del batch
+      del x_hat
+      del Loss
+      del other_MSE
+
+  if variational: return validation_loss / data_length, valid_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
+  else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
+
+
+def train_interpol(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
+  '''
+  This function is implemented for training the model.
+
+  Input:
+  ---
+  autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+  variational: [bool] whether this is a variational autoencoder or not.
+  optimizer: [torch.optim.Optimizer] Pytorch optimizer object for the model
+  criterion: [torch.nn.MSELoss() or other] the obejctive function for training.
+  other_metric: [reMSELoss() or other] other metric for evaluation
+  dataloader: [torch.utils.data.DataLoader] the dataloader for evaluation.
+
+  Output:
+  ---
+  train_loss / data_length: [torch.float with no grad] train loss for the batch
+  train_loss_other/ data_length:  [torch.float with no grad] other metric train loss for the batch
+
+  (variational Optional)
+  whole_MSE/ data_length: [torch.float with no grad] MSE loss for the batch
+  whole_KL/ data_length: [torch.float with no grad] KL divergence loss for the batch
+  '''
+  autoencoder.train()
+  train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+
+  if variational: 
+     whole_KL = 0
+     whole_MSE = 0
+  count = 0
+  for batch in dataloader:
+      count += batch.size(0)
+      numsfcs = (batch.shape[1]-4)//2
+    
+      #Getting random indices
+      print(count)
+      print(batch.shape)
+      # # print(batch[:,:4,:])
+      # indices = np.array([4+np.random.randint(0,numsfcs-1) for i in range(autoencoder.encoder.sfc_nums)])
+
+      # #Selecting and setting sfcs and isfcs
+      # sfcs = np.asarray(batch[0,indices,:].int())[0]
+
+      # print("B4 ordering", batch.shape)
+      # batch = batch[:,:4,sfcs]
+      # print("After ordering", batch.shape)
+      # # print(batch)
+
+      # for i in range(batch.shape[0]):
+      #   x_l, conv_l = interpolate(batch[i,2:4,:], batch[i,:2,:],3571)
+      #   # print("xlshape",x_l.shape)
+      #   # print(x_l)
+      #   batch2= torch.cat((torch.Tensor(conv_l), torch.Tensor(x_l)),0).unsqueeze(0)
+
+      # print("Batch2 shape", batch2.shape)
+      # print(batch2)
+      # batch2 = batch2.permute(0,2,1).to("cuda")  # Send batch of images to the GPU
+
+      batch = batch.permute(0,2,1).to("cuda")
+
+      optimizer.zero_grad()  # Set optimiser grad to 0
+      if variational:
+        x_hat, KL = autoencoder(batch)
+        MSE = criterion(batch, x_hat)
+        whole_KL += KL.item() * batch.size(0)
+        whole_MSE += MSE.item() * batch.size(0)
+        Loss = MSE + KL # MSE loss plus KL divergence
+      else:
+        x_hat = autoencoder(batch)
+        # print(x_hat.shape, batch2.shape)
+        Loss = criterion(batch[:,:,:2], x_hat)  # Calculate MSE loss
+      with torch.no_grad(): other_MSE = other_metric(batch[:,:,:2], x_hat)  # Calculate (may be) relative loss
+      Loss.backward()  # Back-propagate
+      optimizer.step()
+      train_loss += Loss * batch.size(0)
+      train_loss_other += other_MSE * batch.size(0)
+      del x_hat
+      del batch
+      # del batch2
+      del Loss
+      del other_MSE
+  if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
+  else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
+
+def validate_interpol(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
   '''
   This function is implemented for validating the model.
 
@@ -148,6 +292,10 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
     whole_MSE = 0
   count = 0
   for batch in dataloader:
+    print(count)
+
+    batch = batch.permute(0,2,1).to("cuda")
+
     with torch.no_grad():
       count += batch.size(0)
       batch = batch.to(device)  # Send batch of images to the GPU
@@ -159,8 +307,8 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
           Loss = MSE + KL # MSE loss plus KL divergence
       else:
           x_hat = autoencoder(batch)
-          Loss = criterion(batch, x_hat)  # Calculate MSE loss
-      other_MSE = other_metric(batch, x_hat)
+          Loss = criterion(batch[:,:,:2], x_hat)  # Calculate MSE loss
+      other_MSE = other_metric(batch[:,:,:2], x_hat)
       validation_loss += Loss * batch.size(0)
       valid_loss_other += other_MSE * batch.size(0)
       del batch
@@ -170,6 +318,166 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
 
   if variational: return validation_loss / data_length, valid_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
   else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
+
+def train_shuffle(autoencoder, variational, optimizer, criterion, other_metric, dataloader, sfcs, isfcs):
+  '''
+  This function is implemented for training the model.
+
+  Input:
+  ---
+  autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.
+  variational: [bool] whether this is a variational autoencoder or not.
+  optimizer: [torch.optim.Optimizer] Pytorch optimizer object for the model
+  criterion: [torch.nn.MSELoss() or other] the obejctive function for training.
+  other_metric: [reMSELoss() or other] other metric for evaluation
+  dataloader: [torch.utils.data.DataLoader] the dataloader for evaluation.
+  sfcs: [list] of space filling curves to shuffle through
+  isfcs: [list] of inverse space filling curves to shuffle through
+  Output:
+  ---
+  train_loss / data_length: [torch.float with no grad] train loss for the batch
+  train_loss_other/ data_length:  [torch.float with no grad] other metric train loss for the batch
+
+  (variational Optional)
+  whole_MSE/ data_length: [torch.float with no grad] MSE loss for the batch
+  whole_KL/ data_length: [torch.float with no grad] KL divergence loss for the batch
+  '''
+  autoencoder.train()
+  train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  if variational: 
+     whole_KL = 0
+     whole_MSE = 0
+  count = 0
+  nofsfcs = autoencoder.encoder.sfc_nums
+  for batch in dataloader:
+      count += batch.size(0)
+      indices = [random.randint(0,int(len(sfcs)-1)) for i in range(nofsfcs)]
+      autoencoder.set_sfcs([sfcs[i] for i in indices],[isfcs[i] for i in indices])
+      batch = batch.to(device)  # Send batch of images to the GPU
+      optimizer.zero_grad()  # Set optimiser grad to 0
+      if variational:
+        x_hat, KL = autoencoder(batch)
+        MSE = criterion(batch, x_hat)
+        whole_KL += KL.item() * batch.size(0)
+        whole_MSE += MSE.item() * batch.size(0)
+        Loss = MSE + KL # MSE loss plus KL divergence
+      else:
+        x_hat = autoencoder(batch)
+        # print(batch.shape, x_hat.shape)
+        Loss = criterion(batch, x_hat)  # Calculate MSE loss
+      with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
+      Loss.backward()  # Back-propagate
+      optimizer.step()
+      train_loss += Loss * batch.size(0)
+      train_loss_other += other_MSE * batch.size(0)
+      del x_hat
+      del batch
+      del Loss
+      del other_MSE
+  if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
+  else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
+
+def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric, dataloader, adaptivepadded, interpol):
+  autoencoder.train()
+  train_loss, train_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  
+  for batch in dataloader:
+
+      #Finding out how many sfcs we have at our disposal
+      numsfcs = (batch.shape[1]-4)//2
+
+      #Getting random indices
+      indices = np.array([4+np.random.randint(0,numsfcs-1) for i in range(autoencoder.encoder.sfc_nums)])
+
+      #Selecting and setting sfcs and isfcs
+      sfcs = np.asarray(batch[0,indices,:].int())
+      isfcs = np.asarray(batch[0,numsfcs+indices,:].int())
+
+      if adaptivepadded:
+        autoencoder.encoder.coords = batch[0,2:4,:]
+
+      autoencoder.set_sfcs(sfcs,isfcs)
+      second = time.time()
+
+      # print(sfcs[0][isfcs[0]])
+      if adaptivepadded:
+        batch = batch[:,:2,:].to(device)
+      else:
+        batch = batch[:,:4,:].to(device) # Send batch of images to the GPU, cut to right size
+      
+      optimizer.zero_grad()  # Set optimiser grad to 0
+      x_hat = autoencoder(batch)
+      # print(x_hat.shape, batch.shape, "hi")
+
+      if adaptivepadded:
+        x_hat = x_hat.permute(0,2,1)
+
+      MSE = criterion(batch[:,:2,:], x_hat)  # Calculate MSE loss
+      with torch.no_grad(): other_MSE = other_metric(batch[:,:2,:], x_hat)  # Calculate (may be) relative loss
+      MSE.backward()  # Back-propagate
+    #   if torch.cuda.device_count() > 1: optimizer.step()
+    #   else: optimizer.step()  # Step the optimiser
+      optimizer.step()
+      train_loss += MSE * batch.size(0)
+      train_loss_other += other_MSE * batch.size(2)
+      del x_hat
+      del batch
+      del MSE
+      del other_MSE
+
+  return train_loss / data_length, train_loss_other/ data_length  # Return MSE
+
+def validate_adaptive(autoencoder, variational, optimizer, criterion, other_metric, dataloader, adaptivepadded, interpol):
+  autoencoder.eval()
+  validation_loss, valid_loss_other, data_length = 0, 0, len(dataloader.dataset)
+  count = 0
+  
+  for batch in dataloader:
+    #Finding out how many sfcs we have at our disposal
+    numsfcs = (batch.shape[1]-4)//2
+    
+    #Getting random indices
+    
+    indices = np.array([4+np.random.randint(0,numsfcs-1) for i in range(autoencoder.encoder.sfc_nums)])
+
+    #Selecting and setting sfcs and isfcs
+    sfcs = np.asarray(batch[0,indices,:].int())
+    isfcs = np.asarray(batch[0,numsfcs+indices,:].int())
+    if adaptivepadded:
+      autoencoder.encoder.coords = batch[0,2:4,:]
+
+    autoencoder.set_sfcs(sfcs,isfcs)
+    
+
+    # print(sfcs[0][isfcs[0]])
+    with torch.no_grad():
+      count += batch.size(0)
+
+      if adaptivepadded:
+        batch = batch[:,:2,:].to(device)
+      else:
+        batch = batch[:,:4,:].to(device) # Send batch of images to the GPU, cut to right size
+
+      # if variational:
+      #   x_hat, KL = autoencoder(batch)
+      #   # if torch.cuda.device_count() > 1: KL /= batch.size(0) * autoencoder.module.encoder.input_size * autoencoder.module.encoder.components
+      #   # else: KL /= batch.size(0) * autoencoder.encoder.input_size * autoencoder.encoder.components
+      #   MSE = criterion(batch, x_hat) + KL  # MSE loss plus KL divergence
+      # else:
+      x_hat = autoencoder(batch)
+      if adaptivepadded:
+        x_hat = x_hat.permute(0,2,1)
+      MSE = criterion(batch[:,:2,:], x_hat)  # Calculate MSE loss
+      other_MSE = other_metric(batch[:,:2,:], x_hat)
+      validation_loss += MSE * batch.size(0)
+      valid_loss_other += other_MSE * batch.size(0)
+      del batch
+      del x_hat
+      del MSE
+      del other_MSE
+      # print('valid ', count)
+
+  return validation_loss / data_length, valid_loss_other / data_length   # Return MSE  
 
 # main function for training, returns a trained model as well as the final loss function value and accuracy for the train, valid, test sets.
 def train_model(autoencoder,
@@ -186,7 +494,18 @@ def train_model(autoencoder,
                 criterion_type = 'MSE', 
                 visualize = True, 
                 seed = 41,
-                save_path = None):
+                checksfcs = False,
+                save_path = None,
+                shuffle = False,
+                sfcstoshuffle = [],
+                isfcstoshuffle = [],
+                changevalid = False,
+                validsfcs = [],
+                validisfcs = [],
+                adaptive = False,
+                adaptivepadded = False,
+                wandbopt = False,
+                interpol = False):
   '''
   This function is main function for loading, training, and saving the model.
 
@@ -208,7 +527,17 @@ def train_model(autoencoder,
   visualize: [bool] whether do a liveloss plot.
   seed: [int] the random seed from cuda kernels
   save_path: [string] the path to save the training txt files and model/model_dict.
-
+  checksfcs: [bool] if True, the training function will print the autoencoder's SFC and iSFC and SFC[iSFC] to check that they are both changing and being reordered
+  shuffle: [bool] decides whether training shuffles curves
+  sfcstoshuffle: [list] to pass to training if we are shuffling
+  isfcstoshuffle: [list] to pass to training if we are shuffling
+  changevalid: [bool] decides if validation is shuffling space filling curves instead of using the preset ones
+  validsfcs: [list] to pass to validation if we are shuffling
+  validisfcs: [list] to pass to validation if we are shuffling
+  adaptive: [bool] whether to use training for the adaptive mesh decoder padding method
+  adaptivepadded: [bool] whether to use training for the adaptive mesh padding method
+  wandbopt: [bool] whether to log the training and validation MSEs and relative MSEs to the current wandb project
+  interpol: [bool] if to use the interpolating training/validation function
   Output:
   ---
   autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.  
@@ -226,17 +555,17 @@ def train_model(autoencoder,
   if state_load is not None:
      state_load = torch.load(state_load)
      check_gap = state_load['check_gap']
-    #  lr = state_load['lr']
+     lr = state_load['lr']
      epoch_start = state_load['epoch_start']
      if torch.cuda.device_count() > 1: autoencoder.module.load_state_dict(state_load['model_state_dict'])
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
-     optimizer_state_dict = state_load['optimizer_state_dict']
   else: epoch_start = 0
   
   if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  elif optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-
-  if state_load is not None: optimizer.load_state_dict(optimizer_state_dict)
+  if optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  if optimizer == 'Adadelta': optimizer = torch.optim.Adadelta(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  if optimizer == 'SGD': optimizer = torch.optim.SGD(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  if optimizer == 'Rprop': optimizer = torch.optim.Rprop(autoencoder.parameters(), lr = lr)
 
   if criterion_type == 'MSE': 
       criterion = nn.MSELoss()
@@ -270,14 +599,35 @@ def train_model(autoencoder,
       train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader) 
       valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
     else:
-      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
-      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+      if shuffle:
+        train_loss, train_loss_other = train_shuffle(autoencoder, variational, optimizer, criterion, other_metric, train_loader, sfcstoshuffle, isfcstoshuffle)
+        if changevalid:
+          valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, valshuffle = True, sfcs = validsfcs, isfcs = validisfcs)
+        else:
+          valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+        if checksfcs:
+          print("SFCS:", autoencoder.encoder.orderings)
+          print("ISFCS:", autoencoder.decoder.orderings)
+          print("Check:", autoencoder.encoder.orderings[0][autoencoder.decoder.orderings[0]])
+      elif adaptive:
+        train_loss, train_loss_other = train_adaptive(autoencoder, variational, optimizer, criterion, other_metric, train_loader, adaptivepadded, interpol)
+        valid_loss, valid_loss_other = validate_adaptive(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, adaptivepadded, interpol)
+        if checksfcs:
+          print("SFCS:", autoencoder.encoder.orderings)
+          print("ISFCS:", autoencoder.decoder.orderings)
+          print("Check:", autoencoder.encoder.orderings[0][autoencoder.decoder.orderings[0]])
+      elif interpol:
+        train_loss, train_loss_other = train_interpol(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
+        valid_loss, valid_loss_other = validate_interpol(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+      else:
+        train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
+        valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
 
     if criterion_type == 'MSE':
-        train_MSE_re = train_loss_other.cpu().numpy()
-        valid_MSE_re = valid_loss_other.cpu().numpy()
-        train_MSE = train_loss.cpu().detach().numpy()
-        valid_MSE = valid_loss.cpu().numpy()
+      train_MSE_re = train_loss_other.cpu().numpy()
+      valid_MSE_re = valid_loss_other.cpu().numpy()
+      train_MSE = train_loss.cpu().detach().numpy()
+      valid_MSE = valid_loss.cpu().numpy()
     elif criterion_type == 'relative_MSE':
         train_MSE = train_loss_other.cpu().numpy()
         valid_MSE = valid_loss_other.cpu().numpy()
@@ -296,7 +646,14 @@ def train_model(autoencoder,
       
       liveloss.update(logs)
       liveloss.draw()
-
+    
+    if wandbopt:
+      wandb.log({"Epoch": epoch,        
+           "Train MSE": train_MSE,        
+           "Train MSE relative": train_MSE_re,        
+           "Valid MSE": valid_MSE,        
+           "Valid MSE relative": valid_MSE_re})
+  
     time_end = time.time()
     train_MSEs.append(train_MSE)
     valid_MSEs.append(valid_MSE)
@@ -356,11 +713,13 @@ def train_model(autoencoder,
      NN = autoencoder.module.encoder.NN
      sfc_nums = autoencoder.module.encoder.sfc_nums
      latent = autoencoder.module.encoder.dims_latent
+     nfclayers = autoencoder.module.encoder.nfclayers
      variational = autoencoder.module.encoder.variational
   else:
      NN = autoencoder.encoder.NN
      sfc_nums = autoencoder.encoder.sfc_nums
      latent = autoencoder.encoder.dims_latent
+     nfclayers = autoencoder.encoder.nfclayers
      variational = autoencoder.encoder.variational
   
   if save_path is not None:
@@ -369,8 +728,8 @@ def train_model(autoencoder,
       lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
       np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
     
-    filename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-    refilename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    filename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}_NFC_{nfclayers}.txt'
+    refilename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}_NFC_{nfclayers}.txt'
 
     np.savetxt(filename, MSELoss)
     np.savetxt(refilename, reMSELoss)
@@ -378,12 +737,14 @@ def train_model(autoencoder,
     print('MESLoss saved to ', filename)
     print('relative MSELoss saved to ', refilename)
 
-    save_path = save_path + F'Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+    save_path = save_path + F'Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}_NFC_{nfclayers}'
   
     if torch.cuda.device_count() > 1:
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path)
     else:
       save_model(autoencoder, optimizer, check_gap, n_epochs, save_path)
 
+  if wandbopt:
+    print("logging validMSE")
+    wandb.log({"validMSE": valid_MSE})
   return autoencoder
-  
