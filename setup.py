@@ -16,17 +16,18 @@ for ir in required:
 if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
    # on windows
    compile_command = 'f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32'
-elif sys.platform == 'linux' or sys.platform == 'linux2':
+elif sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'darwin':
    # on linux
    compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'   
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
-      url='https://github.com/acse-2020/acse2020-acse9-finalreport-acse-jy220',
+      url='https://github.com/acse-jy220/SFC-CAE-Ready-to-use',
       author="Imperial College London",
       author_email='jin.yu20@imperial.ac.uk',
       install_requires=reqs,
       test_suite='tests',
+      version='0.1.0'
       packages=['sfc_cae'])
 
 # compile fortran
