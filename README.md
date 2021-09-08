@@ -196,9 +196,9 @@ For advance training options, please have a look at the [instruction notebooks](
 
 <p align="center">
   <p float="left">
-     <img src="https://github.com/acse-jy220/SFC-CAE-gifs/blob/main/original_ppm.gif" width="600">
+     <img src="https://github.com/acse-jy220/SFC-CAE-gifs/blob/main/original_ppm.gif" width="1000">
      <a href="https://github.com/acse-jy220/SFC-CAE-gifs/blob/main/original_ppm.gif"><strong>Original CO2 PPM</strong></a>
-     <img src="https://github.com/acse-jy220/SFC-CAE-gifs/blob/main/CO2_latent_4_PPM.gif" width="600">
+     <img src="https://github.com/acse-jy220/SFC-CAE-gifs/blob/main/CO2_latent_4_PPM.gif" width="1000">
      <a href="https://github.com/acse-jy220/SFC-CAE-gifs/blob/main/CO2_latent_4_PPM.gif"><strong>Reconstructed by 3-SFC-VCAE-NN, 4 latent variables</strong></a>
   </p>
 </p>
