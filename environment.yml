@@ -21,4 +21,5 @@ dependencies:
     - cmocean
     - dash
     - torch
+    - timm
 
