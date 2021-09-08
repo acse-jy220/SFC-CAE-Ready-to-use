@@ -166,13 +166,13 @@ For advance training options, please have a look at the [instruction notebooks](
 <p align="center">
   <p float="middle">
      <p float="middle">
-     <img src="pics/original_block.gif" width="500">
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_block.gif" width="500">
      <p float="middle">
-     <a href="pics/original_block.gif"><strong>Analytical Block Advection</strong></a>
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_block.gif"><strong>Analytical Block Advection</strong></a>
      <p float="middle">
-     <img src="pics/reconstructed_block.gif" width="500">
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/reconstructed_block.gif" width="500">
      <p float="middle">
-     <a href="pics/reconstructed_block.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 16 latent</strong></a>
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/reconstructed_block.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 16 latent</strong></a>
   </p>
 </p>
 
@@ -181,10 +181,10 @@ For advance training options, please have a look at the [instruction notebooks](
 
 <p align="center">
   <p float="middle">
-     <img src="pics/original_FPC.gif">
-     <a href="pics/original_FPC.gif"><strong>Original Velocity Magnitude</strong></a>
-     <img src="pics/reconstructed_FPC.gif">
-     <a href="pics/reconstructed_FPC.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 8 latent</strong></a>
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_FPC.gif">
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_FPC.gif"><strong>Original Velocity Magnitude</strong></a>
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/reconstructed_FPC.gif">
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/reconstructed_FPC.gif"><strong>Reconstructed by 2-SFC-CAE-NN, 8 latent</strong></a>
   </p>
 </p>
 
@@ -196,10 +196,10 @@ For advance training options, please have a look at the [instruction notebooks](
 
 <p align="center">
   <p float="left">
-     <img src="pics/original_ppm.gif">
-     <a href="pics/original_ppm.gif"><strong>Original CO2 PPM</strong></a>
-     <img src="pics/reconstructed_3SFC_VCAE.gif">
-     <a href="pics/reconstructed_3SFC_VCAE.gif"><strong>Reconstructed by 3-SFC-VCAE-NN, 16 latent</strong></a>
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_ppm.gif">
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_ppm.gif"><strong>Original CO2 PPM</strong></a>
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/CO2_latent_4_PPM.gif">
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/CO2_latent_4_PPM.gif"><strong>Reconstructed by 3-SFC-VCAE-NN, 4 latent variables</strong></a>
   </p>
 </p>
 
@@ -210,13 +210,13 @@ For advance training options, please have a look at the [instruction notebooks](
 <p align="center">
   <p float="middle">
      <p float="middle">
-     <img src="pics/original_slugflow.gif">
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_slugflow.gif">
      <p float="middle">
-     <a href="pics/original_slugflow.gif"><strong>Original Volume Fraction of the Slugflow</strong></a>
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/original_slugflow.gif"><strong>Original Volume Fraction of the Slugflow</strong></a>
      <p float="middle">
-     <img src="pics/reconstructed_slugflow.gif">
+     <img src="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/reconstructed_slugflow.gif">
      <p float="middle">
-     <a href="pics/reconstructed_slugflow.gif"><strong>Reconstructed by 3-SFC-CAE-NN, 64 latent</strong></a>
+     <a href="https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/reconstructed_slugflow.gif"><strong>Reconstructed by 3-SFC-CAE-NN, 64 latent</strong></a>
   </p>
 </p>
 
