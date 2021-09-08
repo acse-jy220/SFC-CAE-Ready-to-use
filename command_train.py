@@ -51,6 +51,8 @@ if parameters['activation'] == 'ReLU':
    activation = nn.ReLU()
 elif parameters['activation'] == 'Tanh':
    activation = nn.Tanh()
+elif parameters['activation'] == 'SELU':
+   activation = nn.SELU()
 
 self_concat = int(parameters['self_concat'])
 sfc_nums = int(parameters['sfc_nums'])
@@ -141,7 +143,7 @@ if parameters['mode'] == 'train':
          train_set, train_k, train_b = standardlize_tensor(train_set, lower = 0, upper = 1)
          valid_set, valid_k, valid_b = standardlize_tensor(valid_set, lower = 0, upper = 1)
          test_set, test_k, test_b = standardlize_tensor(test_set, lower = 0, upper = 1)
-      elif parameters['activation'] == 'Tanh':
+      elif parameters['activation'] == 'Tanh' or parameters['activation'] == 'SELU':
          train_set, train_k, train_b = standardlize_tensor(train_set, lower = -1, upper = 1)
          valid_set, valid_k, valid_b = standardlize_tensor(valid_set, lower = -1, upper = 1)
          test_set, test_k, test_b = standardlize_tensor(test_set, lower = -1, upper = 1)       
