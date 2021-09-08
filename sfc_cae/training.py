@@ -12,6 +12,8 @@ from livelossplot import PlotLosses
 import random 
 import numpy as np
 from sfc_cae.utils import *
+# for NAdam
+import timm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -235,6 +237,7 @@ def train_model(autoencoder,
   
   if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   elif optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer = 'Nadam': optimizer = timm.optim.Nadam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
 
   if state_load is not None: optimizer.load_state_dict(optimizer_state_dict)
 

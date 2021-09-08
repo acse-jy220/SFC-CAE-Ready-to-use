@@ -485,6 +485,8 @@ class SFC_CAE(nn.Module):
          activate = 'ReLU'
       elif isinstance(self.encoder.activate, type(nn.Tanh())):
          activate = 'Tanh'
+      elif isinstance(self.encoder.activate, type(nn.SELU())):
+         activate = 'SELU'
     
       if self.encoder.structured:
          cell_11 = '1-Grid'
