@@ -153,7 +153,7 @@ if parameters['mode'] == 'train':
             full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, tk, tb)
          else: full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
          train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
-      elif parameters['activation'] == 'Tanh':
+      elif parameters['activation'] == 'Tanh' or parameters['activation'] == 'SELU':
          if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
             full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  -1, 1, tk, tb)
          else: full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
