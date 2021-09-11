@@ -41,7 +41,7 @@ def relative_MSE(x, y, epsilon = 0):
     assert x.shape == y.shape, 'the input tensors should have the same shape!'
     return ((x - y) ** 2).sum() / (y ** 2).sum()     
 
-def save_model(model, optimizer, check_gap, n_epoches, save_path):
+def save_model(model, optimizer, check_gap, n_epoches, save_path, dict_only = False):
     '''
     Save model and parameters of the optimizer as pth file, for continuous training.
     ---
@@ -61,11 +61,11 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path):
             'check_gap':check_gap,
             'epoch_start':n_epoches
             }, model_dictname)
-
-    # save the pure model (for direct evaluation)
-    torch.save(model, model_name)
-
-    print('model saved to', model_name)
+    
+    if not dict_only:
+      # save the pure model (for direct evaluation)
+      torch.save(model, model_name)
+      print('model saved to', model_name)
     print('model_dict saved to', model_dictname)
 
 def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
@@ -188,7 +188,8 @@ def train_model(autoencoder,
                 criterion_type = 'MSE', 
                 visualize = True, 
                 seed = 41,
-                save_path = None):
+                save_path = None,
+                dict_only = False):
   '''
   This function is main function for loading, training, and saving the model.
 
@@ -210,6 +211,7 @@ def train_model(autoencoder,
   visualize: [bool] whether do a liveloss plot.
   seed: [int] the random seed from cuda kernels
   save_path: [string] the path to save the training txt files and model/model_dict.
+  dict_only: [bool] only save the model_dict to save memory of the disk for large models.
 
   Output:
   ---
@@ -384,9 +386,9 @@ def train_model(autoencoder,
     save_path = save_path + F'Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
     if torch.cuda.device_count() > 1:
-      save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path)
+      save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
     else:
-      save_model(autoencoder, optimizer, check_gap, n_epochs, save_path)
+      save_model(autoencoder, optimizer, check_gap, n_epochs, save_path, dict_only)
 
   return autoencoder
   
