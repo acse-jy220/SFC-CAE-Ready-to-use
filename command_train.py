@@ -199,7 +199,8 @@ if parameters['mode'] == 'train':
                           lr = lr, 
                           seed = seed,
                           visualize = visualize,
-                          save_path = save_path)
+                          save_path = save_path,
+                          dict_only = True)
    
 else: 
    autoencoder.load_state_dict(torch.load(state_load)['model_state_dict'])
