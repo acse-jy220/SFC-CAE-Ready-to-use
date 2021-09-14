@@ -382,8 +382,8 @@ def train_model(autoencoder,
       lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
       np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
     
-    filename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-    refilename = save_path + F'Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    filename = save_path + F'Optimizer_{optimizer_type}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    refilename = save_path + F'Optimizer_{optimizer_type}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
 
     np.savetxt(filename, MSELoss)
     np.savetxt(refilename, reMSELoss)
@@ -391,7 +391,7 @@ def train_model(autoencoder,
     print('MESLoss saved to ', filename)
     print('relative MSELoss saved to ', refilename)
 
-    save_path = save_path + F'Optimizer_{optimizer_type}Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+    save_path = save_path + F'Optimizer_{optimizer_type}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
     if torch.cuda.device_count() > 1:
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
