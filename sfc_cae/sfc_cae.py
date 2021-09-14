@@ -450,12 +450,12 @@ class SFC_CAE(nn.Module):
                           force_initialising_param)
     self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
    
-   # specify name of the activation
-   if isinstance(self.encoder.activate, type(nn.ReLU())):
+    # specify name of the activation
+    if isinstance(self.encoder.activate, type(nn.ReLU())):
       self.activate = 'ReLU'
-   elif isinstance(self.encoder.activate, type(nn.Tanh())):
+    elif isinstance(self.encoder.activate, type(nn.Tanh())):
       self.activate = 'Tanh'
-   elif isinstance(self.encoder.activate, type(nn.SELU())):
+    elif isinstance(self.encoder.activate, type(nn.SELU())):
       self.activate = 'SELU'
 
   def output_structure(self):
