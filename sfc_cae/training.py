@@ -178,7 +178,7 @@ def train_model(autoencoder,
                 train_loader, 
                 valid_loader,
                 test_loader,
-                optimizer = 'Adam',
+                optimizer_type = 'Adam',
                 state_load = None,
                 n_epochs = 100,
                 varying_lr = False, 
@@ -237,9 +237,16 @@ def train_model(autoencoder,
      optimizer_state_dict = state_load['optimizer_state_dict']
   else: epoch_start = 0
   
-  if optimizer == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  elif optimizer == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
-  elif optimizer == 'Nadam': optimizer = tioptim.Nadam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  if optimizer_type == 'Adam': optimizer = torch.optim.Adam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'Adamax': optimizer = torch.optim.Adamax(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'SGD': optimizer = torch.optim.SGD(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'Adagrad': optimizer = torch.optim.Adagrad(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'AdamW': optimizer = torch.optim.AdamW(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  # other custom Pytorch optimizers, from https://github.com/rwightman/pytorch-image-models/tree/master/timm/optim
+  elif optimizer_type == 'Nadam': optimizer = tioptim.Nadam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'AdamP': optimizer = tioptim.AdamP(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'RAdam': optimizer = tioptim.RAdam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'madgrad': optimizer = tioptim.MADGRAD(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
 
   if state_load is not None: optimizer.load_state_dict(optimizer_state_dict)
 
@@ -383,7 +390,7 @@ def train_model(autoencoder,
     print('MESLoss saved to ', filename)
     print('relative MSELoss saved to ', refilename)
 
-    save_path = save_path + F'Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+    save_path = save_path + F'Optimizer_{optimizer_type}Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
     if torch.cuda.device_count() > 1:
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)

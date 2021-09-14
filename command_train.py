@@ -83,7 +83,7 @@ if parameters['state_load'] != 'None':
    state_load = parameters['state_load']
 else: state_load = None
 
-optimizer = parameters['optimizer']
+optimizer_type = parameters['optimizer']
 
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
@@ -192,7 +192,7 @@ if parameters['mode'] == 'train':
                           train_loader = train_loader,
                           valid_loader = valid_loader,
                           test_loader = test_loader,
-                          optimizer = optimizer,
+                          optimizer_type = optimizer_type,
                           state_load = state_load,
                           n_epochs = n_epoches, 
                           varying_lr = change_lr,
