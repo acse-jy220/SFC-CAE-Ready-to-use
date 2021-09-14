@@ -247,6 +247,7 @@ def train_model(autoencoder,
   elif optimizer_type == 'AdamP': optimizer = tioptim.AdamP(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   elif optimizer_type == 'RAdam': optimizer = tioptim.RAdam(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
   elif optimizer_type == 'madgrad': optimizer = tioptim.MADGRAD(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
+  elif optimizer_type == 'RMSprop': optimizer = tioptim.RMSpropTF(autoencoder.parameters(), lr = lr, weight_decay = weight_decay)
 
   if state_load is not None: optimizer.load_state_dict(optimizer_state_dict)
 
