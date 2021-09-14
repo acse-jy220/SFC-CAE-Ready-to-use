@@ -449,6 +449,14 @@ class SFC_CAE(nn.Module):
                           variational,
                           force_initialising_param)
     self.decoder = SFC_CAE_Decoder(self.encoder, invert_space_filling_orderings, output_linear)
+   
+   # specify name of the activation
+   if isinstance(self.encoder.activate, type(nn.ReLU())):
+      self.activate = 'ReLU'
+   elif isinstance(self.encoder.activate, type(nn.Tanh())):
+      self.activate = 'Tanh'
+   elif isinstance(self.encoder.activate, type(nn.SELU())):
+      self.activate = 'SELU'
 
   def output_structure(self):
     '''
@@ -481,13 +489,6 @@ class SFC_CAE(nn.Module):
           components_set += F', {i + 1}'
       components_set += '\}'
     
-      if isinstance(self.encoder.activate, type(nn.ReLU())):
-         activate = 'ReLU'
-      elif isinstance(self.encoder.activate, type(nn.Tanh())):
-         activate = 'Tanh'
-      elif isinstance(self.encoder.activate, type(nn.SELU())):
-         activate = 'SELU'
-    
       if self.encoder.structured:
          cell_11 = '1-Grid'
          type_m = 'Grid'
@@ -515,7 +516,7 @@ class SFC_CAE(nn.Module):
             
         f.write('\\hline\n')  
         layer_count += 1
-        f.write(F'{layer_count}-ExpandNN-SFC$\\mathcal{{C}}$ & ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) & 3 Variable (3 $\\times$ {size * components * self.encoder.self_concat}) & 1 & 1 & 0 & 0 & ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write(F'{layer_count}-ExpandNN-SFC$\\mathcal{{C}}$ & ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) & 3 Variable (3 $\\times$ {size * components * self.encoder.self_concat}) & 1 & 1 & 0 & 0 & ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) & {self.activate}\\\\\n')
         f.write('\\hline\n') 
         f.write(F'\\multicolumn{{9}}{{|c|}}{{Reshape ({size * components * self.encoder.self_concat}, 1, SFC$\\mathcal{{C}}$) to form ({size}, {components * self.encoder.self_concat}, SFC$\\mathcal{{C}}$)}} \\\\\n')
         f.write('\\hline\n')
@@ -528,7 +529,7 @@ class SFC_CAE(nn.Module):
         conv_f = self.encoder.conv_size[i]
         conv_n = self.encoder.conv_size[i + 1]
         layer_count += 1
-        f.write(F'{layer_count}-Conv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[i]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[i + 1]} & {self.encoder.stride} & {self.encoder.padding} & 0 & ({conv_n}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write(F'{layer_count}-Conv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[i]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[i + 1]} & {self.encoder.stride} & {self.encoder.padding} & 0 & ({conv_n}, {self.encoder.channels[i + 1]}, SFC$\\mathcal{{C}}$) & {self.activate}\\\\\n')
         f.write('\\hline\n')
     
       for i in range(len(self.encoder.size_fc) - 2):
@@ -536,9 +537,9 @@ class SFC_CAE(nn.Module):
         fc_f = self.encoder.size_fc[i]
         fc_n = self.encoder.size_fc[i + 1]
         if i == 0:
-            f.write(F'{layer_count}-FC & {fc_f} ($= {self.encoder.conv_size[-1]} \\times {self.encoder.channels[-1]} \\times {self.encoder.sfc_nums}$) & \\multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
+            f.write(F'{layer_count}-FC & {fc_f} ($= {self.encoder.conv_size[-1]} \\times {self.encoder.channels[-1]} \\times {self.encoder.sfc_nums}$) & \\multicolumn{{5}}{{c|}}{{}} & {fc_n} & {self.activate}\\\\\n')
         else:
-            f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
+            f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {self.activate}\\\\\n')
         f.write('\\hline\n')
       
       # Whether variational decide the format in the middle
@@ -546,15 +547,15 @@ class SFC_CAE(nn.Module):
          layer_count += 1
          f.write('\\multicolumn{9}{|c|}{\\textbf{Variational Reparametrization}}\\\\\n')
          f.write('\\hline\n') 
-         f.write(F'{layer_count}-FC-$\\sigma$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
+         f.write(F'{layer_count}-FC-$\\sigma$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {self.activate}\\\\\n')
          f.write('\\hline\n') 
-         f.write(F'{layer_count}-FC-$\\mu$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n')
+         f.write(F'{layer_count}-FC-$\\mu$ & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {self.activate}\\\\\n')
          f.write('\\hline\n') 
          layer_count += 1
          f.write(F'{layer_count}-Sampling & {self.encoder.size_fc[-1]} & 3 Variable (3 $\\times${self.encoder.size_fc[-1]}) & 1 & 1 & 0 & 0 & {self.encoder.size_fc[-1]} & Identity\\\\\n')
          layer_count += 1
       else: 
-         f.write(F'{layer_count}-FC & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {activate}\\\\\n') 
+         f.write(F'{layer_count}-FC & {self.encoder.size_fc[-2]} & \multicolumn{{5}}{{c|}}{{}} & {self.encoder.size_fc[-1]} & {self.activate}\\\\\n') 
          layer_count += 1    
       f.write('\\hline\n')
         
@@ -565,7 +566,7 @@ class SFC_CAE(nn.Module):
         layer_count += 1
         fc_f = self.encoder.size_fc[-i]
         fc_n = self.encoder.size_fc[-i - 1]
-        f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {activate}\\\\\n')
+        f.write(F'{layer_count}-FC & {fc_f} & \multicolumn{{5}}{{c|}}{{}} & {fc_n} & {self.activate}\\\\\n')
         f.write('\\hline\n')
 
       f.write(F'\multicolumn{{9}}{{|c|}}{{Split the data into {self.encoder.sfc_nums} sequences as the input of layer {layer_count + 1}-TransConv1d-SFC$\\mathcal{{C}}$ $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$, convert from {self.encoder.size_fc[0] // self.encoder.sfc_nums} to ({self.encoder.conv_size[-1]}, {self.encoder.num_final_channels})}} \\\\\n')
@@ -575,14 +576,14 @@ class SFC_CAE(nn.Module):
         conv_f = self.encoder.conv_size[-i]
         conv_n = self.encoder.conv_size[-i - 1]
         layer_count += 1
-        f.write(F'{layer_count}-TransConv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[-i]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[-i]} & {self.encoder.stride} & {self.encoder.padding} & {self.encoder.output_paddings[i - 1]} & ({conv_n}, {self.encoder.channels[-i - 1]}, SFC$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write(F'{layer_count}-TransConv1d-SFC$\\mathcal{{C}}$ & ({conv_f}, {self.encoder.channels[-i]}, SFC$\\mathcal{{C}}$) & {self.encoder.kernel_size} & {self.encoder.channels[-i]} & {self.encoder.stride} & {self.encoder.padding} & {self.encoder.output_paddings[i - 1]} & ({conv_n}, {self.encoder.channels[-i - 1]}, SFC$\\mathcal{{C}}$) & {self.activate}\\\\\n')
         f.write('\\hline\n')
     
       if self.encoder.NN:
         f.write(F'\multicolumn{{9}}{{|c|}}{{Apply inverse SFC orderings to ({size}, {components}, SFC$\\mathcal{{C}}$) $\\forall \\; \\mathcal{{C}} \\in {sfc_set}$,  flatten into ({size * components * self.encoder.self_concat}, 1, {type_m}$\mathcal{{C}}$)}} \\\\\n')
         f.write('\\hline\n')
         layer_count += 1
-        f.write(F'{layer_count}-ExpandNN-{type_m}$\\mathcal{{C}}$ & ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$) & 3 Variable (3 $\\times$ {size * components * self.encoder.self_concat}) & 1 & 1 & 0 & 0 & ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$) & {activate}\\\\\n')
+        f.write(F'{layer_count}-ExpandNN-{type_m}$\\mathcal{{C}}$ & ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$) & 3 Variable (3 $\\times$ {size * components * self.encoder.self_concat}) & 1 & 1 & 0 & 0 & ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$) & {self.activate}\\\\\n')
         f.write('\\hline\n')    
         f.write(F'\multicolumn{{9}}{{|c|}}{{Reshape ({size * components * self.encoder.self_concat}, 1, {type_m}$\\mathcal{{C}}$), and separate self-concat channels, to form ({size}, {components * self.encoder.self_concat}, {type_m}$\\mathcal{{C}}$) $\\times$ {self.encoder.self_concat}}} \\\\\n')
         f.write('\\hline\n')         
@@ -591,7 +592,7 @@ class SFC_CAE(nn.Module):
         f.write('\\hline\n')
     
       layer_count += 1
-      f.write(F'{layer_count}{cell_end} & ({size}, {components}, {type_m}$\\mathcal{{C}}$) $\\times$ {self.encoder.self_concat * self.encoder.sfc_nums} & $\\sum\\limits_{{i = 1}}^{{{self.encoder.self_concat * self.encoder.sfc_nums}}} \\; ${type_m}$i$ & {components} & 1 & 0 & 0 & ({size}, {components}, {type_m}$\\mathcal{{C}}$) & {activate} \\\\\n')
+      f.write(F'{layer_count}{cell_end} & ({size}, {components}, {type_m}$\\mathcal{{C}}$) $\\times$ {self.encoder.self_concat * self.encoder.sfc_nums} & $\\sum\\limits_{{i = 1}}^{{{self.encoder.self_concat * self.encoder.sfc_nums}}} \\; ${type_m}$i$ & {components} & 1 & 0 & 0 & ({size}, {components}, {type_m}$\\mathcal{{C}}$) & {self.activate} \\\\\n')
       f.write('\\hline\n')
     
       f.write('\\end{tabular}%\n')
