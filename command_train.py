@@ -130,7 +130,7 @@ else: reconstruct_end_index = None
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
 if parameters['mode'] == 'train':
-   if parameters['train_index'] != 'None' and parameters['valid_index'] != 'None' and parameters['test_index'] != 'None' and parameters['state_load'] != 'None':
+   if parameters['load_index'] == 'True':
       train_index = np.load(parameters['train_index'])
       valid_index = np.load(parameters['valid_index'])
       test_index = np.load(parameters['test_index'])
