@@ -127,12 +127,24 @@ if parameters['reconstruct_end_index'] != 'None':
    reconstruct_end_index = int(parameters['reconstruct_end_index'])
 else: reconstruct_end_index = None
 
+samples = len(glob.glob(parameters['data_dir'] + '*'))
 
 if parameters['mode'] == 'train':
-   train_ratio = 15/17
-   valid_ratio = 1/17
-   test_ratio = 1/17 
-   train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
+   if parameters['train_index'] != 'None' and parameters['valid_index'] != 'None' and parameters['test_index'] != 'None' and parameters['state_load'] != 'None':
+      train_index = np.load(parameters['train_index'])
+      valid_index = np.load(parameters['valid_index'])
+      test_index = np.load(parameters['test_index'])
+   else:
+      train_ratio = 15/17
+      valid_ratio = 1/17
+      test_ratio = 1/17 
+      train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
+      np.save('train_index', train_index)
+      np.save('valid_index', valid_index)
+      np.save('test_index', test_index)
+   train_path = get_path_data((parameters['data_dir'] + '*'), train_index - 1)
+   valid_path = get_path_data((parameters['data_dir'] + '*'), valid_index - 1)
+   test_path = get_path_data((parameters['data_dir'] + '*'), test_index - 1)
 
    if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
       train_set = full_tensor[train_index].float()
@@ -150,16 +162,31 @@ if parameters['mode'] == 'train':
    elif parameters['data_type'] == 'tensors':
       if parameters['activation'] == 'ReLU':
          if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, tk, tb)
-         else: full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
-         train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
+            # full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, tk, tb)
+            train_set = MyTensorDataset(train_path,  0, 1, tk, tb)
+            valid_set = MyTensorDataset(valid_path,  0, 1, tk, tb)
+            test_set = MyTensorDataset(test_path,  0, 1, tk, tb)
+         else: 
+            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
+            train_set = MyTensorDataset(train_path,  0, 1, full_set.tk, full_set.tb)
+            valid_set = MyTensorDataset(valid_path,  0, 1, full_set.tk, full_set.tb)
+            test_set = MyTensorDataset(test_path,  0, 1, full_set.tk, full_set.tb)
+            tk = full_set.tk
+            tb = full_set.tb
+            # train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
       elif parameters['activation'] == 'Tanh' or parameters['activation'] == 'SELU':
          if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  -1, 1, tk, tb)
-         else: full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
-         train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
-      tk = full_set.tk
-      tb = full_set.tb
+            train_set = MyTensorDataset(train_path,  0, 1, tk, tb)
+            valid_set = MyTensorDataset(valid_path,  0, 1, tk, tb)
+            test_set = MyTensorDataset(test_path,  0, 1, tk, tb)
+         else: 
+            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
+            train_set = MyTensorDataset(train_path,  0, 1, full_set.tk, full_set.tb)
+            valid_set = MyTensorDataset(valid_path,  0, 1, full_set.tk, full_set.tb)
+            test_set = MyTensorDataset(test_path,  0, 1, full_set.tk, full_set.tb)
+            # train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
+            tk = full_set.tk
+            tb = full_set.tb
 
    print('length of train set:', len(train_set), '\n')
    print('length of valid set:',len(valid_set), '\n')
