@@ -104,9 +104,9 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         x_hat, KL = autoencoder(batch)
         MSE = criterion(batch, x_hat)
         print('MSE:', MSE)
-        print('KL:', KL)
         if torch.cuda.device_count() > 1: KL = KL.sum()
-        whole_KL += KL.item() * batch.size(0)
+        print('KL:', KL)
+        whole_KL += KL.detach().numpy() * batch.size(0)
         whole_MSE += MSE.item() * batch.size(0)
         Loss = MSE.add_(KL) # MSE loss plus KL divergence
         print('Loss:', Loss)
