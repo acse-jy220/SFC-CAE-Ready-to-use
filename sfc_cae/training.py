@@ -105,8 +105,12 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         MSE = criterion(batch, x_hat)
         whole_KL += KL.item() * batch.size(0)
         whole_MSE += MSE.item() * batch.size(0)
-        # Loss = MSE + KL # MSE loss plus KL divergence
-        Loss = torch.cat((MSE, KL), 0).sum().requires_grad_(True)
+        print(MSE.shape)
+        print(MSE)
+        print(KL.shape)
+        print(KL)
+        Loss = MSE + KL # MSE loss plus KL divergence
+        # Loss = torch.cat((MSE, KL), 0).sum().requires_grad_(True)
       else:
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
