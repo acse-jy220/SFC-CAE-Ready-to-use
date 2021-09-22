@@ -110,7 +110,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         # print(KL.shape)
         # print(KL)
         Loss = MSE.add_(KL) # MSE loss plus KL divergence
-        # Loss = torch.cat((MSE, KL), 0).sum().requires_grad_(True)
+        print(Loss)
       else:
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
