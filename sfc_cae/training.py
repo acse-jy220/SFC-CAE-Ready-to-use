@@ -221,6 +221,7 @@ def train_model(autoencoder,
   seed: [int] the random seed from cuda kernels
   save_path: [string] the path to save the training txt files and model/model_dict.
   dict_only: [bool] only save the model_dict to save memory of the disk for large models.
+  parallel_mode: [string] 'DP' or 'DDP', 'DP' represents Data Parallel, 'DDP' represents Distributed Data Parallel.
 
   Output:
   ---

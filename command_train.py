@@ -215,7 +215,7 @@ autoencoder = SFC_CAE(input_size,
                       variational = variational)
 
 if parameters['mode'] == 'train':
-   if parameters['parallel_mode'] = 'DDP': parallel_mode = parameters['parallel_mode']
+   if parameters['parallel_mode'] == 'DDP': parallel_mode = parameters['parallel_mode']
    else: parallel_mode = 'DP'
    autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,
