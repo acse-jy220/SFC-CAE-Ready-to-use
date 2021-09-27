@@ -215,6 +215,8 @@ autoencoder = SFC_CAE(input_size,
                       variational = variational)
 
 if parameters['mode'] == 'train':
+   if parameters['parallel_mode'] = 'DDP': parallel_mode = parameters['parallel_mode']
+   else: parallel_mode = 'DP'
    autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,
                           valid_loader = valid_loader,
@@ -227,7 +229,8 @@ if parameters['mode'] == 'train':
                           seed = seed,
                           visualize = visualize,
                           save_path = save_path,
-                          dict_only = True)
+                          dict_only = True,
+                          parallel_mode = parallel_mode)
    
 else: 
    autoencoder.load_state_dict(torch.load(state_load)['model_state_dict'])
