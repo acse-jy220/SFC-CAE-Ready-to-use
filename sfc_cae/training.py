@@ -14,6 +14,9 @@ import numpy as np
 from sfc_cae.utils import *
 # for NAdam
 from timm import optim as tioptim
+# Distributed Data Parallel
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -194,7 +197,8 @@ def train_model(autoencoder,
                 visualize = True, 
                 seed = 41,
                 save_path = None,
-                dict_only = False):
+                dict_only = False,
+                parallel_mode = 'DP'):
   '''
   This function is main function for loading, training, and saving the model.
 
@@ -229,15 +233,19 @@ def train_model(autoencoder,
   autoencoder.to(device)
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
-     autoencoder = torch.nn.DataParallel(autoencoder)
+     if parallel_mode == 'DP': autoencoder = torch.nn.DataParallel(autoencoder)
+     elif parallel_mode == 'DDP': 
+       torch.distributed.init_process_group(backend='nccl', world_size=torch.cuda.device_count())
+       autoencoder = DDP(autoencoder, output_device=0)
 
   # see if continue training happens
   if state_load is not None:
-     state_load = torch.load(state_load)
+     if torch.cuda.device_count() > 1 and parallel_mode == 'DP': state_load = torch.load(state_load, map_location='cuda:0')
+     else: state_load = torch.load(state_load)
      check_gap = state_load['check_gap']
     #  lr = state_load['lr']
      epoch_start = state_load['epoch_start']
-     if torch.cuda.device_count() > 1: autoencoder.module.load_state_dict(state_load['model_state_dict'])
+     if torch.cuda.device_count() > 1 and parallel_mode == 'DP': autoencoder.module.load_state_dict(state_load['model_state_dict'])
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
      optimizer_state_dict = state_load['optimizer_state_dict']
   else: epoch_start = 0
@@ -370,7 +378,7 @@ def train_model(autoencoder,
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
 
-  if torch.cuda.device_count() > 1:
+  if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
      NN = autoencoder.module.encoder.NN
      sfc_nums = autoencoder.module.encoder.sfc_nums
      latent = autoencoder.module.encoder.dims_latent
@@ -399,7 +407,7 @@ def train_model(autoencoder,
 
     save_path = save_path + F'Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
-    if torch.cuda.device_count() > 1:
+    if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
     else:
       save_model(autoencoder, optimizer, check_gap, n_epochs, save_path, dict_only)
