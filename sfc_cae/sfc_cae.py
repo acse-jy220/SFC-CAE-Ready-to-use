@@ -307,14 +307,17 @@ class SFC_CAE_Decoder(nn.Module):
     # if self.sfc_nums > 1: self.final_sp = NearestNeighbouring(size = self.input_size * self.components, initial_weight= 1 / self.sfc_nums, num_neigh = self.sfc_nums)
 
     # final linear activate (shut down it if you have standardlized your data first)
-    if output_linear:
-      self.out_linear_weights = []
-      self.out_linear_bias = []
-      for i in range(self.components):
-          self.out_linear_weights.append(nn.Parameter(torch.ones(self.input_size)))
-          self.out_linear_bias.append(nn.Parameter(torch.zeros(self.input_size)))
-      self.out_linear_weights = nn.ModuleList(self.out_linear_weights)
-      self.out_linear_bias = nn.ModuleList(self.out_linear_bias)
+   #  if output_linear:
+   #    self.out_linear_weights = []
+   #    self.out_linear_bias = []
+   #    for i in range(self.components):
+   #        self.out_linear_weights.append(nn.Parameter(torch.ones(self.input_size)))
+   #        self.out_linear_bias.append(nn.Parameter(torch.zeros(self.input_size)))
+   #    self.out_linear_weights = nn.ModuleList(self.out_linear_weights)
+   #    self.out_linear_bias = nn.ModuleList(self.out_linear_bias)
+   if output_linear:
+      self.out_linear_weights = nn.Parameter(torch.ones(self.components))
+      self.out_linear_bias = nn.Parameter(torch.zeros(self.components))
       
 
   def get_concat_list(self, x, num_sfc):
@@ -368,25 +371,25 @@ class SFC_CAE_Decoder(nn.Module):
         # tt_list *= self.final_sp
       #  tt_list = tt_list.sum(-1)
       #   del tt_list
-        z = self.activate(tt_list)
+        if not self.output_linear: z = self.activate(tt_list)
       #   del f_nn
         del tt_list
     else: z = zs[0].squeeze(-1)
     for i in range(self.sfc_nums): del zs[0]
     if self.components > 1: 
         z = z.view(-1, self.components, self.input_size).permute(0, -1, -2)
-        if self.output_linear: 
-            ts = [] 
-            for i in range(self.components):
-                t = z[..., i]
-                t = t * self.out_linear_weights[i] + self.out_linear_bias[i]
-                ts.append(t.unsqueeze(-1))
-            z = torch.cat(ts, -1)
-            del ts
-        return z
+      #   if self.output_linear: 
+      #       ts = [] 
+      #       for i in range(self.components):
+      #           t = z[..., i]
+      #           t = t * self.out_linear_weights[i] + self.out_linear_bias[i]
+      #           ts.append(t.unsqueeze(-1))
+      #       z = torch.cat(ts, -1)
+      #       del ts
+      #   return z
     else: 
-        if self.output_linear:
-            z = self.out_linear_weights[0] * z + self.out_linear_bias[0]
+      #   if self.output_linear:
+      #       z = self.out_linear_weights[0] * z + self.out_linear_bias[0]
         return z
 
 
