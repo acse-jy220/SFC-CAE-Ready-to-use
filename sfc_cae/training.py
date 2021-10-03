@@ -252,6 +252,8 @@ def train_model(autoencoder,
     #  elif parallel_mode == 'DDP':
     #   torch.distributed.init_process_group(backend='nccl', world_size=N, init_method='...')
     #   autoencoder = DDP(autoencoder)
+     print(autoencoder)
+     print(type(print(autoencoder)))
 
   # see if continue training happens
   if state_load is not None:
@@ -451,6 +453,8 @@ def train_model_DDP(rank,
     # create model and move it to GPU with id rank
     autoencoder = autoencoder.to(rank)
     autoencoder = DDP(autoencoder, device_ids=[rank])
+
+    print('enter train_model function! ')
 
     train_model(autoencoder,
                 train_loader, 
