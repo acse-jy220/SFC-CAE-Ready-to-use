@@ -217,7 +217,9 @@ autoencoder = SFC_CAE(input_size,
 if parameters['mode'] == 'train':
    if parameters['parallel_mode'] == 'DDP': 
       parallel_mode = parameters['parallel_mode']
-      mp.spawn(train_model_DDP,
+      if __name__ == '__main__':
+        torch.multiprocessing.freeze_support()
+        mp.spawn(train_model_DDP,
                args=(autoencoder, 
                      train_loader,
                      valid_loader,
