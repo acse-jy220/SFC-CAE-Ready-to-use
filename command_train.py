@@ -127,8 +127,8 @@ else: start_index = 0
 if parameters['reconstruct_end_index'] != 'None':
    end_index = int(parameters['reconstruct_end_index'])
 else: end_index = samples
-if parameters['output_linear'] != 'True': output_linear = True
-elif parameters['output_linear'] != 'False': output_linear = False
+if parameters['output_linear'] == 'True': output_linear = True
+else: output_linear = False
 
 if parameters['mode'] == 'train':
    if parameters['load_index'] == 'True':
