@@ -215,7 +215,24 @@ autoencoder = SFC_CAE(input_size,
                       variational = variational)
 
 if parameters['mode'] == 'train':
-   if parameters['parallel_mode'] == 'DDP': parallel_mode = parameters['parallel_mode']
+   if parameters['parallel_mode'] == 'DDP': 
+      parallel_mode = parameters['parallel_mode']
+      mp.spawn(train_model_DDP,
+               args=(autoencoder, 
+                     train_loader,
+                     valid_loader,
+                     test_loader,
+                     optimizer_type,
+                     state_load,
+                     n_epoches, 
+                     change_lr,
+                     lr, 
+                     seed,
+                     visualize,
+                     save_path,
+                     True,),
+               nprocs=torch.cuda.device_count(),
+               join=True)      
    else: parallel_mode = 'DP'
    autoencoder = train_model(autoencoder, 
                           train_loader = train_loader,

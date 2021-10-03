@@ -12,11 +12,12 @@ from livelossplot import PlotLosses
 import random 
 import numpy as np
 from sfc_cae.utils import *
-# for NAdam
+# for other custom Pytorch Optimizers
 from timm import optim as tioptim
 # Distributed Data Parallel
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.multiprocessing as mp
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -33,6 +34,22 @@ def set_seed(seed):
     torch.backends.cudnn.enabled   = True
 
     return True
+
+def setup_DDP(rank, world_size):
+    '''
+    Setup Distributed Data Parallel.
+    '''
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # initialize the process group
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+def cleanup_DDP():
+    '''
+    Destroy Distributed Data Parallel.
+    '''
+    dist.destroy_process_group()
 
 def relative_MSE(x, y, epsilon = 0):
     '''
@@ -71,7 +88,7 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path, dict_only = Fa
       print('model saved to', model_name)
     print('model_dict saved to', model_dictname)
 
-def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
+def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode):
   '''
   This function is implemented for training the model.
 
@@ -106,13 +123,10 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
       if variational:
         x_hat, KL = autoencoder(batch)
         MSE = criterion(batch, x_hat)
-        # print('MSE:', MSE)
         if torch.cuda.device_count() > 1: KL = KL.sum()
-        # print('KL:', KL)
         whole_KL += KL.detach().cpu().numpy() * batch.size(0)
         whole_MSE += MSE.item() * batch.size(0)
         Loss = MSE.add_(KL) # MSE loss plus KL divergence
-        # print('Loss:', Loss)
       else:
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
@@ -128,7 +142,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
   else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
-def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader):
+def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode):
   '''
   This function is implemented for validating the model.
 
@@ -235,16 +249,15 @@ def train_model(autoencoder,
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      if parallel_mode == 'DP': autoencoder = torch.nn.DataParallel(autoencoder)
-     elif parallel_mode == 'DDP': 
-       torch.distributed.init_process_group(backend='nccl', world_size=torch.cuda.device_count())
-       autoencoder = DDP(autoencoder, output_device=0)
+    #  elif parallel_mode == 'DDP':
+    #   torch.distributed.init_process_group(backend='nccl', world_size=N, init_method='...')
+    #   autoencoder = DDP(autoencoder)
 
   # see if continue training happens
   if state_load is not None:
      if torch.cuda.device_count() > 1 and parallel_mode == 'DP': state_load = torch.load(state_load, map_location='cuda:0')
      else: state_load = torch.load(state_load)
      check_gap = state_load['check_gap']
-    #  lr = state_load['lr']
      epoch_start = state_load['epoch_start']
      if torch.cuda.device_count() > 1 and parallel_mode == 'DP': autoencoder.module.load_state_dict(state_load['model_state_dict'])
      else: autoencoder.load_state_dict(state_load['model_state_dict'])
@@ -294,11 +307,11 @@ def train_model(autoencoder,
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
     if variational:
-      train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader) 
-      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+      train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode) 
+      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode)
     else:
-      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader)
-      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader)
+      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode)
+      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode)
 
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other.cpu().numpy()
@@ -397,8 +410,8 @@ def train_model(autoencoder,
       lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
       np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
     
-    filename = save_path + F'Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-    refilename = save_path + F'Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    filename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    refilename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
 
     np.savetxt(filename, MSELoss)
     np.savetxt(refilename, reMSELoss)
@@ -406,7 +419,7 @@ def train_model(autoencoder,
     print('MESLoss saved to ', filename)
     print('relative MSELoss saved to ', refilename)
 
-    save_path = save_path + F'Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+    save_path = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
     if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
@@ -414,4 +427,50 @@ def train_model(autoencoder,
       save_model(autoencoder, optimizer, check_gap, n_epochs, save_path, dict_only)
 
   return autoencoder
+
+def train_model_DDP(rank, 
+                    autoencoder,
+                    train_loader, 
+                    valid_loader,
+                    test_loader,
+                    optimizer_type = 'Adam',
+                    state_load = None,
+                    n_epochs = 100,
+                    varying_lr = False, 
+                    lr = 1e-4, 
+                    weight_decay = 0, 
+                    criterion_type = 'MSE', 
+                    visualize = True, 
+                    seed = 41,
+                    save_path = None,
+                    dict_only = False):
+
+    print(f"Running DDP on rank {rank}.")
+    setup_DDP(rank, torch.cuda.device_count())
+
+    # create model and move it to GPU with id rank
+    autoencoder = autoencoder.to(rank)
+    autoencoder = DDP(autoencoder, device_ids=[rank])
+
+    train_model(autoencoder,
+                train_loader, 
+                valid_loader,
+                test_loader,
+                optimizer_type,
+                state_load,
+                n_epochs,
+                varying_lr, 
+                lr, 
+                weight_decay, 
+                criterion_type, 
+                visualize, 
+                seed,
+                save_path,
+                dict_only,
+                parallel_mode = 'DDP')
+
+    cleanup_DDP()
+
+    return autoencoder
+
   
