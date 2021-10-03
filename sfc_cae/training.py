@@ -252,8 +252,8 @@ def train_model(autoencoder,
     #  elif parallel_mode == 'DDP':
     #   torch.distributed.init_process_group(backend='nccl', world_size=N, init_method='...')
     #   autoencoder = DDP(autoencoder)
-     print(autoencoder)
-     print(type(print(autoencoder)))
+    #  print(autoencoder)
+    #  print(type(print(autoencoder)))
 
   # see if continue training happens
   if state_load is not None:
@@ -373,9 +373,9 @@ def train_model(autoencoder,
       old_loss = this_loss
   
   if variational:
-    test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader)
+    test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode)
   else:
-    test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader)
+    test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode)
 
   if criterion_type == 'MSE':
     test_MSE_re = test_loss_other.cpu().numpy()
@@ -400,20 +400,22 @@ def train_model(autoencoder,
      latent = autoencoder.module.encoder.dims_latent
      variational = autoencoder.module.encoder.variational
      activate = autoencoder.module.activate
+     output_linear = autoencoder.module.decoder.output_linear
   else:
      NN = autoencoder.encoder.NN
      sfc_nums = autoencoder.encoder.sfc_nums
      latent = autoencoder.encoder.dims_latent
      variational = autoencoder.encoder.variational
      activate = autoencoder.activate
+     output_linear = autoencoder.decoder.output_linear
   if save_path is not None:
 
     if varying_lr:
       lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
       np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
     
-    filename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-    refilename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    filename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    refilename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
 
     np.savetxt(filename, MSELoss)
     np.savetxt(refilename, reMSELoss)
@@ -421,7 +423,7 @@ def train_model(autoencoder,
     print('MESLoss saved to ', filename)
     print('relative MSELoss saved to ', refilename)
 
-    save_path = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
+    save_path = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
     if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
