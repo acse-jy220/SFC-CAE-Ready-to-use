@@ -454,8 +454,6 @@ def train_model_DDP(rank,
     autoencoder = autoencoder.to(rank)
     autoencoder = DDP(autoencoder, device_ids=[rank])
 
-    print('enter train_model function! ')
-
     train_model(autoencoder,
                 train_loader, 
                 valid_loader,

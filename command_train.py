@@ -120,14 +120,15 @@ lr = float(parameters['lr'])
 n_epoches = int(parameters['n_epoches'])
 seed = int(parameters['seed'])
 dimension = int(parameters['dimension'])
-if parameters['reconstruct_start_index'] != 'None':
-   reconstruct_start_index = int(parameters['reconstruct_start_index'])
-else: reconstruct_start_index = None
-if parameters['reconstruct_end_index'] != 'None':
-   reconstruct_end_index = int(parameters['reconstruct_end_index'])
-else: reconstruct_end_index = None
-
 samples = len(glob.glob(parameters['data_dir'] + '*'))
+if parameters['reconstruct_start_index'] != 'None':
+   start_index = int(parameters['reconstruct_start_index'])
+else: start_index = 0
+if parameters['reconstruct_end_index'] != 'None':
+   end_index = int(parameters['reconstruct_end_index'])
+else: end_index = samples
+if parameters['output_linear'] != 'True': output_linear = True
+elif parameters['output_linear'] != 'False': output_linear = False
 
 if parameters['mode'] == 'train':
    if parameters['load_index'] == 'True':
@@ -138,7 +139,11 @@ if parameters['mode'] == 'train':
       train_ratio = 15/17
       valid_ratio = 1/17
       test_ratio = 1/17 
+      if start_index is not None or end_index is not None: samples = end_index - start_index
       train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
+      train_index = train_index + start_index
+      valid_index = valid_index + start_index
+      test_index = test_index + start_index
       np.save('train_index', train_index)
       np.save('valid_index', valid_index)
       np.save('test_index', test_index)
@@ -212,7 +217,8 @@ autoencoder = SFC_CAE(input_size,
                       space_filling_orderings, 
                       invert_space_filling_orderings,
                       activation = activation,
-                      variational = variational)
+                      variational = variational,
+                      output_linear = output_linear)
 
 if parameters['mode'] == 'train':
    if parameters['parallel_mode'] == 'DDP': 
