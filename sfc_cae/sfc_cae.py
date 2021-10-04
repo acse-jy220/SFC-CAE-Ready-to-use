@@ -372,6 +372,7 @@ class SFC_CAE_Decoder(nn.Module):
       #  tt_list = tt_list.sum(-1)
       #   del tt_list
         if not self.output_linear: z = self.activate(tt_list)
+        else: z = tt_list
       #   del f_nn
         del tt_list
     else: z = zs[0].squeeze(-1)
