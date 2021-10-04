@@ -379,6 +379,7 @@ class SFC_CAE_Decoder(nn.Module):
     for i in range(self.sfc_nums): del zs[0]
     if self.components > 1: 
         z = z.view(-1, self.components, self.input_size).permute(0, -1, -2)
+        return z
       #   if self.output_linear: 
       #       ts = [] 
       #       for i in range(self.components):
