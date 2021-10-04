@@ -315,7 +315,7 @@ class SFC_CAE_Decoder(nn.Module):
    #        self.out_linear_bias.append(nn.Parameter(torch.zeros(self.input_size)))
    #    self.out_linear_weights = nn.ModuleList(self.out_linear_weights)
    #    self.out_linear_bias = nn.ModuleList(self.out_linear_bias)
-   if output_linear:
+    if output_linear:
       self.out_linear_weights = nn.Parameter(torch.ones(self.components))
       self.out_linear_bias = nn.Parameter(torch.zeros(self.components))
       
