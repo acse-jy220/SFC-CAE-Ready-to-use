@@ -433,11 +433,13 @@ def train_model(autoencoder,
 
   return autoencoder
 
-def get_dataloader(rank, train_set, valid_set, test_set, world_size = torch.cuda.device_count()):
-    sampler = distributed.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank, shuffle=True)
-    train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=sampler)
-    valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=sampler)
-    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=sampler)
+def get_dataloader(rank, train_set, valid_set, test_set, batch_size, world_size = torch.cuda.device_count()):
+    train_sampler = distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True)
+    valid_sampler = distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True)
+    test_sampler = distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True)
+    train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
+    valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
+    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
     return train_loader, valid_loader, test_loader
 
 def train_model_DDP(rank, 
@@ -445,6 +447,7 @@ def train_model_DDP(rank,
                     train_set, 
                     valid_set,
                     test_set,
+                    batch_size,
                     optimizer_type = 'Adam',
                     state_load = None,
                     n_epochs = 100,
@@ -465,6 +468,8 @@ def train_model_DDP(rank,
     autoencoder = DDP(autoencoder, device_ids=[rank])
 
     train_loader, valid_loader, test_loader = get_dataloader(train_set, valid_set, test_set)
+
+    print('pass here now.')
 
     train_model(autoencoder,
                 train_loader, 

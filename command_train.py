@@ -231,6 +231,7 @@ if parameters['mode'] == 'train':
                      train_set,
                      valid_set,
                      test_set,
+                     batch_size,
                      optimizer_type,
                      state_load,
                      n_epoches, 
