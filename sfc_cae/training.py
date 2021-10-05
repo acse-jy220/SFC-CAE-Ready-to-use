@@ -467,7 +467,7 @@ def train_model_DDP(rank,
     autoencoder = autoencoder.to(rank)
     autoencoder = DDP(autoencoder, device_ids=[rank])
 
-    train_loader, valid_loader, test_loader = get_dataloader(train_set, valid_set, test_set)
+    train_loader, valid_loader, test_loader = get_dataloader(rank, train_set, valid_set, test_set, batch_size)
 
     print('pass here now.')
 
