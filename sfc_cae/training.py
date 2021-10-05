@@ -18,7 +18,7 @@ from timm import optim as tioptim
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.multiprocessing as mp
-import torch.utils.data.distributed.DistributedSampler as DistributedSampler
+from torch.utils.data import distributed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -434,7 +434,7 @@ def train_model(autoencoder,
   return autoencoder
 
 def get_dataloader(rank, train_set, valid_set, test_set, world_size = torch.cuda.device_count()):
-    sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank, shuffle=True)
+    sampler = distributed.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank, shuffle=True)
     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=sampler)
     valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=sampler)
     test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=sampler)
