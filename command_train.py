@@ -196,9 +196,10 @@ if parameters['mode'] == 'train':
    print('length of train set:', len(train_set), '\n')
    print('length of valid set:',len(valid_set), '\n')
    print('length of test set:',len(test_set), '\n')
-   train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
-   valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
-   test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
+   if parameters['parallel_mode'] == 'DP':
+     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
+     valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
+     test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
 # whether save the model
 if parameters['save_path'] != 'None':
@@ -227,9 +228,9 @@ if parameters['mode'] == 'train':
         torch.multiprocessing.freeze_support()
         mp.spawn(train_model_DDP,
                args=(autoencoder, 
-                     train_loader,
-                     valid_loader,
-                     test_loader,
+                     train_set,
+                     valid_set,
+                     test_set,
                      optimizer_type,
                      state_load,
                      n_epoches, 
