@@ -243,21 +243,22 @@ if parameters['mode'] == 'train':
                      True,),
                nprocs=torch.cuda.device_count(),
                join=True)      
-   else: parallel_mode = 'DP'
-   autoencoder = train_model(autoencoder, 
-                          train_loader = train_loader,
-                          valid_loader = valid_loader,
-                          test_loader = test_loader,
-                          optimizer_type = optimizer_type,
-                          state_load = state_load,
-                          n_epochs = n_epoches, 
-                          varying_lr = change_lr,
-                          lr = lr, 
-                          seed = seed,
-                          visualize = visualize,
-                          save_path = save_path,
-                          dict_only = True,
-                          parallel_mode = parallel_mode)
+   else: 
+      parallel_mode = 'DP'
+      autoencoder = train_model(autoencoder, 
+                                train_loader = train_loader,
+                                valid_loader = valid_loader,
+                                test_loader = test_loader,
+                                optimizer_type = optimizer_type,
+                                state_load = state_load,
+                                n_epochs = n_epoches, 
+                                varying_lr = change_lr,
+                                lr = lr, 
+                                seed = seed,
+                                visualize = visualize,
+                                save_path = save_path,
+                                dict_only = True,
+                                parallel_mode = parallel_mode)
    
 else: 
    autoencoder.load_state_dict(torch.load(state_load)['model_state_dict'])
