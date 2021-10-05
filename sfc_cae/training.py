@@ -18,7 +18,7 @@ from timm import optim as tioptim
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.multiprocessing as mp
-import torch.utils.data.DistributedSampler as DistributedSampler
+import torch.utils.data.distributed.DistributedSampler as DistributedSampler
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
