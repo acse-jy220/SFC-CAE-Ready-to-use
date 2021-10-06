@@ -6,7 +6,8 @@ Github handle: acse-jy220
 
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
-import torch.nn.functional as fn  # Function module
+import torch.nn.functional as fn
+from torch.nn.parallel.data_parallel import DataParallel  # Function module
 from torch.utils.data import DataLoader
 from livelossplot import PlotLosses
 import random 
@@ -243,18 +244,14 @@ def train_model(autoencoder,
   autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.  
   '''
   set_seed(seed)
-  variational = autoencoder.encoder.variational
+  if isinstance(autoencoder, DDP): variational = autoencoder.module.encoder.variational
+  else: variational = autoencoder.encoder.variational
   
   print('torch device num:', torch.cuda.device_count(),'\n')
   autoencoder.to(device)
   if torch.cuda.device_count() > 1:
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      if parallel_mode == 'DP': autoencoder = torch.nn.DataParallel(autoencoder)
-    #  elif parallel_mode == 'DDP':
-    #   torch.distributed.init_process_group(backend='nccl', world_size=N, init_method='...')
-    #   autoencoder = DDP(autoencoder)
-    #  print(autoencoder)
-    #  print(type(print(autoencoder)))
 
   # see if continue training happens
   if state_load is not None:
@@ -395,7 +392,7 @@ def train_model(autoencoder,
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
 
-  if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
+  if isinstance(autoencoder, DataParallel) and isinstance(autoencoder, DDP):
      NN = autoencoder.module.encoder.NN
      sfc_nums = autoencoder.module.encoder.sfc_nums
      latent = autoencoder.module.encoder.dims_latent
@@ -426,7 +423,7 @@ def train_model(autoencoder,
 
     save_path = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
-    if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
+    if isinstance(autoencoder, DataParallel) and isinstance(autoencoder, DDP):
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
     else:
       save_model(autoencoder, optimizer, check_gap, n_epochs, save_path, dict_only)

@@ -267,8 +267,6 @@ else:
    print('Entering Reconstruction mode......')
    print('------------------------------------\n')
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 if parameters['reconstructed_path'] != 'None':
    result_vtu_to_vtu(parameters['vtu_dir'], parameters['reconstructed_path'], vtu_fields, autoencoder, tk = tk, tb = tb, start_index = start_index, end_index = end_index, model_device = device)
 
