@@ -236,11 +236,11 @@ if parameters['mode'] == 'train':
                      state_load,
                      n_epoches, 
                      change_lr,
-                     lr, 
+                     lr,
+                     visualize, 
                      seed,
-                     visualize,
                      save_path,
-                     True,),
+                     True),
                nprocs=torch.cuda.device_count(),
                join=True)      
    else: 
