@@ -392,7 +392,7 @@ def train_model(autoencoder,
   MSELoss = np.vstack((np.array(train_MSEs), np.array(valid_MSEs))).T
   reMSELoss = np.vstack((np.array(re_train_MSEs), np.array(re_valid_MSEs))).T
 
-  if isinstance(autoencoder, DataParallel) and isinstance(autoencoder, DDP):
+  if isinstance(autoencoder, DataParallel) or isinstance(autoencoder, DDP):
      NN = autoencoder.module.encoder.NN
      sfc_nums = autoencoder.module.encoder.sfc_nums
      latent = autoencoder.module.encoder.dims_latent
@@ -423,7 +423,7 @@ def train_model(autoencoder,
 
     save_path = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_Latent_{latent}_Nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}'
   
-    if isinstance(autoencoder, DataParallel) and isinstance(autoencoder, DDP):
+    if isinstance(autoencoder, DataParallel) or isinstance(autoencoder, DDP):
       save_model(autoencoder.module, optimizer, check_gap, n_epochs, save_path, dict_only)
     else:
       save_model(autoencoder, optimizer, check_gap, n_epochs, save_path, dict_only)
