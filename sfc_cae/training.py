@@ -248,10 +248,10 @@ def train_model(autoencoder,
   else: variational = autoencoder.encoder.variational
   
   print('torch device num:', torch.cuda.device_count(),'\n')
-  autoencoder.to(device)
-  if torch.cuda.device_count() > 1:
+  if not isinstance(autoencoder, DDP): autoencoder.to(device)
+  if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
      print("Let's use", torch.cuda.device_count(), "GPUs!")
-     if parallel_mode == 'DP': autoencoder = torch.nn.DataParallel(autoencoder)
+     autoencoder = torch.nn.DataParallel(autoencoder)
 
   # see if continue training happens
   if state_load is not None:
@@ -482,5 +482,6 @@ def train_model_DDP(rank,
     cleanup_DDP()
 
     return autoencoder
+
 
   
