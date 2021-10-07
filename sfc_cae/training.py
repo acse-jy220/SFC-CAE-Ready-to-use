@@ -120,7 +120,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   count = 0
   for batch in dataloader:
       count += batch.size(0)
-      batch = batch.to(device)  # Send batch of images to the GPU
+      if not isinstance(autoencoder, DDP): batch = batch.to(device)  # Send batch of images to the GPU
       optimizer.zero_grad()  # Set optimiser grad to 0
       if variational:
         x_hat, KL = autoencoder(batch)
@@ -175,7 +175,7 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
   for batch in dataloader:
     with torch.no_grad():
       count += batch.size(0)
-      batch = batch.to(device)  # Send batch of images to the GPU
+      if not isinstance(autoencoder, DDP): batch = batch.to(device)  # Send batch of images to the GPU
       if variational:
           x_hat, KL = autoencoder(batch)
           MSE = criterion(batch, x_hat)
@@ -247,7 +247,7 @@ def train_model(autoencoder,
   set_seed(seed)
   if isinstance(autoencoder, DDP): 
      variational = autoencoder.module.encoder.variational
-     device = rank
+     # device = rank
   else: variational = autoencoder.encoder.variational
   
   print('torch device num:', torch.cuda.device_count(),'\n')
