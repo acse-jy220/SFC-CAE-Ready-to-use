@@ -36,7 +36,7 @@ from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorData
 
 #################################################### Functions for data pre-processing / data loading ######################################################################
 
-def read_in_files(data_path, file_format='vtu', vtu_fields=None):
+def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = False):
     '''
     This function reads in the vtu/txt files in a {data_path} as tensors, of shape [snapshots, number of Nodes, Channels]
 
@@ -44,7 +44,8 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
     ---
     data_path: [string] the data_path which holds vtu/txt files, no other type of files are accepted!!!
     file_format: [string] 'vtu' or 'txt', the format of the file.
-    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure']
+    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure'].
+    write_out: [bool] whether write out those readed-in fields as indenpendent tensors, used for `MyTensorDataset` Class.
 
     Output:
     ---
@@ -105,6 +106,10 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None):
                zero_compos += 1
                whole_data[..., i:-1] = whole_data[..., i + 1:]
         if zero_compos > 0 : whole_data = whole_data[..., :-zero_compos]
+
+        if write_out:
+           for i in range(whole_data.shape[0]):
+               torch.save(whole_data[i], 'tensor_%d.pt'%i)
         
         return whole_data, coords, cells    
 
