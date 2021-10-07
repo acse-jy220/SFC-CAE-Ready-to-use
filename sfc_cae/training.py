@@ -214,7 +214,8 @@ def train_model(autoencoder,
                 varying_lr = False, 
                 check_gap = 3,
                 weight_decay = 0, 
-                criterion_type = 'MSE'):
+                criterion_type = 'MSE',
+                rank = None):
   '''
   This function is main function for loading, training, and saving the model.
 
@@ -479,7 +480,8 @@ def train_model_DDP(rank,
                 dict_only = dict_only,
                 visualize = visualize,
                 parallel_mode = 'DDP',
-                optimizer_type = optimizer_type)
+                optimizer_type = optimizer_type,
+                rank = rank)
 
     cleanup_DDP()
 
