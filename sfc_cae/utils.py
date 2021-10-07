@@ -113,7 +113,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
            bar.start()
            cnt = 0
            for i in range(whole_data.shape[0]):
-               torch.save(whole_data[i], 'tensor_%d.pt'%i)
+               torch.save(whole_data[i, :], 'tensor_%d.pt'%i)
                cnt += 1
                bar.update(cnt)
            bar.finish()

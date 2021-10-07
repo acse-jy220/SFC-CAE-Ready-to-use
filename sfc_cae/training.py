@@ -244,7 +244,9 @@ def train_model(autoencoder,
   autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.  
   '''
   set_seed(seed)
-  if isinstance(autoencoder, DDP): variational = autoencoder.module.encoder.variational
+  if isinstance(autoencoder, DDP): 
+     variational = autoencoder.module.encoder.variational
+     device = rank
   else: variational = autoencoder.encoder.variational
   
   print('torch device num:', torch.cuda.device_count(),'\n')
