@@ -108,7 +108,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
         if zero_compos > 0 : whole_data = whole_data[..., :-zero_compos]
 
         if write_out:
-           print("Writing Tensors......\n")
+           print("\nWriting Tensors......\n")
            bar=progressbar.ProgressBar(maxval=num_data)
            bar.start()
            cnt = 0
