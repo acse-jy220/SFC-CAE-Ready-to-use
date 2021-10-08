@@ -200,17 +200,13 @@ if parameters['mode'] == 'train':
      train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
      valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
      test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
-   elif parameters['parallel_mode'] == 'DDP':
-     os.environ['MASTER_ADDR'] = 'localhost'
-     os.environ['MASTER_PORT'] = '12355'
-     # initialize the process group
-     dist.init_process_group("nccl", world_size=torch.cuda.device_count())
-     train_sampler = distributed.DistributedSampler(train_set, num_replicas=torch.cuda.device_count(), shuffle=True)
-     valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=torch.cuda.device_count(), shuffle=True)
-     test_sampler = distributed.DistributedSampler(test_set, num_replicas=torch.cuda.device_count(), shuffle=True)
-     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
-     valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
-     test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
+   # elif parameters['parallel_mode'] == 'DDP':
+   #   train_sampler = distributed.DistributedSampler(train_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+   #   valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+   #   test_sampler = distributed.DistributedSampler(test_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+   #   train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
+   #   valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
+   #   test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
          
 # whether save the model
 if parameters['save_path'] != 'None':
@@ -237,6 +233,13 @@ if parameters['mode'] == 'train':
       parallel_mode = parameters['parallel_mode']
       if __name__ == '__main__':
         torch.multiprocessing.freeze_support()
+        mp.spawn(setup_DDP, args=(torch.cuda.device_count()), nprocs=torch.cuda.device_count(), join=True)
+        train_sampler = distributed.DistributedSampler(train_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+        valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+        test_sampler = distributed.DistributedSampler(test_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+        train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
+        valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
+        test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
         mp.spawn(train_model_DDP,
                args=(autoencoder, 
                      train_loader,
