@@ -233,7 +233,7 @@ if parameters['mode'] == 'train':
       parallel_mode = parameters['parallel_mode']
       if __name__ == '__main__':
         torch.multiprocessing.freeze_support()
-        mp.spawn(setup_DDP, args=(torch.cuda.device_count()), nprocs=torch.cuda.device_count(), join=True)
+        mp.spawn(setup_DDP, args=(), nprocs=torch.cuda.device_count(), join=True)
         train_sampler = distributed.DistributedSampler(train_set, num_replicas=torch.cuda.device_count(), shuffle=True)
         valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=torch.cuda.device_count(), shuffle=True)
         test_sampler = distributed.DistributedSampler(test_set, num_replicas=torch.cuda.device_count(), shuffle=True)
