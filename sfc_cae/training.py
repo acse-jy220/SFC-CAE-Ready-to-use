@@ -90,7 +90,7 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path, dict_only = Fa
       print('model saved to', model_name)
     print('model_dict saved to', model_dictname)
 
-def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode):
+def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode, rank = None):
   '''
   This function is implemented for training the model.
 
@@ -121,6 +121,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   for batch in dataloader:
       count += batch.size(0)
       if not isinstance(autoencoder, DDP): batch = batch.to(device)  # Send batch of images to the GPU
+      else: batch = batch.to(rank)
       optimizer.zero_grad()  # Set optimiser grad to 0
       if variational:
         x_hat, KL = autoencoder(batch)
@@ -144,7 +145,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
   else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
-def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode):
+def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode, rank = None):
   '''
   This function is implemented for validating the model.
 
@@ -176,6 +177,7 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
     with torch.no_grad():
       count += batch.size(0)
       if not isinstance(autoencoder, DDP): batch = batch.to(device)  # Send batch of images to the GPU
+      else: batch = batch.to(rank)
       if variational:
           x_hat, KL = autoencoder(batch)
           MSE = criterion(batch, x_hat)
@@ -310,11 +312,11 @@ def train_model(autoencoder,
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
     if variational:
-      train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode) 
-      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode)
+      train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode, rank) 
+      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode, rank)
     else:
-      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode)
-      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode)
+      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode, rank)
+      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode, rank)
 
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other.cpu().numpy()
@@ -374,9 +376,9 @@ def train_model(autoencoder,
       old_loss = this_loss
   
   if variational:
-    test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode)
+    test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
   else:
-    test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode)
+    test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
 
   if criterion_type == 'MSE':
     test_MSE_re = test_loss_other.cpu().numpy()
