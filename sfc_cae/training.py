@@ -120,6 +120,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   count = 0
   for batch in dataloader:
       count += batch.size(0)
+      print(count)
       if isinstance(autoencoder, DDP): batch = batch.to(rank)  # Send batch of images to the GPU
       else: batch = batch.to(device)
       optimizer.zero_grad()  # Set optimiser grad to 0
@@ -134,7 +135,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
-      
+
       dist.barrier()
       torch.cuda.empty_cache()
 
