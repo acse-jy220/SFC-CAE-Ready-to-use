@@ -134,6 +134,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
+      torch.cuda.empty_cache()
       Loss.backward()  # Back-propagate
       optimizer.step()
       train_loss += Loss * batch.size(0)
