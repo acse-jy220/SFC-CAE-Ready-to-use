@@ -476,11 +476,18 @@ def train_model_DDP(rank,
                     dict_only = False):
 
     print(f"Running DDP on rank {rank}.")
-    # setup_DDP(rank, torch.cuda.device_count())
+    setup_DDP(rank, torch.cuda.device_count())
 
     # create model and move it to GPU with id rank
     autoencoder = autoencoder.to(rank)
     autoencoder = DDP(autoencoder, device_ids=[rank])
+
+    train_sampler = distributed.DistributedSampler(train_set, rank=rank, num_replicas=torch.cuda.device_count(), shuffle=True)
+    valid_sampler = distributed.DistributedSampler(valid_set, rank=rank, num_replicas=torch.cuda.device_count(), shuffle=True)
+    test_sampler = distributed.DistributedSampler(test_set, rank=rank, num_replicas=torch.cuda.device_count(), shuffle=True)
+    train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
+    valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
+    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
 
     # train_sampler, valid_sampler, test_sampler = get_sampler(rank, train_set, valid_set, test_set)
 
