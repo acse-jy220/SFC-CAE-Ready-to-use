@@ -120,8 +120,8 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   count = 0
   for batch in dataloader:
       count += batch.size(0)
-      if not isinstance(autoencoder, DDP): batch = batch.to(device)  # Send batch of images to the GPU
-      else: batch = batch.to(rank)
+      if isinstance(autoencoder, DDP): batch = batch.to(rank)  # Send batch of images to the GPU
+      else: batch = batch.to(device)
       optimizer.zero_grad()  # Set optimiser grad to 0
       if variational:
         x_hat, KL = autoencoder(batch)
@@ -134,11 +134,15 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
         x_hat = autoencoder(batch)
         Loss = criterion(batch, x_hat)  # Calculate MSE loss
       with torch.no_grad(): other_MSE = other_metric(batch, x_hat)  # Calculate (may be) relative loss
-      # torch.cuda.empty_cache()
+      
+      dist.barrier()
+      torch.cuda.empty_cache()
+
       Loss.backward()  # Back-propagate
       optimizer.step()
       train_loss += Loss * batch.size(0)
       train_loss_other += other_MSE * batch.size(0)
+
       del x_hat
       del batch
       del Loss
@@ -319,6 +323,16 @@ def train_model(autoencoder,
       train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode, rank)
       valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode, rank)
 
+    if isinstance(autoencoder, DDP):
+      dist.all_reduce(train_loss, reduce_op=dist.ReduceOp.SUM)
+      dist.all_reduce(train_loss_other, reduce_op=dist.ReduceOp.SUM)
+      dist.all_reduce(valid_loss, reduce_op=dist.ReduceOp.SUM)
+      dist.all_reduce(valid_loss_other, reduce_op=dist.ReduceOp.SUM)
+      train_loss /= torch.cuda.device_count()
+      train_loss_other /= torch.cuda.device_count()
+      valid_loss /= torch.cuda.device_count()
+      valid_loss_other /= torch.cuda.device_count()
+
     if criterion_type == 'MSE':
         train_MSE_re = train_loss_other.cpu().numpy()
         valid_MSE_re = valid_loss_other.cpu().numpy()
@@ -376,7 +390,7 @@ def train_model(autoencoder,
       decrease_rate = 0
       old_loss = this_loss
     
-    torch.cuda.empty_cache() # clean cache after every epoch
+    # torch.cuda.empty_cache() # clean cache after every epoch
   
   if variational:
     test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
