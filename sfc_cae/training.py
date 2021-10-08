@@ -437,8 +437,8 @@ def train_model(autoencoder,
 
 def get_dataloader(rank, train_set, valid_set, test_set, batch_size, world_size = torch.cuda.device_count()):
     train_sampler = distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True)
-    valid_sampler = distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True)
-    test_sampler = distributed.DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True)
+    valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=world_size, rank=rank, shuffle=True)
+    test_sampler = distributed.DistributedSampler(test_set, num_replicas=world_size, rank=rank, shuffle=True)
     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
     valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
     test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
