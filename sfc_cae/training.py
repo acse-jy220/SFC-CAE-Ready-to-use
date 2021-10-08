@@ -37,7 +37,7 @@ def set_seed(seed):
 
     return True
 
-def setup_DDP(rank, world_size):
+def setup_DDP(rank, world_size = torch.cuda.device_count()):
     '''
     Setup Distributed Data Parallel.
     '''
