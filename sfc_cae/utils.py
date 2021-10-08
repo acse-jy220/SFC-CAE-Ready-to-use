@@ -649,7 +649,9 @@ class NearestNeighbouring(nn.Module):
 
     def forward(self, tensor_list):
         tensor_list *= self.weights
-        return tensor_list.sum(-1) + self.bias
+        out_tensor = torch.sum(tensor_list, -1)
+        del tensor_list
+        return out_tensor + self.bias
 
 def expend_SFC_NUM(sfc_ordering, partitions):
     '''
