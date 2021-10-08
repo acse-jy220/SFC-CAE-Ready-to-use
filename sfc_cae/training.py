@@ -476,7 +476,7 @@ def train_model_DDP(rank,
                     dict_only = False):
 
     print(f"Running DDP on rank {rank}.")
-    setup_DDP(rank, torch.cuda.device_count())
+    # setup_DDP(rank, torch.cuda.device_count())
 
     # create model and move it to GPU with id rank
     autoencoder = autoencoder.to(rank)

@@ -201,6 +201,10 @@ if parameters['mode'] == 'train':
      valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
      test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
    elif parameters['parallel_mode'] == 'DDP':
+     os.environ['MASTER_ADDR'] = 'localhost'
+     os.environ['MASTER_PORT'] = '12355'
+     # initialize the process group
+     dist.init_process_group("nccl", world_size=torch.cuda.device_count())
      train_sampler = distributed.DistributedSampler(train_set, num_replicas=torch.cuda.device_count(), shuffle=True)
      valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=torch.cuda.device_count(), shuffle=True)
      test_sampler = distributed.DistributedSampler(test_set, num_replicas=torch.cuda.device_count(), shuffle=True)
