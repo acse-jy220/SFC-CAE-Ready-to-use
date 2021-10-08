@@ -200,7 +200,14 @@ if parameters['mode'] == 'train':
      train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
      valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
      test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
-
+   elif parameters['parallel_mode'] == 'DDP':
+     train_sampler = distributed.DistributedSampler(train_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+     valid_sampler = distributed.DistributedSampler(valid_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+     test_sampler = distributed.DistributedSampler(test_set, num_replicas=torch.cuda.device_count(), shuffle=True)
+     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, sampler=train_sampler)
+     valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, sampler=valid_sampler)
+     test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
+         
 # whether save the model
 if parameters['save_path'] != 'None':
    save_path = parameters['save_path']
@@ -228,9 +235,9 @@ if parameters['mode'] == 'train':
         torch.multiprocessing.freeze_support()
         mp.spawn(train_model_DDP,
                args=(autoencoder, 
-                     train_set,
-                     valid_set,
-                     test_set,
+                     train_loader,
+                     valid_loader,
+                     test_loader,
                      batch_size,
                      optimizer_type,
                      state_load,
