@@ -242,9 +242,9 @@ if parameters['mode'] == 'train':
       #   test_loader = DataLoader(dataset=test_set, batch_size=batch_size, sampler=test_sampler)
         mp.spawn(train_model_DDP,
                args=(autoencoder, 
-                     train_loader,
-                     valid_loader,
-                     test_loader,
+                     train_set,
+                     valid_set,
+                     test_set,
                      batch_size,
                      optimizer_type,
                      state_load,

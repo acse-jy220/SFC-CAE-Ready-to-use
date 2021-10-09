@@ -461,9 +461,9 @@ def get_sampler(rank, train_set, valid_set, test_set, world_size = torch.cuda.de
 
 def train_model_DDP(rank, 
                     autoencoder,
-                    train_loader, 
-                    valid_loader,
-                    test_loader,
+                    train_set, 
+                    valid_set,
+                    test_set,
                     batch_size,
                     optimizer_type = 'Adam',
                     state_load = None,
