@@ -416,6 +416,9 @@ def plot_path_grid_cube(size, ordering, point_color = 'red', line_color = 'blue'
     else: 
         cuts = np.linspace(0, size ** 3, levels + 1).astype(np.int32)
         for i in range(levels): 
+            start = cuts[i]
+            end = cuts[i + 1]
+            if i != levels - 1: end += 1
             ax.plot(x[cuts[i]:cuts[i+1]], y[cuts[i]:cuts[i+1]], z[cuts[i]:cuts[i+1]], '-', linewidth = linewidth)
             ax.scatter(x[cuts[i]:cuts[i+1]], y[cuts[i]:cuts[i+1]], z[cuts[i]:cuts[i+1]], '-')
 
@@ -523,6 +526,9 @@ def plot_trace_vtu_2D(coords, levels, save = False, width = None):
     ax.set_ylim(y_bottom, y_top)
     cuts = np.linspace(0, coords.shape[0], levels + 1).astype(np.int32)
     for i in range(levels):
+        start = cuts[i]
+        end = cuts[i + 1]
+        if i != levels - 1: end += 1
         if width is not None: ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-', linewidth = width)
         else: ax.plot(coords[cuts[i]:cuts[i+1], 0], coords[cuts[i]:cuts[i+1], 1], '-')
     plt.axis('off')
