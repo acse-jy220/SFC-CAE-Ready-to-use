@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.tri as tri
+from mpl_toolkits.mplot3d import Axes3D
 import meshio
 import re
 
@@ -360,6 +361,74 @@ class MyTensorDataset(Dataset):
         return self.length
 
 ####################################################  Plotting functions for unstructured mesh ######################################################################      
+
+def plot_path_grid_cube(size, ordering, point_color = 'red', line_color = 'blue', show_blocks = True, mark_numbers = True, linewidth = 5, levels = None):    
+    '''
+    This function will generate path plot (with block background) of some sfcs in 3D cube grids, as well as show the node numbering.
+
+    Input:
+    ---
+    size: [int] the length of the cube.
+    ordering: [1d-array] the ordering of the grids in the cube, length stricted equal to size ^ 3.
+    point_color: [str] the color of the Nodes.
+    line_color: [str] the color of the lines.
+    show_blocks: [bool] whether the grids are showed in the plot.
+    mark_numbers: [bool] whether the numbering of the grids are annotated in the plot.
+    linewidth: [float] the width of the SFC.
+    levels: [int or NoneType] whether color of different levels (w.r.t ordering) are distinguished.
+
+    Output:
+    ---
+    A 3D plot.
+    '''
+    fig = plt.figure(figsize=(15,15))
+    ax = fig.add_subplot(projection='3d')
+    mesh = np.arange(0, size + 1)
+    mesh = (mesh[:-1] + mesh[1:]) / 2
+    x, y, z = np.meshgrid(mesh, mesh, mesh, indexing='ij')
+
+    # Create axis
+    axes = [size] * 3
+  
+    # Create Data
+    data = np.ones(axes, dtype=np.bool)
+  
+    # Controll Tranperency
+    alpha = 0.2
+    alpha_2 = 0.2
+  
+    # Control colour
+    colors = np.empty(axes + [4], dtype=np.float32)
+    edges = np.empty(axes + [4], dtype=np.float32)
+    colors = [1, 1, 1, alpha]
+    edges = [0, 0, 0, alpha_2]
+  
+    # Voxels is used
+    if show_blocks: ax.voxels(data, facecolors=colors, edgecolors=edges)
+
+    # plot ordering in 3d
+    x = x.flatten()[ordering]
+    y = y.flatten()[ordering]
+    z = z.flatten()[ordering]
+    if levels is None: 
+       ax.plot(x, y, z, color = line_color, linewidth = linewidth)
+       ax.scatter(x, y, z, c = point_color)
+    else: 
+        cuts = np.linspace(0, size ** 3, levels + 1).astype(np.int32)
+        for i in range(levels): 
+            ax.plot(x[cuts[i]:cuts[i+1]], y[cuts[i]:cuts[i+1]], z[cuts[i]:cuts[i+1]], '-', linewidth = linewidth)
+            ax.scatter(x[cuts[i]:cuts[i+1]], y[cuts[i]:cuts[i+1]], z[cuts[i]:cuts[i+1]], '-')
+
+    labs = (np.arange(size ** 3) + 1).tolist()
+
+    #use for loop to add annotations to each point in plot
+    if mark_numbers: 
+      for i, txt in enumerate(labs):
+        disp = [0.05, 0.02, 0.02]
+        ax.text(x[i] + disp[0], y[i] + disp[1], z[i] + disp[2], txt, None, color = point_color, fontfamily = 'sans-serif', fontsize=15, fontweight='bold')
+
+    ax.axis('off')
+    plt.show()
 
 def get_sfc_curves_from_coords(coords, num):
     '''
