@@ -130,6 +130,52 @@ def sparse_square_grid(N):
     
     return K.indptr + 1, K.indices + 1, K.getnnz()
 
+def sparse_cube(N):
+    '''
+    Get the Fortran CSRformat of the connectivity matrix of a cube grid.
+    ---
+    N: [int] the size of the square grid.
+    ---
+    Returns:
+
+    findm: [1d-array] The Intptr of the CSRMatrix, start index is 1
+    colm: [1d-array] The Column Indices of the CSRMatrix, start index is 1
+    ncolm: [int] The number of non-zeros in this sparse Matrix, equal to findm[-1]
+    '''
+
+    n = N ** 3
+    
+    offsets = [-N**2, -N, -1, 0, 1, N, N**2]
+    diags = []
+    subdiag_N = np.ones(n-N)
+    gap = np.arange(N**2 - N, n - N**2, N)
+    for i in gap: subdiag_N[i: i + N] = 0
+
+    # coefficient in front of u_{i-N**2}:
+    diags.append(np.ones(n-N**2))
+    # coefficient in front of u_{i-N}:
+    diags.append(subdiag_N)
+    # coefficient in front of u_{i-1}:
+    diags.append(np.ones(n-1))
+    # main diagonal, zero for centre difference in space
+    diags.append(np.ones(n))
+    # coefficient in front of u_{i+1}:
+    diags.append(diags[2])
+    # coefficient in front of u_{i+N}:
+    diags.append(diags[1])
+    # coefficient in front of u_{i+N**2}:
+    diags.append(diags[0])
+    
+    K = sp.diags(diags, offsets, format='csr')
+    
+    # loop over x-axis-right-most column in cube (except first row)
+    for i in range(N, n, N):
+        K[i, i-1] = 0 # increase in x-axis
+        K[i-1, i] = 0 # decrease in x-axis
+    K.eliminate_zeros()
+
+    return K.indptr + 1, K.indices + 1, K.getnnz()
+
 def get_hilbert_curves(size, num):
     '''
     Get the hilbert_curves on a structured square grid of size [size]^ 2.
@@ -151,12 +197,13 @@ def get_hilbert_curves(size, num):
         invert_Hilbert_index_2 = np.argsort(Hilbert_index_2)
         return [Hilbert_index, Hilbert_index_2], [invert_Hilbert_index, invert_Hilbert_index_2]
 
-def get_MFT_RNN_curves_structured(size, num):
+def get_MFT_RNN_curves_structured(size, num, dim=2):
     '''
     Get the MFT_RNN_curves on a structured square grid of size [size]^ 2.
     ---
     size: [int] the size of the square grid.
     num: [int] the number of space-filling curves want to generate.
+    dim: [int] 2 or 3, represents 2D or 3D problem.
     ---
     Returns:
 
@@ -164,13 +211,14 @@ def get_MFT_RNN_curves_structured(size, num):
     inv_lists: [list of 1d-arrays] the list of inverse space-filling curve orderings, of shape (number of curves, number of Nodes).
     '''
 
-    findm, colm, ncolm  = sparse_square_grid(size)
+    if dim == 2: findm, colm, ncolm  = sparse_square_grid(size)
+    elif dim == 3: findm, colm, ncolm  = sparse_cube(size)
     curve_lists = []
     inv_lists = []
     ncurve = num
     graph_trim = -10  # has always been set at -10
     starting_node = 0 # =0 do not specifiy a starting node, otherwise, specify the starting node
-    whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurve, size**2, ncolm)
+    whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurve, size**dim, ncolm)
     for i in range(space_filling_curve_numbering.shape[-1]):
         curve_lists.append(np.argsort(space_filling_curve_numbering[:,i]))
         inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))
