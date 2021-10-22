@@ -148,7 +148,7 @@ def sparse_cube(N):
     offsets = [-N**2, -N, -1, 0, 1, N, N**2]
     diags = []
     subdiag_N = np.ones(n-N)
-    gap = np.arange(N**2 - N, n - N**2, N)
+    gap = np.arange(N**2 - N, n - N**2, N**2)
     for i in gap: subdiag_N[i: i + N] = 0
 
     # coefficient in front of u_{i-N**2}:
