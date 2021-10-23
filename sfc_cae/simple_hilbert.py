@@ -142,35 +142,26 @@ def hilbert_space_filling_curve_3d(num = 2):
          
         # grid_1
         grid_1 = rotate_3d_xy_90(grid_sample, size = size, nrot = 1, reverse=True)
-        # print(grid_1)
         # grid_2 and 3
         grid_2 = rotate_3d(grid_sample, size = size, zdir = (2, 1, 0)) + size ** 3
         merge_1 = np.concatenate((grid_1, grid_2), axis = -2)
-        # print(merge_1)
         grid_3 = rotate_3d(grid_sample, size = size, zdir = (2, 1, 0)) + 2 * size ** 3
         # grid_4 and 5
         grid_4 = rotate_3d_yz_90(grid_sample, size = size, nrot = 2, reverse=False) + 3 * size ** 3
         merge_2 = np.concatenate((grid_4, grid_3), axis = -2)
-        # print(merge_2)
         half_1 = np.concatenate((merge_1, merge_2), axis = -1)
-        # print(half_1)
         grid_5 = rotate_3d_yz_90(grid_sample, size = size, nrot = 2, reverse=False) + 4 * size ** 3
-        # print(grid_5)
         # grid_6 and 7
         grid_6 = rotate_3d_xz_90(grid_sample, size = 2, nrot = 3, reverse=True) + 5 * size ** 3 
         merge_4 = np.concatenate((grid_5, grid_6), axis = -2)
-        # print(merge_4)
         grid_7 = rotate_3d_xz_90(grid_sample, size = 2, nrot = 3, reverse=True) + 6 * size ** 3 
         # grid_8
         grid_8 = rotate_3d_xy_90(grid_sample, size = size, nrot = 3, reverse=True) + 7 * size ** 3
         merge_5 = np.concatenate((grid_8, grid_7), axis = -2)
-        # print(merge_5)
-        half_2 = np.concatenate((merge_5, merge_4), axis = -1)
-        # print(half_2)
-        
+        half_2 = np.concatenate((merge_5, merge_4), axis = -1)    
+          
         # merge 8 grids to form a big grid of next iter.
         grid_sample =np.concatenate((half_1, half_2), axis = 0)
-        # print(grid_sample)
         
         # increase the size
         size *= 2 
