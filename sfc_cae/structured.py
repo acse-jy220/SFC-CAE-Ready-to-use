@@ -228,12 +228,12 @@ def get_MFT_RNN_curves_structured(size, num, dim=2):
     secs = (duration % 3600) % 60
 
     if hours != 0:
-       time_str = F'%d hour %d mins %d seconds' % (hours, mins, int(secs))
+       time_str = F'%d hour %d min %.2f second' % (hours, mins, secs)
     else:
         if mins != 0:
-            time_str = F'%d mins %d seconds' % (mins, int(secs))
+            time_str = F'%d min %.2f second' % (mins, secs)
         else:
-            time_str = F'%.2f seconds' % (secs)
+            time_str = F'%.2f second' % (secs)
 
     print(F'The Fortran library takes %s to generate sfcs.'% time_str)
 
