@@ -218,7 +218,25 @@ def get_MFT_RNN_curves_structured(size, num, dim=2):
     ncurve = num
     graph_trim = -10  # has always been set at -10
     starting_node = 0 # =0 do not specifiy a starting node, otherwise, specify the starting node
+    start_time = time.time()
     whichd, space_filling_curve_numbering = sfc.ncurve_python_subdomain_space_filling_curve(colm, findm, starting_node, graph_trim, ncurve, size**dim, ncolm)
+    end_time = time.time()
+    duration = end_time - start_time
+
+    hours = duration // 3600
+    mins = (duration % 3600) // 60
+    secs = (duration % 3600) % 60
+
+    if hours != 0:
+       time_str = F'%d hour %d mins %d seconds' % (hours, mins, int(secs))
+    else:
+        if mins != 0:
+            time_str = F'%d mins %d seconds' % (mins, int(secs))
+        else:
+            time_str = F'%.2f seconds' % (secs)
+
+    print(F'The Fortran library takes %s to generate sfcs.'% time_str)
+
     for i in range(space_filling_curve_numbering.shape[-1]):
         curve_lists.append(np.argsort(space_filling_curve_numbering[:,i]))
         inv_lists.append(np.argsort(np.argsort(space_filling_curve_numbering[:,i])))
