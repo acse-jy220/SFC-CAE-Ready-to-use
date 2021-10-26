@@ -23,11 +23,17 @@ from mpl_toolkits.mplot3d import Axes3D
 import meshio
 import re
 
+# permutation lib
+from itertools import permutations
+import itertools
+
 # create an animation
 from matplotlib import animation
 from IPython.display import HTML
 # custom colormap
 import cmocean
+
+import copy
 
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
@@ -678,6 +684,57 @@ def find_minus_neigh(ordering):
     minus_neigh[1:] = ordering[:-1]
     minus_neigh[0] = ordering[0]
     return minus_neigh
+
+def gen_neighbour_keys(ndim):
+    '''
+    Generate keys for create neighbours in multi-dimension,
+    where -1 represents minus neigh, 0 represents no shift, 1 represents plus neigh.
+
+    Input:
+    ---
+    ndim: [int] dimension for NN.
+    
+    Return:
+    ---
+    C: [list of ndim-tuples] indicating the neighbours in md.    
+    '''
+    keys = (np.arange(3) - 1).astype('int')
+    C = list(itertools.product(keys, repeat=ndim))
+    C.remove((0,) * ndim)
+    return C
+
+def get_neighbour_index(ordering, tuple_i):
+    '''
+    Get neighbours for a sfc in multi-dimension,
+    corresponding to a md neighbour key generated from 'gen_neighbour_keys' function.
+
+    Input:
+    ---
+    ordering: [numpy.ndarray] multi-dimensional sfc.
+    tuple_i: [tuple] indicates the respective place of this neighbour, see 'gen_neighbour_keys' function.
+    
+    Return:
+    ---
+    neigh_ordering: [numpy.ndarray] the neighbours in md, same shape to \{ordering\}.
+    '''
+    ndim = len(tuple_i)
+    neigh_ordering = copy.deepcopy(ordering)
+    indices_from = {}
+    indices_to = {}
+    for i in range(ndim):
+        if tuple_i[i] == 1:
+           indices_from.update({i: slice(1, None)})
+           indices_to.update({i: slice(None, -1)})
+        elif tuple_i[i] == -1:
+           indices_from.update({i: slice(None, -1)})
+           indices_to.update({i: slice(1, None)})
+
+    idx_from = tuple([indices_from.get(dim, slice(None)) for dim in range(ndim)])
+    idx_to = tuple([indices_to.get(dim, slice(None)) for dim in range(ndim)])
+    
+    neigh_ordering[idx_to] = ordering[idx_from]
+
+    return neigh_ordering
 
 def ordering_tensor(tensor, ordering):
     '''
