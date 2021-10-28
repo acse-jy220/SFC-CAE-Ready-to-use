@@ -755,7 +755,7 @@ def get_neighbourhood_md(x, Ax, ordering = False):
     size = x.flatten().shape[0]
     for i, tuple_i in enumerate(Ax):
         order_list += (get_neighbour_index(x, tuple_i).flatten() + (i+1) * size, )
-    order_list = torch.stack(order_list, 0)
+    order_list = torch.cat(order_list, 0)
     return order_list
 
 def ordering_tensor(tensor, ordering):
