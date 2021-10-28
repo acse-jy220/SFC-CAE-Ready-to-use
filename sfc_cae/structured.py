@@ -6,14 +6,14 @@ Author: Jin Yu
 Github handle: acse-jy220
 """
 
-from sfc_cae.simple_hilbert import *
-from sfc_cae.advection_block_analytical import *
+from .simple_hilbert import *
+from .advection_block_analytical import *
 import space_filling_decomp_new as sfc
 import numpy as np  # Numpy
 import scipy.sparse.linalg as spl
 import scipy.linalg as sl
 import scipy.sparse as sp
-from sfc_cae.utils import *
+from .utils import *
 
 
 def loadsimulation(data_dir, simulaion_steps, simulaion_num, reshape = False):

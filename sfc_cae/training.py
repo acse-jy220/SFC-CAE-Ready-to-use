@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from livelossplot import PlotLosses
 import random 
 import numpy as np
-from sfc_cae.utils import *
+from .utils import *
 # for other custom Pytorch Optimizers
 from timm import optim as tioptim
 # Distributed Data Parallel

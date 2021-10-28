@@ -7,7 +7,7 @@ Github handle: acse-jy220
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
-from sfc_cae.utils import *
+from .utils import *
 
 
 
@@ -48,7 +48,7 @@ class SFC_CAE_Encoder(nn.Module):
     CASE -- (SFC-CAE): 
          x: the compressed latent variable, of shape (dims_latent, )
 
-    CASE-- (SFC-VCAE):
+    CASE -- (SFC-VCAE):
          x: the compressed latent variable, of shape (dims_latent, )
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
@@ -227,7 +227,7 @@ class SFC_CAE_Decoder(nn.Module):
     CASE -- (SFC-CAE): 
          z: the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
 
-    CASE-- (SFC-VCAE):
+    CASE -- (SFC-VCAE):
          z: the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
@@ -436,7 +436,7 @@ class SFC_CAE(nn.Module):
     CASE -- (SFC-CAE): 
          self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
 
-    CASE-- (SFC-VCAE):
+    CASE -- (SFC-VCAE):
          self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
