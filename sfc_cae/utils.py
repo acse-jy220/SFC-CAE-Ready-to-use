@@ -750,10 +750,12 @@ def get_neighbourhood_md(x, Ax, ordering = False):
     ---
     neighbourhood: [tuple of numpy.ndarray or torch.Tensor] neighbourhood in multi-dimension.
     '''
+    x = x.flatten()
     if ordering: x = x.long()
-    order_list = (x.flatten(), )
-    for tuple_i in Ax:
-        order_list += (get_neighbour_index(x, tuple_i).flatten(), )
+    order_list = (x, )
+    size = x.shape[0]
+    for i, tuple_i in enumerate(Ax):
+        order_list += (get_neighbour_index(x, tuple_i).flatten() + (i+1) * size, )
     order_list = torch.stack(order_list, 0)
     return order_list
 
