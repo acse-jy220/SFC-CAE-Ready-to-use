@@ -1,4 +1,5 @@
 """A ready-to-use, self-adjusting space-filling-curve (variational) convolutional autoencoder"""
-__all__ = ["utils", "sfc_cae", "structured", "training"]
-for x in __all__: 
-    from x import *
+from .utils import *
+from .sfc_cae import *
+from .structured import *
+from .training import *
