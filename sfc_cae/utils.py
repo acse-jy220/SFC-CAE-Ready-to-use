@@ -758,6 +758,58 @@ def get_neighbourhood_md(x, Ax, ordering = False):
     order_list = torch.cat(order_list, 0)
     return order_list
 
+def get_concat_list_md(x, ordering_list):
+    '''
+    get the concat list of a tensor input x according to some ordering list of size (size of neighborhood, total nodes in x)
+
+    Input:
+    ---
+    x: [torch.Tensor] the tensor variable.
+    ordering_list: [(normally) numpy.ndarray] 1-D array represents sfc_ordering after applying MD-NN, of size [size of neighborhood * total nodes in x].
+    
+    Return:
+    ---
+    ordered_tensor: [torch.Tensor] ordered neighbourhood tensor in md, input of 'NearestNeighbouring_md'.
+    '''
+    ndim = x.ndim
+    num_neigh = 3**ndim
+    xx = (x.flatten()).repeat(num_neigh)
+    return xx[ordering_list].reshape(num_neigh, -1)
+
+class NearestNeighbouring_md(nn.Module):
+    '''
+    This class defines the "Neareast Neighbouring" Layer in the multi-dimension form, i.e 2D or 3D.
+    
+    __init__:
+      Input:
+      ---
+      size: [tuple] the shape of the input image, 2D or 3D.
+      initial_weight: [int] the initial weights for neighbourhoods, an intuiative value is defined in sfc_cae.py
+      num_neigh: [int] the number of neighbours plus self, default is 3, but can be a larger number if self_concat > 1.
+
+    __forward__(tensor_list):
+      Input:
+      ---
+      tensor_list: [torch.FloatTensor] the concat list of our variable x and its neighbours, concatenate at the last dimension, 
+                   of shape [number of time steps, number of Nodes, number of channels, number of neighbours]
+
+      Returns:
+      ---
+      The element-wise (hadamard) product and addition: Σ(w_i * x_i) for x_i ɛ {neighbourhood of x}  
+    '''
+    def __init__(self, shape, initial_weight=None, num_neigh = 3):
+        super().__init__()
+        self.size = np.prod(shape)
+        self.dim = len(shape)
+        self.num_neigh = num_neigh ** self.dim
+        if initial_weight is None: initial_weight = 1/self.num_neigh
+        self.weights = nn.Parameter(torch.ones((self.num_neigh, self.size)) * initial_weight)
+        self.bias = nn.Parameter(torch.zeros(self.size))
+
+    def forward(self, tensor_list):
+        tensor_list *= self.weights
+        return torch.sum(tensor_list, 0) + self.bias
+
 def ordering_tensor(tensor, ordering):
     '''
     This function orders the tensor in the 0-axis with a provided ordering.
