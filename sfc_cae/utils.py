@@ -736,7 +736,7 @@ def get_neighbour_index(ordering, tuple_i):
 
     return neigh_ordering
 
-def get_neighbourhood_md(x, Ax, ordering = True):
+def get_neighbourhood_md(x, Ax, ordering = False):
     '''
     This function returns the neighbourhood for a sfc ordering/ tensor variable in multi-dimension.
 
@@ -751,9 +751,9 @@ def get_neighbourhood_md(x, Ax, ordering = True):
     neighbourhood: [tuple of numpy.ndarray or torch.Tensor] neighbourhood in multi-dimension.
     '''
     if ordering: x = x.long()
-    order_list = (x, )
+    order_list = (x.flatten(), )
     for tuple_i in Ax:
-        order_list += (get_neighbour_index(x, tuple_i), )
+        order_list += (get_neighbour_index(x, tuple_i).flatten(), )
     order_list = torch.stack(order_list, 0)
     return order_list
 
