@@ -734,7 +734,7 @@ def get_neighbour_index(ordering, tuple_i):
     
     neigh_ordering[idx_to] = ordering[idx_from]
 
-    return torch.from_numpy(neigh_ordering.astype('np.int64'))
+    return neigh_ordering
 
 def get_neighbourhood_md(x, Ax):
     '''
@@ -749,6 +749,7 @@ def get_neighbourhood_md(x, Ax):
     ---
     neighbourhood: [tuple of numpy.ndarray or torch.Tensor] neighbourhood in multi-dimension.
     '''
+    x = x.int()
     order_list = (x, )
     for tuple_i in Ax:
         order_list += (get_neighbour_index(x, tuple_i), )
