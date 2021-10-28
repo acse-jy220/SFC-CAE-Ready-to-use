@@ -734,7 +734,7 @@ def get_neighbour_index(ordering, tuple_i):
     
     neigh_ordering[idx_to] = ordering[idx_from]
 
-    return neigh_ordering
+    return torch.from_numpy(neigh_ordering.astype('np.int64'))
 
 def get_neighbourhood_md(x, Ax):
     '''
@@ -752,7 +752,7 @@ def get_neighbourhood_md(x, Ax):
     order_list = (x, )
     for tuple_i in Ax:
         order_list += (get_neighbour_index(x, tuple_i), )
-    order_list = np.stack(order_list, 0)
+    order_list = torch.stack(order_list, 0)
     return order_list
 
 def ordering_tensor(tensor, ordering):
