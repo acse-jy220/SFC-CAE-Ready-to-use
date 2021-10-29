@@ -932,13 +932,11 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
             output_paddings.append((size + 2 * padding - kernel_size) % stride)
        
     # find size of fully-connected layers 
-    print(size)
     size = size ** ndim
-    print(ndim, size)
     inv_conv_start = size
     size = size * sfc_nums * num_final_channels
-    print(size)
     size_fc = [size]
+    if stride < 4: stride = 4
     # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
     while size // (stride ** 1.5) > dims_latent:  
         size //= stride
