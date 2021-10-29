@@ -736,7 +736,7 @@ def get_neighbour_index(ordering, tuple_i):
 
     return neigh_ordering
 
-def get_neighbourhood_md(x, Ax, channels, ordering = False):
+def get_neighbourhood_md(x, Ax, channels=1, ordering = False):
     '''
     This function returns the neighbourhood for a sfc ordering/ tensor variable in multi-dimension.
 
@@ -754,11 +754,13 @@ def get_neighbourhood_md(x, Ax, channels, ordering = False):
     order_list = (x.flatten(), )
     size = x.flatten().shape[0]
     for i, tuple_i in enumerate(Ax):
-        order_list += (get_neighbour_index(x, tuple_i).flatten() + (i+1) * size, )
-    order_list = torch.cat(order_list, 0)
-    if channels > 1: 
-       for i in range(1, channels):
-           order_list = torch.cat((order_list, order_list + size), -1)
+        order_list += (get_neighbour_index(x, tuple_i).flatten(), )
+    order_list = torch.stack(order_list, 0)
+    # , order_list + size
+    # + (i+1) * size
+    # if channels > 1: 
+    #    for i in range(1, channels):
+    #        order_list = torch.cat((order_list, order_list + size), -1)
     return order_list
 
 def get_concat_list_md(x, ordering_list):
