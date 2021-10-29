@@ -932,7 +932,9 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
             output_paddings.append((size + 2 * padding - kernel_size) % stride)
        
     # find size of fully-connected layers 
-    size **=ndim
+    print(size)
+    size = size ** ndim
+    print(ndim, size)
     inv_conv_start = size
     size *= sfc_nums * num_final_channels
     size_fc = [size]
