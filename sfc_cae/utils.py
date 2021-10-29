@@ -814,7 +814,7 @@ class NearestNeighbouring_md(nn.Module):
 
     def forward(self, tensor_list):
         tensor_list *= self.weights
-        return torch.sum(tensor_list, 0) + self.bias
+        return torch.sum(tensor_list, -1) + self.bias
 
 def expand_snapshot_for_structured_backward(x, num_diff_nodes):
     '''
