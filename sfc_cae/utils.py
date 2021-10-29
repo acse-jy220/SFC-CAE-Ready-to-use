@@ -736,7 +736,7 @@ def get_neighbour_index(ordering, tuple_i):
 
     return neigh_ordering
 
-def get_neighbourhood_md(x, Ax, ordering = False):
+def get_neighbourhood_md(x, Ax, channels, ordering = False):
     '''
     This function returns the neighbourhood for a sfc ordering/ tensor variable in multi-dimension.
 
@@ -756,6 +756,9 @@ def get_neighbourhood_md(x, Ax, ordering = False):
     for i, tuple_i in enumerate(Ax):
         order_list += (get_neighbour_index(x, tuple_i).flatten() + (i+1) * size, )
     order_list = torch.cat(order_list, 0)
+    if channels > 1: 
+       for i in range(1, channels):
+           order_list = torch.cat((order_list, order_list + size), -1)
     return order_list
 
 def get_concat_list_md(x, ordering_list):
@@ -771,10 +774,8 @@ def get_concat_list_md(x, ordering_list):
     ---
     ordered_tensor: [torch.Tensor] ordered neighbourhood tensor in md, input of 'NearestNeighbouring_md'.
     '''
-    ndim = x.ndim
-    num_neigh = 3**ndim
-    xx = (x.flatten()).repeat(num_neigh)
-    return xx[ordering_list].reshape(num_neigh, -1)
+    xx = (x).repeat(ordering_list.shape[0])
+    return xx[ordering_list].reshape(ordering_list.shape[0], -1)
 
 class NearestNeighbouring_md(nn.Module):
     '''
@@ -809,6 +810,13 @@ class NearestNeighbouring_md(nn.Module):
     def forward(self, tensor_list):
         tensor_list *= self.weights
         return torch.sum(tensor_list, 0) + self.bias
+
+def expand_snapshot_for_structured_backward(x, num_diff_nodes):
+    '''
+    fill the node number difference from unstructured and (virtual) structured grids.
+    '''
+    filled = torch.flip(x, (-1,))[..., 1:num_diff_nodes + 1]
+    return torch.cat((x, filled), -1)
 
 def ordering_tensor(tensor, ordering):
     '''
@@ -876,7 +884,7 @@ def expend_SFC_NUM(sfc_ordering, partitions):
         sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
     return sfc_ext
 
-def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels):
+def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels, ndim=1):
     '''
     This function contains the algorithm for finding 1D convolutional layers and fully-connected layers depend on the input, see thesis
 
@@ -891,6 +899,7 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     input_channel: [int] the number of input_channels of the tensor, equals to components * self_concat, see 'sfc_cae.py'
     increase_multi: [int] an muliplication factor we have for consecutive 1D Conv Layers.
     num_final_channels: [int] the maximum number we defined for all Layers.
+    ndim: [int] the dimension of ConvLayers, only used when second sfc(s) is used.
 
     Output:
     ---
@@ -902,23 +911,23 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     np.array(output_paddings[::-1][1:]): [1d-array] the output_paddings, used for the Decoder.
     '''
     channels = [input_channel]
-    output_paddings = [size % stride]
+    output_paddings = [(size + 2 * padding - kernel_size) % stride]
     conv_size = [size]
 
     # find size of convolutional layers 
-    while size * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
+    while size ** ndim * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
         size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
         conv_size.append(size)
         if num_final_channels >= input_channel * increase_multi: 
             input_channel *= increase_multi
-            output_paddings.append(size % stride)
+            output_paddings.append((size + 2 * padding - kernel_size) % stride)
             channels.append(input_channel)
         else: 
             channels.append(num_final_channels)
-            output_paddings.append(size % stride)
+            output_paddings.append((size + 2 * padding - kernel_size) % stride)
        
     # find size of fully-connected layers 
-    inv_conv_start = size
+    inv_conv_start = size ** ndim
     size *= sfc_nums * num_final_channels
     size_fc = [size]
     # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
