@@ -936,7 +936,8 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     size = size ** ndim
     print(ndim, size)
     inv_conv_start = size
-    size *= sfc_nums * num_final_channels
+    size = size * sfc_nums * num_final_channels
+    print(size)
     size_fc = [size]
     # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
     while size // (stride ** 1.5) > dims_latent:  
