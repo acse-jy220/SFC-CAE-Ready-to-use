@@ -736,7 +736,7 @@ def get_neighbour_index(ordering, tuple_i):
 
     return neigh_ordering
 
-def get_neighbourhood_md(x, Ax, channels=1, ordering = False):
+def get_neighbourhood_md(x, Ax, ordering = False):
     '''
     This function returns the neighbourhood for a sfc ordering/ tensor variable in multi-dimension.
 
@@ -752,7 +752,7 @@ def get_neighbourhood_md(x, Ax, channels=1, ordering = False):
     '''
     if ordering: x = x.long()
     order_list = (x.flatten(), )
-    size = x.flatten().shape[0]
+    # size = x.flatten().shape[0]
     for i, tuple_i in enumerate(Ax):
         order_list += (get_neighbour_index(x, tuple_i).flatten(), )
     order_list = torch.stack(order_list, 0)
@@ -776,8 +776,11 @@ def get_concat_list_md(x, ordering_list):
     ---
     ordered_tensor: [torch.Tensor] ordered neighbourhood tensor in md, input of 'NearestNeighbouring_md'.
     '''
-    xx = (x).repeat(ordering_list.shape[0])
-    return xx[ordering_list].reshape(ordering_list.shape[0], -1)
+    num_neigh = ordering_list.shape[0]
+    xx = copy.deepcopy(x[..., ordering_list[0]]).unsqueeze(-1)
+    for i in range(1, num_neigh): 
+        xx = torch.cat((xx, x[..., ordering_list[i]].unsqueeze(-1)), -1)
+    return xx
 
 class NearestNeighbouring_md(nn.Module):
     '''
@@ -806,7 +809,7 @@ class NearestNeighbouring_md(nn.Module):
         self.dim = len(shape)
         self.num_neigh = num_neigh ** self.dim
         if initial_weight is None: initial_weight = 1/self.num_neigh
-        self.weights = nn.Parameter(torch.ones((self.num_neigh, self.size)) * initial_weight)
+        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh)) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(self.size))
 
     def forward(self, tensor_list):
@@ -833,7 +836,7 @@ def ordering_tensor(tensor, ordering):
     ---
     tensor: [torch.FloatTensor] the ordered simulation tensor.
     '''
-    return tensor[:, ordering]
+    return tensor[..., ordering]
 
 class NearestNeighbouring(nn.Module):
     '''
