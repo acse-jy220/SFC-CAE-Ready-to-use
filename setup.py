@@ -27,7 +27,7 @@ setup(name='SFC-CAE',
       author_email='jin.yu20@imperial.ac.uk',
       install_requires=reqs,
       test_suite='tests',
-      version='0.1.0',
+      version='0.2.0',
       packages=['sfc_cae'])
 
 # compile fortran
