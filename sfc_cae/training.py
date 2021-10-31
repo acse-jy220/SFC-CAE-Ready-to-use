@@ -120,7 +120,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   count = 0
   for batch in dataloader:
       count += batch.size(0)
-      print(count)
+      # print(count)
       if isinstance(autoencoder, DDP): batch = batch.to(rank)  # Send batch of images to the GPU
       else: batch = batch.to(device)
       optimizer.zero_grad()  # Set optimiser grad to 0
