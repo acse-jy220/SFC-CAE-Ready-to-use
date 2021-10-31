@@ -817,8 +817,9 @@ def get_concat_list_md(x, ordering_list, num_neigh):
     ---
     ordered_tensor: [torch.Tensor] ordered neighbourhood tensor in md, input of 'NearestNeighbouring_md'.
     '''
+    target_shape = x.shape + (num_neigh,)
     xx = x.repeat(((1,) * (x.ndim - 1) + (num_neigh,)))
-    return xx[..., ordering_list]
+    return xx[..., ordering_list].reshape(target_shape)
 
 class NearestNeighbouring_md(nn.Module):
     '''
@@ -847,7 +848,7 @@ class NearestNeighbouring_md(nn.Module):
         self.dim = len(shape)
         self.num_neigh = num_neigh ** self.dim
         if initial_weight is None: initial_weight = 1/self.num_neigh
-        self.weights = nn.Parameter(torch.ones(self.size * self.num_neigh) * initial_weight)
+        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh)) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(self.size))
 
     def forward(self, tensor_list):
