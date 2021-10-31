@@ -847,7 +847,7 @@ class NearestNeighbouring_md(nn.Module):
         self.dim = len(shape)
         self.num_neigh = num_neigh ** self.dim
         if initial_weight is None: initial_weight = 1/self.num_neigh
-        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh)) * initial_weight)
+        self.weights = nn.Parameter(torch.ones(self.size * self.num_neigh) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(self.size))
 
     def forward(self, tensor_list):
