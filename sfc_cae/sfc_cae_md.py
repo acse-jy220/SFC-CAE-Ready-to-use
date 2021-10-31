@@ -201,7 +201,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     # 1D or MD Conv Layers
     for i in range(self.sfc_nums):
         a = x[..., self.orderings[i]]
-        print(a.shape)
+        # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None:
             a = expand_snapshot_for_structured_backward(x, self.diff_nodes)
