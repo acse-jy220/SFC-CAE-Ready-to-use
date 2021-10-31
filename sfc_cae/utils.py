@@ -842,7 +842,7 @@ class NearestNeighbouring_md(nn.Module):
       The element-wise (hadamard) product and addition: Σ(w_i * x_i) for x_i ɛ {neighbourhood of x}  
     '''
     def __init__(self, shape, initial_weight=None, num_neigh = 3):
-        super().__init__()
+        super(NearestNeighbouring_md, self).__init__()
         self.size = np.prod(shape)
         self.dim = len(shape)
         self.num_neigh = num_neigh ** self.dim
@@ -898,7 +898,7 @@ class NearestNeighbouring(nn.Module):
       The element-wise (hadamard) product and addition: (w^-) * (x^-) + w * x + (w^+) * (x^+) + b
     '''
     def __init__(self, size, initial_weight, num_neigh = 3):
-        super().__init__()
+        super(NearestNeighbouring, self).__init__()
         self.size = size
         self.num_neigh = num_neigh
         self.weights = nn.Parameter(torch.ones(size, num_neigh) * initial_weight)
