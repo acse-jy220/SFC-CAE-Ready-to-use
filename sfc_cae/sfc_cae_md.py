@@ -221,7 +221,7 @@ class SFC_CAE_Encoder_md(nn.Module):
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn   
-            a = a.view(-1, self.input_channel, self.input_size) 
+            # a = a.reshape((a.shape[0], self.input_channel, self.input_size)) 
         # if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
         # else: a = a.unsqueeze(1)
         for j in range(self.size_conv):
@@ -389,19 +389,21 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = self.activate(self.convTrans[i][j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
-            b = b[..., self.inv_second_sfc]
             if self.NN:
+               b = b[..., self.inv_second_sfc]
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md)
                tt_nn = self.sps[i](tt_list)
                if self.self_concat > 1:
                    tt_nn = sum(torch.chunk(tt_nn, chunks=self.self_concat, dim=1))
                b = self.activate(tt_nn)
-               del tt_list
+               b = b[..., :self.input_size] # truncate
+               b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
+               del tt_list 
                del tt_nn           
         else: 
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
-            b = b[..., self.orderings[i]]
             if self.NN:
+               b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
                tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh)
                tt_nn = self.sps[i](tt_list)
                if self.self_concat > 1:
@@ -411,8 +413,9 @@ class SFC_CAE_Decoder_md(nn.Module):
                del tt_nn
         zs.append(b.unsqueeze(-1))
     z = torch.cat(zs, -1).sum(-1)
-    if self.inv_second_sfc is not None: return z[..., :self.input_size]
-    else: return z
+    # if self.inv_second_sfc is not None: return z[..., :self.input_size]
+    # else: 
+    return self.activate(z)
 
 ###############################################################   AutoEncoder Wrapper ###################################################################
 
