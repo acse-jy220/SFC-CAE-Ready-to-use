@@ -303,7 +303,9 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.NN_neigh_1d = encoder.NN_neigh_1d
 
     # md Decoder
-    if encoder.second_sfc is None: self.inv_second_sfc = None
+    if encoder.second_sfc is None: 
+        self.inv_second_sfc = None
+        self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], )
     else: 
         self.inv_second_sfc = np.argsort(encoder.second_sfc)  
         self.structured_size_input = self.inv_second_sfc.shape[-1]
@@ -312,7 +314,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.shape = encoder.shape
         self.num_neigh_md = encoder.num_neigh_md   
         self.neigh_md = encoder.neigh_md   
-    self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
+        self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
@@ -397,7 +399,7 @@ class SFC_CAE_Decoder_md(nn.Module):
                del tt_list
                del tt_nn           
         else: 
-            b = b.reshape(b.shape[:2] + (self.input_size, ))
+            # b = b.reshape(b.shape[:2] + (self.input_size, ))
             b = b[..., self.orderings[i]]
             if self.NN:
                tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh)
