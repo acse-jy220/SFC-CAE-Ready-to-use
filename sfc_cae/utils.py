@@ -818,8 +818,8 @@ def get_concat_list_md(x, ordering_list, num_neigh):
     ordered_tensor: [torch.Tensor] ordered neighbourhood tensor in md, input of 'NearestNeighbouring_md'.
     '''
     target_shape = x.shape + (num_neigh,)
-    xx = x.repeat(((1,) * (x.ndim - 1) + (num_neigh,)))
-    return xx[..., ordering_list].reshape(target_shape)
+    xx = (x.repeat(((1,) * (x.ndim - 1) + (num_neigh,))))[..., ordering_list]
+    return torch.from_numpy(np.reshape(xx.detach().numpy(), target_shape, order = 'F'))
 
 class NearestNeighbouring_md(nn.Module):
     '''
@@ -975,7 +975,7 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     inv_conv_start = size
     size = size * sfc_nums * num_final_channels
     size_fc = [size]
-    if stride < 4: stride = 4
+    if stride < 4: stride = 8
     # an intuiative value 1.5 of exponential is chosen here, because we want the size_after_decrease > dims_latent * (stride ^ 0.5), which is not too close to dims_latent.
     while size // (stride ** 1.5) > dims_latent:  
         size //= stride
