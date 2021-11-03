@@ -45,11 +45,11 @@ class SFC_CAE_Encoder_md(nn.Module):
 
     Output:
     ---
-    CASE -- (SFC-CAE): 
-         x: the compressed latent variable, of shape (dims_latent, )
+    CASE -- (SFC-CAE-md): 
+         x: the compressed latent variable, of shape (batch_size, dims_latent)
 
-    CASE -- (SFC-VCAE):
-         x: the compressed latent variable, of shape (dims_latent, )
+    CASE -- (SFC-VCAE-md):
+         x: the compressed latent variable, of shape (batch_size, dims_latent)
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
 
@@ -94,10 +94,6 @@ class SFC_CAE_Encoder_md(nn.Module):
          self.structured_size = np.round(np.power(self.structured_size_input, (1/self.dimension))).astype('int')
          self.shape = (self.structured_size,) * self.dimension
          self.num_neigh_md = 3 ** self.dimension
-
-        #  print(self.num_neigh_md)
-
-        #  print(self.shape)
 
     if sfc_mapping_to_structured is None:
        
@@ -204,7 +200,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None:
-            a = expand_snapshot_for_structured_backward(x, self.diff_nodes)
+            a = expand_snapshot_for_structured_backward(a, self.diff_nodes)
             a = a[..., self.second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
@@ -227,7 +223,8 @@ class SFC_CAE_Encoder_md(nn.Module):
         for j in range(self.size_conv):
             a = self.activate(self.convs[i][j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
-        xs.append(a.reshape(a.shape[0], -1))
+        a = a.reshape(a.shape[0], -1)
+        xs.append(a)
         # print(a.shape)
         del a
     del x
@@ -251,7 +248,6 @@ class SFC_CAE_Encoder_md(nn.Module):
 
 ###############################################################   Decoder Part ###################################################################
 
-
 class SFC_CAE_Decoder_md(nn.Module): 
   def __init__(self, encoder, inv_space_filling_orderings, output_linear = False):
     '''
@@ -265,10 +261,10 @@ class SFC_CAE_Decoder_md(nn.Module):
 
     Output:
     ---
-    CASE -- (SFC-CAE): 
+    CASE -- (SFC-CAE-md): 
          z: the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
 
-    CASE -- (SFC-VCAE):
+    CASE -- (SFC-VCAE-md):
          z: the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
@@ -389,28 +385,26 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = self.activate(self.convTrans[i][j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
+            b = b[..., self.inv_second_sfc]
             if self.NN:
-               b = b[..., self.inv_second_sfc]
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md)
                tt_nn = self.sps[i](tt_list)
-               if self.self_concat > 1:
-                   tt_nn = sum(torch.chunk(tt_nn, chunks=self.self_concat, dim=1))
                b = self.activate(tt_nn)
-               b = b[..., :self.input_size] # truncate
-               b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
                del tt_list 
-               del tt_nn           
+               del tt_nn  
+            b = b[..., :self.input_size] # truncate
+            b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
                b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
                tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh)
                tt_nn = self.sps[i](tt_list)
-               if self.self_concat > 1:
-                   tt_nn = sum(torch.chunk(tt_nn, chunks=self.self_concat, dim=1))
                b = self.activate(tt_nn)
                del tt_list
                del tt_nn
+        if self.self_concat > 1:
+           b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         zs.append(b.unsqueeze(-1))
     z = torch.cat(zs, -1).sum(-1)
     # if self.inv_second_sfc is not None: return z[..., :self.input_size]
@@ -456,10 +450,10 @@ class SFC_CAE_md(nn.Module):
 
     Output:
     ---
-    CASE -- (SFC-CAE): 
+    CASE -- (SFC-CAE-md): 
          self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
 
-    CASE -- (SFC-VCAE):
+    CASE -- (SFC-VCAE-md):
          self.decoder(z): the reconstructed batch of snapshots, in 1D, of shape (batch_size, number of Nodes, number of components)
          kl_div: the KL-divergence of the latent distribution to a standard Gaussian N(0, 1)
     '''
@@ -499,3 +493,5 @@ class SFC_CAE_md(nn.Module):
    else:
       z = self.encoder(x) # encoder, compress each image to 1-D data of size {dims_latent}.
       return self.decoder(z)  # Return the output of the decoder (1-D, the predicted image)
+
+      
