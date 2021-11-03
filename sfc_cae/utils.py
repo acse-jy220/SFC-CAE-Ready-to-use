@@ -804,6 +804,15 @@ def get_neighbourhood_md(x, Ax, ordering = False):
     order_list = torch.cat(order_list, 0)
     return order_list
 
+def torch_reshape_fortran(x, shape):
+    '''
+    Fortran-like reshaping for pytorch, same to numpy.reshape(..., order = 'F').
+    source: https://stackoverflow.com/questions/63960352/reshaping-order-in-pytorch-fortran-like-index-ordering.
+    '''
+    if len(x.shape) > 0:
+        x = x.permute(*reversed(range(len(x.shape))))
+    return x.reshape(*reversed(shape)).permute(*reversed(range(len(shape))))
+
 def get_concat_list_md(x, ordering_list, num_neigh):
     '''
     get the concat list of a tensor input x according to some ordering list of size (size of neighborhood, total nodes in x)
@@ -819,7 +828,7 @@ def get_concat_list_md(x, ordering_list, num_neigh):
     '''
     target_shape = x.shape + (num_neigh,)
     xx = (x.repeat(((1,) * (x.ndim - 1) + (num_neigh,))))[..., ordering_list]
-    return torch.from_numpy(np.reshape(xx.detach().numpy(), target_shape, order = 'F'))
+    return torch_reshape_fortran(xx, target_shape)
 
 class NearestNeighbouring_md(nn.Module):
     '''
