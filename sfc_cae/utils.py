@@ -864,12 +864,71 @@ class NearestNeighbouring_md(nn.Module):
         tensor_list *= self.weights
         return torch.sum(tensor_list, -1) + self.bias
 
-def expand_snapshot_for_structured_backward(x, num_diff_nodes):
+# def expand_snapshot_for_structured_backward(x, num_diff_nodes):
+#     '''
+#     fill the node number difference from unstructured and (virtual) structured grids.
+#     '''
+#     filled = torch.flip(x, (-1,))[..., 1:num_diff_nodes + 1]
+#     return torch.cat((x, filled), -1)
+
+def gen_filling_paras(unstructured_size, structured_size):
     '''
-    fill the node number difference from unstructured and (virtual) structured grids.
+    Return filling indexes for a unstructured grid -> structured grid, with
+    backward-forward approach.
+
+    Input:
+    ---
+    unstructured_size: [int] the number of Nodes in the actual unstructured grid
+    structured_size: [int] the number of Nodes in our artifical structured grid
+
+    Output:
+    ---
+    n_fold: [int] the folds of x
+    flip_time: [int] the times for filpping (copying/reversing).
+    end_backward: [int] does this expand sfc ending in a inverse order?
+    remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
     '''
-    filled = torch.flip(x, (-1,))[..., 1:num_diff_nodes + 1]
-    return torch.cat((x, filled), -1)
+    assert structured_size >= unstructured_size, 'Make sure the virtual structured grid you are constructing have more nodes than the original unstructured mesh!'
+    unstructured_size -= 1
+    n_fold = structured_size // unstructured_size
+    remainder = structured_size % unstructured_size
+    flip_time = n_fold // 2
+    end_backward = bool(n_fold % 2)
+    return n_fold, flip_time, end_backward, remainder
+
+def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder):
+    '''
+    Fill the node number difference from unstructured and (virtual) structured grids.
+
+    Input:
+    ---
+    x: [Torch.Tensor] the fluid snapshots, in batch.
+
+    ## Next three parameters see function 'gen_filling_paras()' ##
+    n_fold: [int] the folds of x
+    flip_time: [int] the times for filpping (copying/reversing).
+    end_backward: [int] does this expand sfc ending in a inverse order?
+    remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
+
+    Output:
+    ---  
+    xx: [Torch.Tensor] expand snapshot on structured grid.
+    '''
+
+    num_nodes = x.shape[-1] - 1
+    forward_x = x[..., :num_nodes]
+    backward_x = torch.flip(x, (-1,))[..., :num_nodes]
+    if flip_time > 0:
+       flipped = torch.cat((forward_x, backward_x), -1)
+       if flip_time > 1: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
+    else: flipped = forward_x
+    if end_backward:
+       remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
+    else:
+       remain = forward_x[..., :remainder]
+    return torch.cat((flipped, remain), -1)
+
+
 
 def ordering_tensor(tensor, ordering):
     '''
