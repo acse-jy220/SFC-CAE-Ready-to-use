@@ -132,6 +132,9 @@ class SFC_CAE_Encoder_md(nn.Module):
         #  self.neigh_md = get_neighbourhood_md(self.second_sfc.reshape(self.shape), self.Ax, ordering = True)
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
 
+         # parameters for expand snapshots
+         self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
+
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
     self.convs = []
@@ -199,8 +202,8 @@ class SFC_CAE_Encoder_md(nn.Module):
         a = x[..., self.orderings[i]]
         # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
-        if self.second_sfc is not None:
-            a = expand_snapshot_for_structured_backward(a, self.diff_nodes)
+        if self.second_sfc is not None: 
+            a = expand_snapshot_backward_connect(a, *self.expand_paras)
             a = a[..., self.second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
@@ -249,7 +252,7 @@ class SFC_CAE_Encoder_md(nn.Module):
 ###############################################################   Decoder Part ###################################################################
 
 class SFC_CAE_Decoder_md(nn.Module): 
-  def __init__(self, encoder, inv_space_filling_orderings, output_linear = False):
+  def __init__(self, encoder, inv_space_filling_orderings, output_linear = False, reduce_strategy = 'truncate'):
     '''
     Class contains the Decoder for SFC_CAE (latent -> reconstructed snapshot).
 
@@ -293,6 +296,8 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.orderings = torch.tensor(inv_space_filling_orderings).long()
     self.shape = encoder.shape
 
+    self.reduce = reduce_strategy
+
     # self.NN_neighs = []
     self.num_neigh = encoder.num_neigh
     # for i in range(self.sfc_nums):self.NN_neighs.append(get_neighbourhood_md(self.orderings[i], gen_neighbour_keys(1), ordering = True))
@@ -311,6 +316,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.num_neigh_md = encoder.num_neigh_md   
         self.neigh_md = encoder.neigh_md   
         self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
+        self.expand_paras = encoder.expand_paras
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
@@ -392,7 +398,8 @@ class SFC_CAE_Decoder_md(nn.Module):
                b = self.activate(tt_nn)
                del tt_list 
                del tt_nn  
-            b = b[..., :self.input_size] # truncate
+            b = reduce_expanded_snapshot(b, self.input_size, *self.expand_paras, scheme=self.reduce) # truncate or mean
+            # b = b[..., :self.input_size] # simple truncate
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
@@ -428,7 +435,8 @@ class SFC_CAE_md(nn.Module):
                variational,
                force_initialising_param=None,
                sfc_mapping_to_structured=None,
-               output_linear = False):
+               output_linear = False,
+               reduce_strategy = 'truncate'):
     '''
     SFC_CAE Class combines the SFC_CAE_Encoder and the SFC_CAE_Decoder with an Autoencoder latent space.
 
@@ -471,7 +479,7 @@ class SFC_CAE_md(nn.Module):
                variational,
                force_initialising_param,
                sfc_mapping_to_structured)
-    self.decoder = SFC_CAE_Decoder_md(self.encoder, inv_space_filling_orderings, output_linear)
+    self.decoder = SFC_CAE_Decoder_md(self.encoder, inv_space_filling_orderings, output_linear, reduce_strategy)
    
     # specify name of the activation
     if isinstance(self.encoder.activate, type(nn.ReLU())):
