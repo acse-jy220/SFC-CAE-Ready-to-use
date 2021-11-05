@@ -921,14 +921,68 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
     if flip_time > 0:
        flipped = torch.cat((forward_x, backward_x), -1)
        if flip_time > 1: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
-    else: flipped = forward_x
+    else: flipped = None
     if end_backward:
        remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
     else:
        remain = forward_x[..., :remainder]
-    return torch.cat((flipped, remain), -1)
+    if flipped is not None: return torch.cat((flipped, remain), -1)
+    else: return remain
 
+def reduce_expanded_snapshot(xx, unstructured_size, n_fold, flip_time, end_backward, remainder, scheme='mean'):
+    '''
+    Collect the results from the expanded structured grid.
 
+    Input:
+    ---
+    xx: [Torch.Tensor] the expanded fluid snapshots by 'expand_snapshot_backward_connect()', in batch.
+
+    ## Next three parameters see function 'gen_filling_paras()' ##
+    flip_time: [int] the times for filpping (copying/reversing).
+    end_backward: [int] does this expand sfc ending in a inverse order?
+    remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
+    scheme: [string] the reduce scheme, default is 'mean' (taking average), 'truncate' is also avaliable.
+
+    Output:
+    ---  
+    reduced_x: [Torch.Tensor] reduced snapshot on unstructured grid.
+    '''
+    if scheme=='mean':
+      xx = xx.float()
+      remain = xx[..., -remainder:]
+      folded = xx[..., :xx.shape[-1] - remainder]
+
+      if end_backward: 
+         remain = torch.flip(remain, (-1,)) 
+
+      folded = folded.reshape(folded.shape[:-1] + (n_fold, unstructured_size - 1))
+
+      forward_part = folded[..., ::2, :]
+      forward_duplicates = forward_part.shape[-2]
+      backward_part = folded[..., 1::2, :]
+      backward_duplicates = backward_part.shape[-2]
+      
+      forward_part = forward_part.sum(-2)
+      backward_part = backward_part.sum(-2)
+      backward_part = torch.flip(backward_part, (-1,))
+
+      reduced_x  = torch.cat((forward_part[..., 0].unsqueeze(-1), forward_part[..., 1:] + backward_part[..., :-1], backward_part[..., -1].unsqueeze(-1)), -1)
+      if end_backward: 
+         reduced_x[..., -remainder:] += remain
+         reduced_x[..., -remainder:-1] /= n_fold + 1
+         reduced_x[..., -1] /= backward_duplicates + 1
+         reduced_x[..., 1:remainder] /= n_fold
+         reduced_x[..., 0] /= forward_duplicates
+      else:
+         reduced_x[..., :remainder] += remain
+         reduced_x[..., 1:remainder] /= n_fold + 1
+         reduced_x[..., 0] /= forward_duplicates + 1
+         reduced_x[..., -remainder:-1] /= n_fold
+         reduced_x[..., -1] /= backward_duplicates  
+
+      return reduced_x
+
+    elif scheme=='truncate': return xx[..., :unstructured_size]
 
 def ordering_tensor(tensor, ordering):
     '''
