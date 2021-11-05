@@ -347,7 +347,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, num_neigh = 3)) 
+            self.sps.append(NearestNeighbouring_md(self.shape, None, self.num_neigh, self.self_concat)) 
 
     self.convTrans = nn.ModuleList(self.convTrans)
     self.sps = nn.ModuleList(self.sps)         
@@ -393,7 +393,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
             b = b[..., self.inv_second_sfc]
             if self.NN:
-               tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md)
+               tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
                tt_nn = self.sps[i](tt_list)
                b = self.activate(tt_nn)
                del tt_list 
@@ -402,17 +402,17 @@ class SFC_CAE_Decoder_md(nn.Module):
             # b = b[..., :self.input_size] # simple truncate
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
-            # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
+            b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
-               tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh)
+               tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
                tt_nn = self.sps[i](tt_list)
                b = self.activate(tt_nn)
                del tt_list
                del tt_nn
-            b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
-        if self.self_concat > 1:
-           b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
+            # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
+        # if self.self_concat > 1:
+        #    b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         zs.append(b.unsqueeze(-1))
     z = torch.cat(zs, -1).sum(-1)
     # if self.inv_second_sfc is not None: return z[..., :self.input_size]

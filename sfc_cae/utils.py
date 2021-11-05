@@ -813,7 +813,7 @@ def torch_reshape_fortran(x, shape):
         x = x.permute(*reversed(range(len(x.shape))))
     return x.reshape(*reversed(shape)).permute(*reversed(range(len(shape))))
 
-def get_concat_list_md(x, ordering_list, num_neigh):
+def get_concat_list_md(x, ordering_list, num_neigh, self_concat=1):
     '''
     get the concat list of a tensor input x according to some ordering list of size (size of neighborhood, total nodes in x)
 
@@ -828,7 +828,9 @@ def get_concat_list_md(x, ordering_list, num_neigh):
     '''
     target_shape = x.shape + (num_neigh,)
     xx = (x.repeat(((1,) * (x.ndim - 1) + (num_neigh,))))[..., ordering_list]
-    return torch_reshape_fortran(xx, target_shape)
+    xx = torch_reshape_fortran(xx, target_shape)
+    if self_concat > 1: xx = torch.cat(torch.chunk(xx, self_concat, dim = 1), -1)      
+    return xx
 
 class NearestNeighbouring_md(nn.Module):
     '''
@@ -851,13 +853,14 @@ class NearestNeighbouring_md(nn.Module):
       ---
       The element-wise (hadamard) product and addition: Σ(w_i * x_i) for x_i ɛ {neighbourhood of x}  
     '''
-    def __init__(self, shape, initial_weight=None, num_neigh = 3):
+    def __init__(self, shape, initial_weight=None, num_neigh = 3, self_concat = 1):
         super(NearestNeighbouring_md, self).__init__()
         self.size = np.prod(shape)
         self.dim = len(shape)
         self.num_neigh = num_neigh ** self.dim
+        self.self_concat = self_concat
         if initial_weight is None: initial_weight = 1/self.num_neigh
-        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh)) * initial_weight)
+        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh * self.self_concat)) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(self.size))
 
     def forward(self, tensor_list):
