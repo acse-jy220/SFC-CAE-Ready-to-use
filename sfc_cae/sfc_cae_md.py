@@ -200,7 +200,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     # 1D or MD Conv Layers
     for i in range(self.sfc_nums):
         a = x[..., self.orderings[i]]
-        print(a.shape)
+        # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None: 
             a = expand_snapshot_backward_connect(a, *self.expand_paras)
@@ -376,8 +376,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     z: [float] the fluid data snapshot, could have multiple components, but 
     the last dimension should always represent the component index.
     '''   
-    print('enter the decoder....')
-
+    
     for i in range(len(self.fcs)):
         x = self.activate(self.fcs[i](x))
     # revert torch.cat
