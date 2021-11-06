@@ -1,6 +1,8 @@
 from sfc_cae import *
 import sys
 
+from sfc_cae_md import SFC_CAE_md
+
 if(len(sys.argv) > 1):
    parameters = read_parameters(sys.argv[1])
 else:
@@ -215,7 +217,30 @@ else: save_path = None
 
 input_size = space_filling_orderings[0].shape[0]
 
-autoencoder = SFC_CAE(input_size,
+if 'AE_type' in parameters.keys():
+   if parameters['AE_type'] == 'md':
+      if 'second_sfc' in parameters.keys():
+          second_sfc = torch.load(parameters['second_sfc'])
+      else: second_sfc = None
+      if 'reduce_strategy' in parameters.keys():
+          reduce_strategy = parameters['reduce_strategy']
+      else: second_sfc = None      
+      autoencoder = SFC_CAE_md(input_size,
+                      dimension,
+                      components,
+                      structured,
+                      self_concat,
+                      nearest_neighbouring,
+                      dims_latent,
+                      space_filling_orderings, 
+                      invert_space_filling_orderings,
+                      activation = activation,
+                      variational = variational,
+                      output_linear = output_linear,
+                      sfc_mapping_to_structured = second_sfc,
+                      reduce_strategy = reduce_strategy)
+else:
+      autoencoder = SFC_CAE(input_size,
                       dimension,
                       components,
                       structured,
