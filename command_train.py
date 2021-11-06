@@ -94,12 +94,12 @@ print('visualize ', visualize, '\n', 'sample number ', samples, '\n')
 # if specifies sfc_file and inv_sfc_file
 if parameters['sfc_file'] != 'None':
    print('reading sfc nums......')
-   space_filling_orderings = torch.tensor(parameters['sfc_file'])
+   space_filling_orderings = torch.tensor(torch.load(parameters['sfc_file']))
    space_filling_orderings = space_filling_orderings[:sfc_nums]
    print(space_filling_orderings)
    if parameters['inv_sfc_file'] != 'None':
       print('reading inverse sfc nums......')
-      invert_space_filling_orderings = torch.tensor(parameters['inv_sfc_file'])
+      invert_space_filling_orderings = torch.tensor(torch.load(parameters['inv_sfc_file']))
       invert_space_filling_orderings = invert_space_filling_orderings[:sfc_nums]
       print(invert_space_filling_orderings)
 else:
@@ -142,9 +142,9 @@ if parameters['mode'] == 'train':
          test_ratio = 1/17 
       else:
          if not parameters['train_index'] == 'None':
-            train_ratio = parameters['train_index']
-            valid_ratio = parameters['valid_index']
-            test_ratio = parameters['test_index']    
+            train_ratio = float(parameters['train_index'])
+            valid_ratio = float(parameters['valid_index'])
+            test_ratio = float(parameters['test_index'])    
           
       if start_index is not None or end_index is not None: samples = end_index - start_index
       train_index, valid_index, test_index = index_split(train_ratio, valid_ratio, test_ratio, total_num = samples)
