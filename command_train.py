@@ -94,12 +94,12 @@ print('visualize ', visualize, '\n', 'sample number ', samples, '\n')
 # if specifies sfc_file and inv_sfc_file
 if parameters['sfc_file'] != 'None':
    print('reading sfc nums......')
-   space_filling_orderings = list(torch.load(parameters['sfc_file']).detach().numpy())
+   space_filling_orderings = torch.tensor(parameters['sfc_file'])
    space_filling_orderings = space_filling_orderings[:sfc_nums]
    print(space_filling_orderings)
    if parameters['inv_sfc_file'] != 'None':
       print('reading inverse sfc nums......')
-      invert_space_filling_orderings = list(torch.load(parameters['inv_sfc_file']).detach().numpy())
+      invert_space_filling_orderings = torch.tensor(parameters['inv_sfc_file'])
       invert_space_filling_orderings = invert_space_filling_orderings[:sfc_nums]
       print(invert_space_filling_orderings)
 else:
