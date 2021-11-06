@@ -410,6 +410,8 @@ class SFC_CAE_Decoder_md(nn.Module):
                b = self.activate(tt_nn)
                del tt_list
                del tt_nn
+            else: 
+              if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
         # if self.self_concat > 1:
         #    b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
