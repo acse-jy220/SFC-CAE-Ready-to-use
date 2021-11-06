@@ -12,6 +12,8 @@ from torch.utils.data import DataLoader
 from livelossplot import PlotLosses
 import random 
 import numpy as np
+
+from sfc_cae_md import SFC_CAE_md
 from .utils import *
 # for other custom Pytorch Optimizers
 from timm import optim as tioptim
@@ -419,6 +421,8 @@ def train_model(autoencoder,
      variational = autoencoder.module.encoder.variational
      activate = autoencoder.module.activate
      output_linear = autoencoder.module.decoder.output_linear
+     if isinstance(type(autoencoder), SFC_CAE_md): AE_type = 'md'
+     else:  AE_type = 'normal'      
   else:
      NN = autoencoder.encoder.NN
      sfc_nums = autoencoder.encoder.sfc_nums
@@ -426,14 +430,15 @@ def train_model(autoencoder,
      variational = autoencoder.encoder.variational
      activate = autoencoder.activate
      output_linear = autoencoder.decoder.output_linear
+
   if save_path is not None:
 
     if varying_lr:
       lr_epoch_lists = np.vstack((np.array(lr_change_epoches), np.array(lr_list))).T
       np.savetxt(save_path +'lr_changes_at_epoch.txt', lr_epoch_lists)
     
-    filename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
-    refilename = save_path + F'{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    filename = save_path + F'Type_{AE_type}_Parallel{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_MSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
+    refilename = save_path + F'Type_{AE_type}Parallel_{parallel_mode}_Optimizer_{optimizer_type}_Activation_{activate}_OutputLinear_{output_linear}_Variational_{variational}_Changelr_{varying_lr}_reMSELoss_Latent_{latent}_nearest_neighbouring_{NN}_SFC_nums_{sfc_nums}_startlr_{lr}_n_epoches_{n_epochs}.txt'
 
     np.savetxt(filename, MSELoss)
     np.savetxt(refilename, reMSELoss)
