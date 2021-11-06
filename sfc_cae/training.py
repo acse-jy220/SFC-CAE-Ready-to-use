@@ -13,7 +13,6 @@ from livelossplot import PlotLosses
 import random 
 import numpy as np
 
-from sfc_cae_md import SFC_CAE_md
 from .utils import *
 # for other custom Pytorch Optimizers
 from timm import optim as tioptim
