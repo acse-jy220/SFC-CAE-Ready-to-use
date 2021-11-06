@@ -113,6 +113,10 @@ if parameters['tk_file'] != 'None':
 if parameters['tb_file'] != 'None':
    tb = torch.load(parameters['tb_file']) 
 
+# parallel mode
+if 'parallel_mode' in parameters.keys():
+       parallel_mode = parameters['parallel_mode']
+else: parallel_mode = 'DP'
 
 # training parameters
 batch_size = int(parameters['batch_size'])
@@ -203,7 +207,8 @@ if parameters['mode'] == 'train':
    print('length of train set:', len(train_set), '\n')
    print('length of valid set:',len(valid_set), '\n')
    print('length of test set:',len(test_set), '\n')
-   if parameters['parallel_mode'] == 'DP':
+       
+   if parallel_mode == 'DP':
      train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
      valid_loader = DataLoader(dataset=valid_set, batch_size=batch_size, shuffle=True)
      test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
@@ -259,8 +264,7 @@ else:
                       output_linear = output_linear)
 
 if parameters['mode'] == 'train':
-   if parameters['parallel_mode'] == 'DDP': 
-      parallel_mode = parameters['parallel_mode']
+   if parallel_mode == 'DDP':
       if __name__ == '__main__':
         torch.multiprocessing.freeze_support()
       #   mp.spawn(setup_DDP, args=(), nprocs=torch.cuda.device_count(), join=True)
@@ -288,7 +292,6 @@ if parameters['mode'] == 'train':
                nprocs=torch.cuda.device_count(),
                join=True)      
    else: 
-      parallel_mode = 'DP'
       autoencoder = train_model(autoencoder, 
                                 train_loader = train_loader,
                                 valid_loader = valid_loader,
