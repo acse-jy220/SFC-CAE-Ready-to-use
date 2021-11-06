@@ -230,7 +230,7 @@ input_size = space_filling_orderings[0].shape[0]
 if 'AE_type' in parameters.keys():
    if parameters['AE_type'] == 'md':
       if 'second_sfc' in parameters.keys():
-          second_sfc = torch.load(parameters['second_sfc'])
+          second_sfc = torch.load(parameters['second_sfc'])[0]
       else: second_sfc = None
       if 'reduce_strategy' in parameters.keys():
           reduce_strategy = parameters['reduce_strategy']
