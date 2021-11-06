@@ -1,8 +1,6 @@
 from sfc_cae import *
 import sys
 
-from sfc_cae_md import SFC_CAE_md
-
 if(len(sys.argv) > 1):
    parameters = read_parameters(sys.argv[1])
 else:
