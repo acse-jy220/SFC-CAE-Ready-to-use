@@ -827,7 +827,7 @@ def torch_reshape_fortran(x, shape):
         x = x.permute(*reversed(range(len(x.shape))))
     return x.reshape(*reversed(shape)).permute(*reversed(range(len(shape))))
 
-def get_concat_list_md(x, ordering_list, num_neigh, self_concat=1):
+def get_concat_list_md(x, ordering_list, num_neigh_md, self_concat=1):
     '''
     get the concat list of a tensor input x according to some ordering list of size (size of neighborhood, total nodes in x)
 
@@ -840,8 +840,8 @@ def get_concat_list_md(x, ordering_list, num_neigh, self_concat=1):
     ---
     ordered_tensor: [torch.Tensor] ordered neighbourhood tensor in md, input of 'NearestNeighbouring_md'.
     '''
-    target_shape = x.shape + (num_neigh,)
-    xx = (x.repeat(((1,) * (x.ndim - 1) + (num_neigh,))))[..., ordering_list]
+    target_shape = x.shape + (num_neigh_md,)
+    xx = (x.repeat(((1,) * (x.ndim - 1) + (num_neigh_md,))))[..., ordering_list]
     xx = torch_reshape_fortran(xx, target_shape)
     if self_concat > 1: xx = torch.cat(torch.chunk(xx, self_concat, dim = 1), -1)      
     return xx

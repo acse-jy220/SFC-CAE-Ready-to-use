@@ -146,7 +146,7 @@ class SFC_CAE_Encoder_md(nn.Module):
          
          self.Ax = gen_neighbour_keys(ndim=self.dimension, direct_neigh=self.direct_neigh)
         #  self.neigh_md = get_neighbourhood_md(self.second_sfc.reshape(self.shape), self.Ax, ordering = True)
-         self.num_neigh_md = len(self.Ax)
+         self.num_neigh_md = len(self.Ax) + 1
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
 
          # parameters for expand snapshots
