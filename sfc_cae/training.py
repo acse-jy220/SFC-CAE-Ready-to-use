@@ -14,6 +14,8 @@ import random
 import numpy as np
 
 from .utils import *
+from .sfc_cae import *
+from .sfc_cae_md import *
 # for other custom Pytorch Optimizers
 from timm import optim as tioptim
 # Distributed Data Parallel
@@ -420,7 +422,7 @@ def train_model(autoencoder,
      variational = autoencoder.module.encoder.variational
      activate = autoencoder.module.activate
      output_linear = autoencoder.module.decoder.output_linear
-     if isinstance(type(autoencoder), SFC_CAE_md): AE_type = 'md'
+     if isinstance(autoencoder.module, SFC_CAE_md): AE_type = 'md'
      else:  AE_type = 'normal'      
   else:
      NN = autoencoder.encoder.NN
@@ -429,6 +431,8 @@ def train_model(autoencoder,
      variational = autoencoder.encoder.variational
      activate = autoencoder.activate
      output_linear = autoencoder.decoder.output_linear
+     if isinstance(autoencoder, SFC_CAE_md): AE_type = 'md'
+     else:  AE_type = 'normal'
 
   if save_path is not None:
 
