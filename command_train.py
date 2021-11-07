@@ -83,6 +83,21 @@ if parameters['state_load'] != 'None':
    state_load = parameters['state_load']
 else: state_load = None
 
+# read in extra arguments
+kwargs={}
+
+if 'kernel_size' in parameters.keys():
+   kwargs.update({'kernel_size': parameters['kernel_size']})
+if 'stride' in parameters.keys():
+       kwargs.update({'stride': parameters['stride']})
+if 'padding' in parameters.keys():
+       kwargs.update({'padding': parameters['padding']})
+if 'increase_multi' in parameters.keys():
+       kwargs.update({'increase_multi': parameters['increase_multi']})
+if 'direct_neigh' in parameters.keys():
+       kwargs.update({'direct_neigh': parameters['direct_neigh']})
+
+
 optimizer_type = parameters['optimizer']
 
 samples = len(glob.glob(parameters['data_dir'] + '*'))
@@ -248,7 +263,8 @@ if 'AE_type' in parameters.keys():
                       variational = variational,
                       output_linear = output_linear,
                       sfc_mapping_to_structured = second_sfc,
-                      reduce_strategy = reduce_strategy)
+                      reduce_strategy = reduce_strategy,
+                      **kwargs)
 else:
       autoencoder = SFC_CAE(input_size,
                       dimension,
