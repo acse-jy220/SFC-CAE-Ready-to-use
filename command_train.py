@@ -87,15 +87,15 @@ else: state_load = None
 kwargs={}
 
 if 'kernel_size' in parameters.keys():
-   kwargs.update({'kernel_size': parameters['kernel_size']})
+   kwargs.update({'kernel_size': int(parameters['kernel_size'])})
 if 'stride' in parameters.keys():
-       kwargs.update({'stride': parameters['stride']})
+       kwargs.update({'stride': int(parameters['stride'])})
 if 'padding' in parameters.keys():
-       kwargs.update({'padding': parameters['padding']})
+       kwargs.update({'padding': int(parameters['padding'])})
 if 'increase_multi' in parameters.keys():
-       kwargs.update({'increase_multi': parameters['increase_multi']})
+       kwargs.update({'increase_multi': int(parameters['increase_multi'])})
 if 'direct_neigh' in parameters.keys():
-       kwargs.update({'direct_neigh': parameters['direct_neigh']})
+       kwargs.update({'direct_neigh': bool(parameters['direct_neigh'])})
 
 
 optimizer_type = parameters['optimizer']
