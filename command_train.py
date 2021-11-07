@@ -265,6 +265,8 @@ if 'AE_type' in parameters.keys():
                       sfc_mapping_to_structured = second_sfc,
                       reduce_strategy = reduce_strategy,
                       **kwargs)
+      
+      print('num_neigh_md:', autoencoder.encoder.num_neigh_md)
 else:
       autoencoder = SFC_CAE(input_size,
                       dimension,
