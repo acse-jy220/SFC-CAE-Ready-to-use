@@ -409,13 +409,14 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = self.activate(self.convTrans[i][j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
-            b = b[..., self.inv_second_sfc]
+            # b = b[..., self.inv_second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
                tt_nn = self.sps[i](tt_list)
                b = self.activate(tt_nn)
                del tt_list 
                del tt_nn  
+            b = b[..., self.inv_second_sfc]
             b = reduce_expanded_snapshot(b, self.input_size, *self.expand_paras, scheme=self.reduce) # truncate or mean
             # b = b[..., :self.input_size] # simple truncate
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
