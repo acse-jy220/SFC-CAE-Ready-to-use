@@ -111,7 +111,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.increase_multi = 4
 
       self.padding = self.kernel_size//2
-
+      self.num_neigh_md = 3
       self.shape = (self.input_size,)
 
       # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
