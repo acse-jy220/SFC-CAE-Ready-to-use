@@ -149,6 +149,9 @@ else: end_index = samples
 if 'output_linear' in parameters.keys() and parameters['output_linear'] == 'True': output_linear = True
 else: output_linear = False
 
+if 'AE_type' in parameters.keys() and parameters['AE_type'] == 'md': md = True
+else: md = False
+
 if parameters['mode'] == 'train':
    if parameters['load_index'] == 'True':
       train_index = np.load(parameters['train_index'])
@@ -194,27 +197,27 @@ if parameters['mode'] == 'train':
       if parameters['activation'] == 'ReLU':
          if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
             # full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, tk, tb)
-            train_set = MyTensorDataset(train_path,  0, 1, tk, tb)
-            valid_set = MyTensorDataset(valid_path,  0, 1, tk, tb)
-            test_set = MyTensorDataset(test_path,  0, 1, tk, tb)
+            train_set = MyTensorDataset(train_path,  0, 1, tk, tb, md = md)
+            valid_set = MyTensorDataset(valid_path,  0, 1, tk, tb, md = md)
+            test_set = MyTensorDataset(test_path,  0, 1, tk, tb, md = md)
          else: 
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1)
-            train_set = MyTensorDataset(train_path,  0, 1, full_set.tk, full_set.tb)
-            valid_set = MyTensorDataset(valid_path,  0, 1, full_set.tk, full_set.tb)
-            test_set = MyTensorDataset(test_path,  0, 1, full_set.tk, full_set.tb)
+            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, md = md)
+            train_set = MyTensorDataset(train_path,  0, 1, full_set.tk, full_set.tb, md = md)
+            valid_set = MyTensorDataset(valid_path,  0, 1, full_set.tk, full_set.tb, md = md)
+            test_set = MyTensorDataset(test_path,  0, 1, full_set.tk, full_set.tb, md = md)
             tk = full_set.tk
             tb = full_set.tb
             # train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
       elif parameters['activation'] == 'Tanh' or parameters['activation'] == 'SELU':
          if parameters['tk_file'] != 'None' and parameters['tb_file'] != 'None':
-            train_set = MyTensorDataset(train_path,  -1, 1, tk, tb)
-            valid_set = MyTensorDataset(valid_path,  -1, 1, tk, tb)
-            test_set = MyTensorDataset(test_path,  -1, 1, tk, tb)
+            train_set = MyTensorDataset(train_path,  -1, 1, tk, tb, md = md)
+            valid_set = MyTensorDataset(valid_path,  -1, 1, tk, tb, md = md)
+            test_set = MyTensorDataset(test_path,  -1, 1, tk, tb, md = md)
          else: 
             full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
-            train_set = MyTensorDataset(train_path,  -1, 1, full_set.tk, full_set.tb)
-            valid_set = MyTensorDataset(valid_path,  -1, 1, full_set.tk, full_set.tb)
-            test_set = MyTensorDataset(test_path,  -1, 1, full_set.tk, full_set.tb)
+            train_set = MyTensorDataset(train_path,  -1, 1, full_set.tk, full_set.tb, md = md)
+            valid_set = MyTensorDataset(valid_path,  -1, 1, full_set.tk, full_set.tb, md = md)
+            test_set = MyTensorDataset(test_path,  -1, 1, full_set.tk, full_set.tb, md = md)
             # train_set, valid_set, test_set = torch.utils.data.dataset.random_split(full_set, [len(train_index), len(valid_index), len(test_index)])
             tk = full_set.tk
             tb = full_set.tb
