@@ -326,10 +326,11 @@ class MyTensorDataset(Dataset):
 
 
     '''
-    def __init__(self, path_dataset, lower, upper, tk = None, tb = None, set_bound = False):
+    def __init__(self, path_dataset, lower, upper, tk = None, tb = None, set_bound = False, md = False):
         self.dataset = path_dataset
         self.length = len(path_dataset)
         self.bounded = set_bound
+        self.md = md
         t_max = torch.load(self.dataset[0]).max(0).values.unsqueeze(0)
         t_min = torch.load(self.dataset[0]).min(0).values.unsqueeze(0)
         cnt_progress = 0
@@ -340,8 +341,9 @@ class MyTensorDataset(Dataset):
             bar=progressbar.ProgressBar(maxval=self.length)
             bar.start()
             for i in range(1, self.length):
-              t_max = torch.cat((t_max, torch.load(self.dataset[i]).max(0).values.unsqueeze(0)), 0)
-              t_min = torch.cat((t_min, torch.load(self.dataset[i]).min(0).values.unsqueeze(0)), 0)
+              data = torch.load(self.dataset[i])
+              t_max = torch.cat((t_max, data.max(0).values.unsqueeze(0)), 0)
+              t_min = torch.cat((t_min, data.min(0).values.unsqueeze(0)), 0)
               cnt_progress +=1
               bar.update(cnt_progress)
             bar.finish()
@@ -357,6 +359,7 @@ class MyTensorDataset(Dataset):
 
     def __getitem__(self, index):
         tensor = torch.load(self.dataset[index])
+        if self.md: tensor = tensor.permute(1, 0)
         tensor = (tensor * self.tk + self.tb).float()
         if self.bounded: 
            tensor[..., 0][tensor[..., 0] > 1] = 1
