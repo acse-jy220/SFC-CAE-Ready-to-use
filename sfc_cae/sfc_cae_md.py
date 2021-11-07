@@ -412,6 +412,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             # b = b[..., self.inv_second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
+               print(tt_list.shape)
                tt_nn = self.sps[i](tt_list)
                b = self.activate(tt_nn)
                del tt_list 
