@@ -874,7 +874,7 @@ class NearestNeighbouring_md(nn.Module):
         self.channels = channels
         self.num_neigh_md = num_neigh_md
         self.self_concat = self_concat
-        if initial_weight is None: initial_weight = 1/self.num_neigh_md
+        if initial_weight is None: initial_weight = 1/ (self.num_neigh_md * self_concat)
         self.weight_shape = (self.size, self.num_neigh_md * self.self_concat)
         if self.channels > 1: self.weight_shape = (self.channels,) + self.weight_shape
         self.weights = nn.Parameter(torch.ones(self.weight_shape) * initial_weight)
