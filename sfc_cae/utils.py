@@ -359,11 +359,11 @@ class MyTensorDataset(Dataset):
 
     def __getitem__(self, index):
         tensor = torch.load(self.dataset[index])
-        if self.md: tensor = tensor.permute(1, 0)
         tensor = (tensor * self.tk + self.tb).float()
         if self.bounded: 
            tensor[..., 0][tensor[..., 0] > 1] = 1
            tensor[..., 0][tensor[..., 0] < 0] = 0
+        if self.md: tensor = tensor.permute(1, 0) 
         return tensor
       
     def __len__(self):
