@@ -25,7 +25,8 @@ class SFC_CAE_Encoder_md(nn.Module):
                activation,
                variational,
                force_initialising_param=None,
-               sfc_mapping_to_structured=None):
+               sfc_mapping_to_structured=None,
+               **kwargs):
     '''
     Class contains the Encoder (snapshot -> latent).
 
@@ -70,6 +71,9 @@ class SFC_CAE_Encoder_md(nn.Module):
     # for i in range(self.sfc_nums):self.NN_neighs.append(get_neighbourhood_md(self.orderings[i], gen_neighbour_keys(1), ordering = True))
     self.NN_neigh_1d = get_neighbourhood_md(torch.arange(self.input_size).long(), gen_neighbour_keys(1), ordering = True)
     self.second_sfc = sfc_mapping_to_structured
+    if 'direct_neigh' in kwargs.keys():
+        self.direct_neigh = kwargs['direct_neigh']
+    else: self.direct_neigh = False
 
     self.structured = structured
     if self.structured: 
@@ -93,7 +97,7 @@ class SFC_CAE_Encoder_md(nn.Module):
          self.diff_nodes = self.structured_size_input - self.input_size
          self.structured_size = np.round(np.power(self.structured_size_input, (1/self.dimension))).astype('int')
          self.shape = (self.structured_size,) * self.dimension
-         self.num_neigh_md = 3 ** self.dimension
+        #  self.num_neigh_md = 3 ** self.dimension
 
     if sfc_mapping_to_structured is None:
        
@@ -115,21 +119,34 @@ class SFC_CAE_Encoder_md(nn.Module):
       = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
     
     elif sfc_mapping_to_structured is not None: 
-         self.kernel_size = 5
-         self.stride = 2
-         self.padding = 2
+         if 'kernel_size' in kwargs.keys():
+            self.kernel_size = kwargs['kernel_size']
+         else: self.kernel_size = 5
 
-         if dimension == 2: 
-           self.increase_multi = 2
-         elif dimension == 3:
-           self.increase_multi = 4      
+         if 'stride' in kwargs.keys():
+                self.stride = kwargs['stride']
+         else: self.stride = 2
+
+         if 'padding' in kwargs.keys():
+                self.padding = kwargs['padding']
+         else: self.padding = 2
+
+         if 'increase_multi' in kwargs.keys():
+                self.increase_multi = kwargs['increase_multi']
+         else: self.increase_multi = 4
+
+        #  if dimension == 2: 
+        #    self.increase_multi = 2
+        #  elif dimension == 3:
+        #    self.increase_multi = 4      
 
          # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
          self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
          = find_size_conv_layers_and_fc_layers(self.structured_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels, self.dimension)
          
-         self.Ax = gen_neighbour_keys(ndim=self.dimension)
+         self.Ax = gen_neighbour_keys(ndim=self.dimension, direct_neigh=self.direct_neigh)
         #  self.neigh_md = get_neighbourhood_md(self.second_sfc.reshape(self.shape), self.Ax, ordering = True)
+         self.num_neigh_md = len(self.Ax)
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
 
          # parameters for expand snapshots
@@ -159,7 +176,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         #   if sfc_mapping_to_structured is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, num_neigh = 3)) 
+            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, num_neigh_md = self.num_neigh_md)) 
     self.convs = nn.ModuleList(self.convs)
     if self.NN: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
@@ -347,7 +364,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(self.shape, None, self.num_neigh, self.self_concat)) 
+            self.sps.append(NearestNeighbouring_md(self.shape, None, self.num_neigh_md, self.self_concat)) 
 
     self.convTrans = nn.ModuleList(self.convTrans)
     self.sps = nn.ModuleList(self.sps)         
@@ -439,7 +456,8 @@ class SFC_CAE_md(nn.Module):
                force_initialising_param=None,
                sfc_mapping_to_structured=None,
                output_linear = False,
-               reduce_strategy = 'truncate'):
+               reduce_strategy = 'truncate',
+               **kwargs):
     '''
     SFC_CAE Class combines the SFC_CAE_Encoder and the SFC_CAE_Decoder with an Autoencoder latent space.
 
@@ -481,7 +499,8 @@ class SFC_CAE_md(nn.Module):
                activation,
                variational,
                force_initialising_param,
-               sfc_mapping_to_structured)
+               sfc_mapping_to_structured,
+               **kwargs)
     self.decoder = SFC_CAE_Decoder_md(self.encoder, inv_space_filling_orderings, output_linear, reduce_strategy)
    
     # specify name of the activation

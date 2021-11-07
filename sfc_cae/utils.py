@@ -685,7 +685,7 @@ def find_minus_neigh(ordering):
     minus_neigh[0] = ordering[0]
     return minus_neigh
 
-def gen_neighbour_keys(ndim):
+def gen_neighbour_keys(ndim, direct_neigh = False):
     '''
     Generate keys for create neighbours in multi-dimension,
     where -1 represents minus neigh, 0 represents no shift, 1 represents plus neigh.
@@ -693,6 +693,7 @@ def gen_neighbour_keys(ndim):
     Input:
     ---
     ndim: [int] dimension for NN.
+    direct_neigh: [bool] whether we are only considering the direct neighbours, for example, in 2d, they are (-1, 0), (0, -1), (1, 0), (0, 1).
     
     Return:
     ---
@@ -700,8 +701,21 @@ def gen_neighbour_keys(ndim):
     '''
     keys = (np.arange(3) - 1).astype('int')
     C = list(itertools.product(keys, repeat=ndim))
-    C.remove((0,) * ndim)
-    return C
+    if ndim == 1:
+       C.remove((0,) * ndim)
+       return C
+    else: 
+       if not direct_neigh:
+          C.remove((0,) * ndim)
+          return C
+       else:
+          C = []
+          for i in range(ndim):
+              uppers = (0,) * (i) + (1,) + (0,) * (ndim - i-1)
+              lowers = (0,) * (i) + (-1,) + (0,) * (ndim - i-1)
+              C.append(uppers)
+              C.append(lowers)      
+          return C     
 
 def get_neighbour_index(ordering, tuple_i):
     '''
@@ -853,14 +867,14 @@ class NearestNeighbouring_md(nn.Module):
       ---
       The element-wise (hadamard) product and addition: Σ(w_i * x_i) for x_i ɛ {neighbourhood of x}  
     '''
-    def __init__(self, shape, initial_weight=None, num_neigh = 3, self_concat = 1):
+    def __init__(self, shape, initial_weight=None, num_neigh_md = 3, self_concat = 1):
         super(NearestNeighbouring_md, self).__init__()
         self.size = np.prod(shape)
-        self.dim = len(shape)
-        self.num_neigh = num_neigh ** self.dim
+        # self.dim = len(shape)
+        self.num_neigh_md = num_neigh_md
         self.self_concat = self_concat
-        if initial_weight is None: initial_weight = 1/self.num_neigh
-        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh * self.self_concat)) * initial_weight)
+        if initial_weight is None: initial_weight = 1/self.num_neigh_md
+        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh_md * self.self_concat)) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(self.size))
 
     def forward(self, tensor_list):
