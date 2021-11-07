@@ -867,14 +867,17 @@ class NearestNeighbouring_md(nn.Module):
       ---
       The element-wise (hadamard) product and addition: Σ(w_i * x_i) for x_i ɛ {neighbourhood of x}  
     '''
-    def __init__(self, shape, initial_weight=None, num_neigh_md = 3, self_concat = 1):
+    def __init__(self, shape, initial_weight=None, channels = 1, num_neigh_md = 3, self_concat = 1):
         super(NearestNeighbouring_md, self).__init__()
         self.size = np.prod(shape)
         # self.dim = len(shape)
+        self.channels = channels
         self.num_neigh_md = num_neigh_md
         self.self_concat = self_concat
         if initial_weight is None: initial_weight = 1/self.num_neigh_md
-        self.weights = nn.Parameter(torch.ones((self.size, self.num_neigh_md * self.self_concat)) * initial_weight)
+        self.weight_shape = (self.size, self.num_neigh_md * self.self_concat)
+        if self.channels > 1: self.weight_shape = (self.channels,) + self.weight_shape
+        self.weights = nn.Parameter(torch.ones(self.weight_shape) * initial_weight)
         self.bias = nn.Parameter(torch.zeros(self.size))
 
     def forward(self, tensor_list):
