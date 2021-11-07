@@ -176,7 +176,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         #   if sfc_mapping_to_structured is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components, num_neigh_md = self.num_neigh_md)) 
+            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
     self.convs = nn.ModuleList(self.convs)
     if self.NN: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
@@ -412,7 +412,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             # b = b[..., self.inv_second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
-               print(tt_list.shape)
+              #  print(tt_list.shape)
                tt_nn = self.sps[i](tt_list)
                b = self.activate(tt_nn)
                del tt_list 
