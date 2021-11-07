@@ -324,6 +324,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     if encoder.second_sfc is None: 
         self.inv_second_sfc = None
         self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], )
+        self.num_neigh_md = encoder.num_neigh_md 
     else: 
         self.inv_second_sfc = np.argsort(encoder.second_sfc)  
         self.structured_size_input = self.inv_second_sfc.shape[-1]
