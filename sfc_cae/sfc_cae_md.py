@@ -423,7 +423,7 @@ class SFC_CAE_Decoder_md(nn.Module):
                del tt_list 
                del tt_nn  
             b = b[..., self.inv_second_sfc]
-            b = reduce_expanded_snapshot(b, self.input_size, *self.expand_paras, self.place_center, scheme=self.reduce) # truncate or mean
+            b = reduce_expanded_snapshot(b, *self.expand_paras, place_center = self.place_center, scheme=self.reduce) # truncate or mean
             # b = b[..., :self.input_size] # simple truncate
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
