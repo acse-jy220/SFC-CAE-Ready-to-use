@@ -912,14 +912,13 @@ def gen_filling_paras(unstructured_size, structured_size):
     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
     '''
     assert structured_size >= unstructured_size, 'Make sure the virtual structured grid you are constructing have more nodes than the original unstructured mesh!'
-    unstructured_size -= 1
-    n_fold = structured_size // unstructured_size
-    remainder = structured_size % unstructured_size
+    n_fold = structured_size // (unstructured_size - 1)
+    remainder = structured_size % (unstructured_size - 1)
     flip_time = n_fold // 2
     end_backward = bool(n_fold % 2)
-    return n_fold, flip_time, end_backward, remainder
+    return n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size
 
-def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder):
+def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center):
     '''
     Fill the node number difference from unstructured and (virtual) structured grids.
 
@@ -932,27 +931,38 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
     flip_time: [int] the times for filpping (copying/reversing).
     end_backward: [int] does this expand sfc ending in a inverse order?
     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
+    place_center: [bool] whether to place the unstructured mesh in the middle of the expanded structured mesh.
 
     Output:
     ---  
     xx: [Torch.Tensor] expand snapshot on structured grid.
     '''
 
-    num_nodes = x.shape[-1] - 1
-    forward_x = x[..., :num_nodes]
-    backward_x = torch.flip(x, (-1,))[..., :num_nodes]
-    if flip_time > 0:
-       flipped = torch.cat((forward_x, backward_x), -1)
-       if flip_time > 1: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
-    else: flipped = None
-    if end_backward:
-       remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
+    if place_center:
+       flip_x = torch.flip(x, (-1,))
+       front_x_total = np.floor((structured_size - unstructured_size) / 2).astype('int')
+       if front_x_total < unstructured_size + 1: front_x = torch.flip(x[..., :front_x_total][..., 1:], (-1,))
+       else: front_x = torch.flip(expand_snapshot_backward_connect(x, *gen_filling_paras(unstructured_size, front_x_total + 1), False)[..., 1:], (-1,))
+       back_x_total = structured_size - unstructured_size - front_x_total
+       if back_x_total < unstructured_size + 1: back_x = flip_x[..., 1:back_x_total + 1]
+       else: back_x = expand_snapshot_backward_connect(flip_x, *gen_filling_paras(unstructured_size, back_x_total + 1), False)[..., 1:]   
+       return torch.cat((front_x, x, back_x), -1)
     else:
-       remain = forward_x[..., :remainder]
-    if flipped is not None: return torch.cat((flipped, remain), -1)
-    else: return remain
+      num_nodes = x.shape[-1] - 1
+      forward_x = x[..., :num_nodes]
+      backward_x = torch.flip(x, (-1,))[..., :num_nodes]
+      if flip_time > 0:
+         flipped = torch.cat((forward_x, backward_x), -1)
+         if flip_time > 1: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
+      else: flipped = None
+      if end_backward:
+         remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
+      else:
+         remain = forward_x[..., :remainder]
+      if flipped is not None: return torch.cat((flipped, remain), -1)
+      else: return remain
 
-def reduce_expanded_snapshot(xx, unstructured_size, n_fold, flip_time, end_backward, remainder, scheme='mean'):
+def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, scheme='mean'):
     '''
     Collect the results from the expanded structured grid.
 
@@ -1005,7 +1015,11 @@ def reduce_expanded_snapshot(xx, unstructured_size, n_fold, flip_time, end_backw
 
       return reduced_x
 
-    elif scheme=='truncate': return xx[..., :unstructured_size]
+    elif scheme=='truncate': 
+        if place_center: 
+            start = structured_size - unstructured_size // 2
+            return xx[..., start:start + unstructured_size]
+        else: return xx[..., :unstructured_size]
 
 def ordering_tensor(tensor, ordering):
     '''

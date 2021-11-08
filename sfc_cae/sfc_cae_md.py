@@ -75,6 +75,10 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.direct_neigh = kwargs['direct_neigh']
     else: self.direct_neigh = False
 
+    if 'place_center' in kwargs.keys():
+        self.place_center = kwargs['place_center']
+    else: self.place_center = False
+
     self.structured = structured
     if self.structured: 
        if activation is None:
@@ -220,7 +224,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None: 
-            a = expand_snapshot_backward_connect(a, *self.expand_paras)
+            a = expand_snapshot_backward_connect(a, *self.expand_paras, self.place_center)
             a = a[..., self.second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
@@ -312,7 +316,8 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.sfc_nums = encoder.sfc_nums
     self.orderings = torch.tensor(inv_space_filling_orderings).long()
     self.shape = encoder.shape
-
+    
+    self.place_center = encoder.place_center
     self.reduce = reduce_strategy
 
     # self.NN_neighs = []
@@ -418,7 +423,7 @@ class SFC_CAE_Decoder_md(nn.Module):
                del tt_list 
                del tt_nn  
             b = b[..., self.inv_second_sfc]
-            b = reduce_expanded_snapshot(b, self.input_size, *self.expand_paras, scheme=self.reduce) # truncate or mean
+            b = reduce_expanded_snapshot(b, self.input_size, *self.expand_paras, self.place_center, scheme=self.reduce) # truncate or mean
             # b = b[..., :self.input_size] # simple truncate
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
