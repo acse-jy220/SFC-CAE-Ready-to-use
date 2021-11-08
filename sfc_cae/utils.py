@@ -1020,7 +1020,7 @@ def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, uns
 
     elif scheme=='truncate': 
         if place_center: 
-            start = structured_size - unstructured_size // 2
+            start = (structured_size - unstructured_size) // 2
             return xx[..., start:start + unstructured_size]
         else: return xx[..., :unstructured_size]
 

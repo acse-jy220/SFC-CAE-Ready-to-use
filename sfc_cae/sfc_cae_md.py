@@ -417,8 +417,8 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
             # b = b[..., self.inv_second_sfc]
             if self.NN:
-               print('before decoder concat..')
-               print(b.shape)
+              #  print('before decoder concat..')
+              #  print(b.shape)
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
               #  print(tt_list.shape)
                tt_nn = self.sps[i](tt_list)
@@ -426,7 +426,8 @@ class SFC_CAE_Decoder_md(nn.Module):
                del tt_list 
                del tt_nn  
             b = b[..., self.inv_second_sfc]
-            b = reduce_expanded_snapshot(b, *self.expand_paras, place_center = self.place_center, scheme=self.reduce) # truncate or mean
+            b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+            # print(b.shape)
             # b = b[..., :self.input_size] # simple truncate
             b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
