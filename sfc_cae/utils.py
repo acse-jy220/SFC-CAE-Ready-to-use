@@ -965,7 +965,7 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
       if flipped is not None: return torch.cat((flipped, remain), -1)
       else: return remain
 
-def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, scheme='mean'):
+def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, scheme='truncate'):
     '''
     Collect the results from the expanded structured grid.
 
