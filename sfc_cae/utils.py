@@ -944,7 +944,7 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
     if place_center:
        flip_x = torch.flip(x, (-1,))
        front_x_total = np.floor((structured_size - unstructured_size) / 2).astype('int')
-       if front_x_total < unstructured_size + 1: front_x = torch.flip(x[..., :front_x_total][..., 1:], (-1,))
+       if front_x_total < unstructured_size + 1: front_x = torch.flip(x[..., 1:front_x_total + 1], (-1,))
        else: front_x = torch.flip(expand_snapshot_backward_connect(x, *gen_filling_paras(unstructured_size, front_x_total + 1), False)[..., 1:], (-1,))
        back_x_total = structured_size - unstructured_size - front_x_total
        if back_x_total < unstructured_size + 1: back_x = flip_x[..., 1:back_x_total + 1]

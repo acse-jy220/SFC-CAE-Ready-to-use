@@ -225,7 +225,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None: 
             a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
-            print(a.shape)
+            # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
                tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
