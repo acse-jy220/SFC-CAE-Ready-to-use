@@ -97,6 +97,8 @@ if 'increase_multi' in parameters.keys():
 if 'direct_neigh' in parameters.keys():
        kwargs.update({'direct_neigh': bool(parameters['direct_neigh'])})
 
+# always place the unstructured FEM mesh at the center at the 2nd sfc
+kwargs.update({'place_center': int(parameters['place_center'])})
 
 optimizer_type = parameters['optimizer']
 
@@ -252,7 +254,7 @@ if 'AE_type' in parameters.keys():
       else: second_sfc = None
       if 'reduce_strategy' in parameters.keys():
           reduce_strategy = parameters['reduce_strategy']
-      else: second_sfc = None      
+      else: reduce_strategy = 'truncate'    
       autoencoder = SFC_CAE_md(input_size,
                       dimension,
                       components,
