@@ -79,6 +79,10 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.place_center = kwargs['place_center']
     else: self.place_center = False
 
+    if 'share_sp_weights' in kwargs.keys():
+        self.share_sp_weights = kwargs['share_sp_weights']
+    else: self.share_sp_weights = False
+
     self.structured = structured
     if self.structured: 
        if activation is None:
@@ -180,7 +184,9 @@ class SFC_CAE_Encoder_md(nn.Module):
         #   if sfc_mapping_to_structured is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
+            if not self.share_sp_weights: self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
+    if self.share_sp_weights: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
+
     self.convs = nn.ModuleList(self.convs)
     if self.NN: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
@@ -320,6 +326,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     
     self.place_center = encoder.place_center
     self.reduce = reduce_strategy
+    self.share_sp_weights = encoder.share_sp_weights
 
     # self.NN_neighs = []
     self.num_neigh = encoder.num_neigh
@@ -371,7 +378,8 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+            if not self.share_sp_weights: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+       if self.share_sp_weights: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
     self.sps = nn.ModuleList(self.sps)         
