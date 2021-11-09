@@ -25,7 +25,7 @@ import torch.multiprocessing as mp
 from torch.utils.data import distributed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def set_seed(seed):
     """
