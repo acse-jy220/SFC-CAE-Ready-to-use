@@ -236,7 +236,8 @@ class SFC_CAE_Encoder_md(nn.Module):
             if self.NN:
                tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
             #    print(tt_list.shape)
-               tt_nn = self.sps[i](tt_list)
+               if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
+               else: tt_nn = self.sps(tt_list)
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn
@@ -244,7 +245,8 @@ class SFC_CAE_Encoder_md(nn.Module):
         else: 
             if self.NN:
                tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
-               tt_nn = self.sps[i](tt_list)
+               if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
+               else: tt_nn = self.sps(tt_list)
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn   
@@ -429,7 +431,8 @@ class SFC_CAE_Decoder_md(nn.Module):
               #  print(b.shape)
                tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
               #  print(tt_list.shape)
-               tt_nn = self.sps[i](tt_list)
+               if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
+               else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
                del tt_list 
                del tt_nn  
@@ -443,7 +446,8 @@ class SFC_CAE_Decoder_md(nn.Module):
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
                tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
-               tt_nn = self.sps[i](tt_list)
+               if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
+               else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
                del tt_list
                del tt_nn
