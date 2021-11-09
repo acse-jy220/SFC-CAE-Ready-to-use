@@ -188,7 +188,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     if self.share_sp_weights: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
 
     self.convs = nn.ModuleList(self.convs)
-    if self.NN: self.sps = nn.ModuleList(self.sps)
+    if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
        if self.init_param is not None: 
@@ -384,7 +384,7 @@ class SFC_CAE_Decoder_md(nn.Module):
        if self.share_sp_weights: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
-    self.sps = nn.ModuleList(self.sps)         
+    if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)         
 
     self.split = encoder.size_fc[0] // self.sfc_nums
 

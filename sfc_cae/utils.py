@@ -750,7 +750,6 @@ def get_neighbour_index(ordering, tuple_i):
     idx_from = tuple([indices_from.get(dim, slice(None)) for dim in range(ndim)])
     idx_to = tuple([indices_to.get(dim, slice(None)) for dim in range(ndim)])
     
-    print(idx_from, idx_to)
     neigh_ordering[idx_to] = ordering[idx_from]
 
     return neigh_ordering
