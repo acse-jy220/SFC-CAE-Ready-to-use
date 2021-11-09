@@ -79,9 +79,17 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.place_center = kwargs['place_center']
     else: self.place_center = False
 
+    if 'neighbour_range' in kwargs.keys():
+        self.neighbour_range = kwargs['neighbour_range']
+    else: self.neighbour_range = 1 
+
     if 'share_sp_weights' in kwargs.keys():
         self.share_sp_weights = kwargs['share_sp_weights']
     else: self.share_sp_weights = False
+
+    if 'share_conv_weights' in kwargs.keys():
+        self.share_conv_weights = kwargs['share_conv_weights']
+    else: self.share_conv_weights = False
 
     self.structured = structured
     if self.structured: 
@@ -152,7 +160,7 @@ class SFC_CAE_Encoder_md(nn.Module):
          self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
          = find_size_conv_layers_and_fc_layers(self.structured_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels, self.dimension)
          
-         self.Ax = gen_neighbour_keys(ndim=self.dimension, direct_neigh=self.direct_neigh)
+         self.Ax = gen_neighbour_keys(ndim=self.dimension, range=self.neighbour_range, direct_neigh=self.direct_neigh)
         #  self.neigh_md = get_neighbourhood_md(self.second_sfc.reshape(self.shape), self.Ax, ordering = True)
          self.num_neigh_md = len(self.Ax) + 1
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
@@ -253,8 +261,10 @@ class SFC_CAE_Encoder_md(nn.Module):
             # a = a.reshape((a.shape[0], self.input_channel, self.input_size)) 
         # if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
         # else: a = a.unsqueeze(1)
+        if self.share_conv_weights: conv_layer = self.convTrans
+        else: conv_layer = self.convTrans[i]
         for j in range(self.size_conv):
-            a = self.activate(self.convs[i][j](a))
+            a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
         a = a.reshape(a.shape[0], -1)
         xs.append(a)
@@ -326,9 +336,13 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.orderings = torch.tensor(inv_space_filling_orderings).long()
     self.shape = encoder.shape
     
+    self.neighbour_range = encoder.neighbour_range
     self.place_center = encoder.place_center
     self.reduce = reduce_strategy
+
+    # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
+    self.share_conv_weights = encoder.share_conv_weights
 
     # self.NN_neighs = []
     self.num_neigh = encoder.num_neigh
@@ -362,9 +376,10 @@ class SFC_CAE_Decoder_md(nn.Module):
     # set up convolutional layers, fully-connected layers and sparse layers
     self.convTrans = []
     self.sps = []
-    for i in range(self.sfc_nums):
-       self.convTrans.append([])
-       for j in range(1, encoder.size_conv + 1):
+    if not self.share_conv_weights:
+      for i in range(self.sfc_nums):
+        self.convTrans.append([])
+        for j in range(1, encoder.size_conv + 1):
            if encoder.second_sfc is None:
               self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
            else:
@@ -375,15 +390,31 @@ class SFC_CAE_Decoder_md(nn.Module):
            if encoder.init_param is not None: 
               self.convTrans[i][j - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
               self.convTrans[i][j - 1].bias.data.fill_(0.001)       
-       self.convTrans[i] = nn.ModuleList(self.convTrans[i])
-       if self.NN:
+        self.convTrans[i] = nn.ModuleList(self.convTrans[i])
+    else:
+        for i in range(1, encoder.size_conv + 1):
+            if encoder.second_sfc is None:
+              self.convTrans.append(nn.ConvTranspose1d(encoder.channels[-i], encoder.channels[-i-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
+            else:
+              if self.dimension == 2:
+                  self.convTrans.append(nn.ConvTranspose2d(encoder.channels[-i], encoder.channels[-i-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
+              elif self.dimension == 3:
+                  self.convTrans.append(nn.ConvTranspose3d(encoder.channels[-i], encoder.channels[-i-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))               
+            if encoder.init_param is not None: 
+              self.convTrans[i - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
+              self.convTrans[i - 1].bias.data.fill_(0.001)       
+  
+    if self.NN:
+       if not self.share_sp_weights:
+          for i in range(self.sfc_nums):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            if not self.share_sp_weights: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
-       if self.share_sp_weights: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
+            self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+       else:
+          self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
-    self.convTrans = nn.ModuleList(self.convTrans)
+    if not self.share_conv_weights: self.convTrans = nn.ModuleList(self.convTrans)
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)         
 
     self.split = encoder.size_fc[0] // self.sfc_nums
@@ -421,8 +452,10 @@ class SFC_CAE_Decoder_md(nn.Module):
         b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
         # else: 
         #     b = x[..., i].view(-1, self.num_final_channels, self.inv_conv_start)
+        if self.share_conv_weights: conv_layer = self.convTrans
+        else: conv_layer = self.convTrans[i]
         for j in range(self.size_conv):
-            b = self.activate(self.convTrans[i][j](b))
+            b = self.activate(conv_layer[j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
             # b = b[..., self.inv_second_sfc]
