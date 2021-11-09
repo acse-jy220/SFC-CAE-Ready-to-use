@@ -277,8 +277,8 @@ class SFC_CAE_Encoder_md(nn.Module):
             # a = a.reshape((a.shape[0], self.input_channel, self.input_size)) 
         # if self.input_channel > 1: a = a.view(-1, self.input_channel, self.input_size)
         # else: a = a.unsqueeze(1)
-        if self.share_conv_weights: conv_layer = self.convTrans
-        else: conv_layer = self.convTrans[i]
+        if self.share_conv_weights: conv_layer = self.convs
+        else: conv_layer = self.convs[i]
         for j in range(self.size_conv):
             a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
