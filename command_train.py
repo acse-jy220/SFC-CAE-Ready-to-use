@@ -89,13 +89,17 @@ kwargs={}
 if 'kernel_size' in parameters.keys():
    kwargs.update({'kernel_size': int(parameters['kernel_size'])})
 if 'stride' in parameters.keys():
-       kwargs.update({'stride': int(parameters['stride'])})
+   kwargs.update({'stride': int(parameters['stride'])})
 if 'padding' in parameters.keys():
-       kwargs.update({'padding': int(parameters['padding'])})
+   kwargs.update({'padding': int(parameters['padding'])})
 if 'increase_multi' in parameters.keys():
-       kwargs.update({'increase_multi': int(parameters['increase_multi'])})
+   kwargs.update({'increase_multi': int(parameters['increase_multi'])})
 if 'direct_neigh' in parameters.keys():
-       kwargs.update({'direct_neigh': bool(parameters['direct_neigh'])})
+   kwargs.update({'direct_neigh': bool(parameters['direct_neigh'])})
+if 'share_sp_weights' in parameters.keys():
+   kwargs.update({'share_sp_weights': bool(parameters['share_sp_weights'])})
+if 'share_conv_weights' in parameters.keys():
+   kwargs.update({'share_conv_weights': bool(parameters['share_conv_weights'])})
 
 # always place the unstructured FEM mesh at the center at the 2nd sfc
 kwargs.update({'place_center': True})
