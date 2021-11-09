@@ -688,7 +688,7 @@ def find_minus_neigh(ordering):
     minus_neigh[0] = ordering[0]
     return minus_neigh
 
-def gen_neighbour_keys(ndim, direct_neigh = False):
+def gen_neighbour_keys(ndim, range = 1, direct_neigh = False):
     '''
     Generate keys for create neighbours in multi-dimension,
     where -1 represents minus neigh, 0 represents no shift, 1 represents plus neigh.
@@ -702,7 +702,7 @@ def gen_neighbour_keys(ndim, direct_neigh = False):
     ---
     C: [list of ndim-tuples] indicating the neighbours in md.    
     '''
-    keys = (np.arange(3) - 1).astype('int')
+    keys = (np.arange(2 * range + 1) - range).astype('int')
     C = list(itertools.product(keys, repeat=ndim))
     if ndim == 1:
        C.remove((0,) * ndim)
@@ -739,16 +739,18 @@ def get_neighbour_index(ordering, tuple_i):
     indices_from = {}
     indices_to = {}
     for i in range(ndim):
-        if tuple_i[i] == 1:
-           indices_from.update({i: slice(1, None)})
-           indices_to.update({i: slice(None, -1)})
-        elif tuple_i[i] == -1:
-           indices_from.update({i: slice(None, -1)})
-           indices_to.update({i: slice(1, None)})
+        loc_k = tuple_i[i]
+        if loc_k > 0:
+           indices_from.update({i: slice(loc_k, None)})
+           indices_to.update({i: slice(None, -loc_k)})
+        elif loc_k < 0:
+           indices_from.update({i: slice(None, loc_k)})
+           indices_to.update({i: slice(-loc_k, None)})
 
     idx_from = tuple([indices_from.get(dim, slice(None)) for dim in range(ndim)])
     idx_to = tuple([indices_to.get(dim, slice(None)) for dim in range(ndim)])
     
+    print(idx_from, idx_to)
     neigh_ordering[idx_to] = ordering[idx_from]
 
     return neigh_ordering
