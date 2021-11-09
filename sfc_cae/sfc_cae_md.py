@@ -171,10 +171,9 @@ class SFC_CAE_Encoder_md(nn.Module):
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
     self.convs = []
-
-    #If NN, add a sparse layer 
-    if self.NN: self.sps = []
-    for i in range(self.sfc_nums):
+    
+    if not self.share_conv_weights:
+      for i in range(self.sfc_nums):
        self.convs.append([])
        for j in range(self.size_conv):
            if sfc_mapping_to_structured is None: 
@@ -188,14 +187,31 @@ class SFC_CAE_Encoder_md(nn.Module):
               self.convs[i][j].weight.data.uniform_(self.init_param[0], self.init_param[1])
               self.convs[i][j].bias.data.fill_(0.001)
        self.convs[i] = nn.ModuleList(self.convs[i])
-       if self.NN:
+    else:
+       for i in range(self.size_conv):
+           if sfc_mapping_to_structured is None: 
+              self.convs.append(nn.Conv1d(self.channels[i], self.channels[i+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+           else:
+              if self.dimension == 2:
+                  self.convs.append(nn.Conv2d(self.channels[i], self.channels[i+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+              elif self.dimension == 3:
+                  self.convs.append(nn.Conv3d(self.channels[i], self.channels[i+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+           if self.init_param is not None: 
+              self.convs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
+              self.convs[i].bias.data.fill_(0.001)       
+
+    self.convs = nn.ModuleList(self.convs)
+
+    if self.NN:
+      if not self.share_sp_weights: 
+        self.sps = []
+        for i in range(self.sfc_nums):          
         #   if sfc_mapping_to_structured is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            if not self.share_sp_weights: self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
-    if self.share_sp_weights: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
+          self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
+      else: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
 
-    self.convs = nn.ModuleList(self.convs)
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
        self.fcs.append(nn.Linear(self.size_fc[i], self.size_fc[i+1]))
