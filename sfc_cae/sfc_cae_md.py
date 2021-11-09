@@ -430,8 +430,10 @@ class SFC_CAE_Decoder_md(nn.Module):
        else:
           self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
-    if not self.share_conv_weights: self.convTrans = nn.ModuleList(self.convTrans)
-    if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)         
+    self.convTrans = nn.ModuleList(self.convTrans)
+    if self.NN: 
+       if not self.share_sp_weights: self.sps = nn.ModuleList(self.sps) 
+       else: self.sps = nn.Sequential(self.sps)[0]        
 
     self.split = encoder.size_fc[0] // self.sfc_nums
 
