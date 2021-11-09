@@ -98,7 +98,7 @@ if 'direct_neigh' in parameters.keys():
        kwargs.update({'direct_neigh': bool(parameters['direct_neigh'])})
 
 # always place the unstructured FEM mesh at the center at the 2nd sfc
-kwargs.update({'place_center': int(parameters['place_center'])})
+kwargs.update({'place_center': True)})
 
 optimizer_type = parameters['optimizer']
 
