@@ -428,8 +428,8 @@ def plot_path_grid_cube(size, ordering, point_color = 'red', line_color = 'blue'
             start = cuts[i]
             end = cuts[i + 1]
             if i != levels - 1: end += 1
-            ax.plot(x[cuts[i]:cuts[i+1]], y[cuts[i]:cuts[i+1]], z[cuts[i]:cuts[i+1]], '-', linewidth = linewidth)
-            ax.scatter(x[cuts[i]:cuts[i+1]], y[cuts[i]:cuts[i+1]], z[cuts[i]:cuts[i+1]], '-')
+            ax.plot(x[start:end], y[start:end], z[start:end], '-', linewidth = linewidth)
+            ax.scatter(x[start:end], y[start:end], z[start:end], '-')
 
     labs = (np.arange(size ** 3) + 1).tolist()
 
