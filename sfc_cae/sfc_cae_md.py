@@ -508,7 +508,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         # if self.self_concat > 1:
         #    b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         zs.append(b.unsqueeze(-1))
-    z = torch.cat(zs, -1).sum(-1)
+    z = torch.cat(zs, -1).mean(-1)
     # if self.inv_second_sfc is not None: return z[..., :self.input_size]
     # else: 
     return self.activate(z)
