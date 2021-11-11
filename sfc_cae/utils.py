@@ -889,7 +889,7 @@ class NearestNeighbouring_md(nn.Module):
 
     def forward(self, tensor_list):
         tensor_list *= self.weights
-        return tensor_list.mean(-1) + self.bias
+        return torch.sum(tensor_list, -1) + self.bias
 
 # def expand_snapshot_for_structured_backward(x, num_diff_nodes):
 #     '''
@@ -1070,7 +1070,7 @@ class NearestNeighbouring(nn.Module):
 
     def forward(self, tensor_list):
         tensor_list *= self.weights
-        return tensor_list.mean(-1) + self.bias
+        return torch.sum(tensor_list, -1) + self.bias
 
 def expend_SFC_NUM(sfc_ordering, partitions):
     '''
