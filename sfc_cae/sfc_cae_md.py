@@ -487,6 +487,8 @@ class SFC_CAE_Decoder_md(nn.Module):
                b = self.activate(tt_nn)
                del tt_list 
                del tt_nn  
+            else:
+               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
             b = b[..., self.inv_second_sfc]
             b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
             # print(b.shape)
