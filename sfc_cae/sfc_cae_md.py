@@ -71,6 +71,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     # for i in range(self.sfc_nums):self.NN_neighs.append(get_neighbourhood_md(self.orderings[i], gen_neighbour_keys(1), ordering = True))
     self.NN_neigh_1d = get_neighbourhood_md(torch.arange(self.input_size).long(), gen_neighbour_keys(1), ordering = True)
     self.second_sfc = sfc_mapping_to_structured
+
     if 'direct_neigh' in kwargs.keys():
         self.direct_neigh = kwargs['direct_neigh']
     else: self.direct_neigh = False
@@ -90,6 +91,14 @@ class SFC_CAE_Encoder_md(nn.Module):
     if 'share_conv_weights' in kwargs.keys():
         self.share_conv_weights = kwargs['share_conv_weights']
     else: self.share_conv_weights = False
+
+    if 'sfcs_for_batch' in kwargs.keys():
+        self.sfcs_for_batch = kwargs['sfcs_for_batch']
+    else: self.sfcs_for_batch = None
+
+    if 'coords' in kwargs.keys():
+       self.coords = kwargs['coords']
+    else: self.coords = None
 
     self.structured = structured
     if self.structured: 
