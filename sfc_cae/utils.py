@@ -43,7 +43,44 @@ from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorData
 
 #################################################### Functions for data pre-processing / data loading ######################################################################
 
-def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = False):
+def get_path_data(data_path, file_format='vtu', indexes=None):
+    '''
+    This function would return a path list for data with a arbitary indice.
+
+    Input:
+    ---
+    data_path: [string] the path for the data, vtu or txt files.
+    indexes: [1d-array] the indice we want to select for the data.
+
+    Output:
+    ---
+    path_list: [list of strings] the path list of corresponding data, used for np.loadtxt()/ meshio.read()
+    '''
+    data = glob.glob(data_path + "*." + file_format)
+    num_data = len(data)
+    file_prefix = data[0].split('.')[:-1]
+    file_prefix = ''.join(file_prefix)
+    file_prefix = file_prefix.split('_')[:-1]
+    file_prefix = '_'.join(file_prefix) + '_'
+    file_format = '.' + file_format
+    path_data = []
+    index = 0
+    readed_in = 0
+    if indexes is None:
+        while readed_in < num_data:
+            while(not os.path.exists(F'{file_prefix}%d{file_format}' % index)):
+                print(F'{file_prefix}%d{file_format} not exist, data switch to {file_prefix}%d{file_format}' % (index, index+1))
+                index += 1
+            path_data.append(F'{file_prefix}%d{file_format}' % index)
+            readed_in += 1
+            index += 1
+    else:
+        for i in range(len(indexes)):
+            path_data.append(F'{file_prefix}%d{file_format}' % indexes[i])
+    return path_data
+
+
+def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = False, indexes = None):
     '''
     This function reads in the vtu/txt files in a {data_path} as tensors, of shape [snapshots, number of Nodes, Channels]
 
@@ -61,31 +98,34 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
     Case 2 - file_format='txt': [torch.FloatTensor] full_stage over times step, time along 0 axis
 
     '''
-    data = glob.glob(data_path + "*")
-    num_data = len(data)
-    file_prefix = data[0].split('.')[-2].split('_')
-    file_prefix.pop(-1)
-    if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
-    else: file_prefix = file_prefix[0] + "_"
+    # data = glob.glob(data_path + "*")
+    # num_data = len(data)
+    # file_prefix = data[0].split('.')[-2].split('_')
+    # file_prefix.pop(-1)
+    # if len(file_prefix) != 1: file_prefix = '_'.join(file_prefix) + "_"
+    # else: file_prefix = file_prefix[0] + "_"
+    # file_format = '.' + file_format
+    # print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
+    path_data = get_path_data(data_path, file_format, indexes)
     file_format = '.' + file_format
-    print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
     cnt_progress = 0
     if (file_format == ".vtu"):
         print("Read in vtu Data......\n")
-        bar=progressbar.ProgressBar(maxval=num_data)
+        bar=progressbar.ProgressBar(maxval=len(path_data))
         bar.start()
         data = []
         coords = None
         cells = None
         start = 0
-        while(True):
-            if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
-                print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
-                start += 1
-            else: break
-        for i in range(start, num_data + start):
+        # while(True):
+        #     if not os.path.exists(F'{file_prefix}%d{file_format}' % start):
+        #         print(F'{file_prefix}%d{file_format} not exist, starting number switch to {file_prefix}%d{file_format}' % (start, start+1))
+        #         start += 1
+        #     else: break
+        for i in range(len(path_data)):
             data.append([])
-            vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
+            # vtu_file = meshio.read(F'{file_prefix}%d{file_format}' % i)
+            vtu_file = meshio.read(path_data[i])
             if not (coords == vtu_file.points).all():
                coords = vtu_file.points
                cells = vtu_file.cells_dict
@@ -93,7 +133,8 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
             for j in range(len(vtu_fields)):
                 vtu_field = vtu_fields[j]
                 if not vtu_field in vtu_file.point_data.keys():
-                   raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
+                #    raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {file_prefix} %d {file_format}' % i)
+                   raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {path_data[i]}' % i)
                 field = vtu_file.point_data[vtu_field]
                 if j == 0:
                    if field.ndim == 1: field = field.reshape(field.shape[0], 1)
@@ -116,7 +157,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
 
         if write_out:
            print("\nWriting Tensors......\n")
-           bar=progressbar.ProgressBar(maxval=num_data)
+           bar=progressbar.ProgressBar(maxval=len(path_data))
            bar.start()
            cnt = 0
            for i in range(whole_data.shape[0]):
@@ -129,14 +170,16 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
 
     elif (file_format == ".txt" or file_format == ".dat"):
         print("Read in txt/dat Data......")
-        bar=progressbar.ProgressBar(maxval=num_data)
+        bar=progressbar.ProgressBar(maxval=len(path_data))
         data = []
-        for i in range(num_data):
+        for i in range(len(path_data)):
             data[i] = torch.from_numpy(np.loadtxt('{file_prefix} %d {file_format}' % i)).float()
             cnt_progress +=1
             bar.update(cnt_progress)
         bar.finish()
         return torch.cat(data, -1)
+
+
 
 def get_simulation_index(num, simulation):
     '''
@@ -271,33 +314,6 @@ def destandardlize_tensor(tensor, tk, tb):
         tensor -= tb
         tensor /= tk
     return tensor
-
-def get_path_data(data_path, indexes):
-    '''
-    This function would return a path list for data with a arbitary indice.
-
-    Input:
-    ---
-    data_path: [string] the path for the data, vtu or txt files.
-    indexes: [1d-array] the indice we want to select for the data.
-
-    Output:
-    ---
-    path_list: [list of strings] the path list of corresponding data, used for np.loadtxt()/ meshio.read()
-    '''
-    data = glob.glob(data_path + "*")
-    num_data = len(data)
-    file_prefix = data[0].split('.')[:-1]
-    file_prefix = ''.join(file_prefix)
-    file_prefix = file_prefix.split('_')[:-1]
-    file_prefix = ''.join(file_prefix) + '_'
-    file_format = data[0].split('.')[-1]
-    file_format = '.' + file_format
-    path_data = []
-    for i in range(len(indexes)):
-        path_data.append(F'{file_prefix}%d{file_format}' % indexes[i])
-    return path_data
-
 
 
 class MyTensorDataset(Dataset):
@@ -1151,6 +1167,107 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
 
 #################################################### Extension functions for data post-processing ######################################################################
 
+def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=False, write_out=False, indexes=None, fill_coords = False):
+    '''
+    This function reads in the vtu/txt files in a {data_path} as tensors, of shape [snapshots, number of Nodes, Channels]
+
+    Input:
+    ---
+    data_path: [string] the data_path which holds vtu/txt files, no other type of files are accepted!!!
+    file_format: [string] 'vtu' or 'txt', the format of the file.
+    vtu_fields: [list] the list of vtu_fields if read in vtu files, the last dimension of the tensor, e.g. ['Velocity', 'Pressure'].
+    write_out: [bool] whether write out those readed-in fields as indenpendent tensors, used for `MyTensorDataset` Class.
+
+    Output:
+    ---
+    Case 1 - file_format='vtu': (3-tuple) [torch.FloatTensor] full_stage over times step, time along 0 axis; [torch.FloatTensor] coords of the mesh; [dictionary] cell_dict of the mesh.
+
+    Case 2 - file_format='txt': [torch.FloatTensor] full_stage over times step, time along 0 axis
+
+    '''
+    path_data = get_path_data(data_path, file_format, indexes)
+    file_format = '.' + file_format
+    cnt_progress = 0
+    if (file_format == ".vtu"):
+        print("Read in vtu Data......\n")
+        bar=progressbar.ProgressBar(maxval=len(path_data))
+        bar.start()
+        data = []
+        if adaptive: 
+            coords = []
+            cells = []
+            num_nodes = np.zeros(len(path_data), dtype = 'int')
+            most_nodes = 0
+            most_nodes_index = 0
+        else: 
+            example_vtu = meshio.read(path_data[0])
+            coords = example_vtu.points
+            cells = example_vtu.cells_dict
+            num_nodes = coords.shape[0]
+        for i in range(len(path_data)):
+            data.append([])
+            vtu_file = meshio.read(path_data[i])
+            if adaptive:
+               coords.append(torch.from_numpy(vtu_file.points.T))
+               cells.append(vtu_file.cells_dict)
+               num_nodes[i] = coords[i].shape[-1]
+               if num_nodes[i] > most_nodes: 
+                most_nodes = num_nodes[i]
+                most_nodes_index = i
+            for j in range(len(vtu_fields)):
+                vtu_field = vtu_fields[j]
+                if not vtu_field in vtu_file.point_data.keys():
+                   raise ValueError(F'{vtu_field} not avaliable in {vtu_file.point_data.keys()} for {path_data[i]}')
+                field = torch.from_numpy(vtu_file.point_data[vtu_field].T)
+                if j == 0:
+                   if field.ndim == 1: field = field.unsqueeze(0)
+                   data[i] = field
+                else:
+                   if field.ndim == 1: field = field.unsqueeze(0)
+                   data[i] = torch.cat((data[i], field), dim=0)
+            cnt_progress +=1
+            bar.update(cnt_progress)
+        bar.finish()
+        print(F'most nodes achieved at snapshot %d, is %d' % (most_nodes_index, most_nodes))
+        if adaptive:
+           cnt_progress = 0
+           print("Fill in paddings for adaptive Data......\n")
+           bar=progressbar.ProgressBar(maxval=len(path_data))
+           bar.start()
+           for i in range(len(path_data)):
+               cnt_progress +=1
+               bar.update(cnt_progress)
+#                num_nodes = coords[i].shape[-1]
+               if num_nodes[i] != most_nodes:
+                  filling_paras = gen_filling_paras(num_nodes[i], most_nodes)
+                  data[i] = expand_snapshot_backward_connect(data[i], *filling_paras, place_center = True)
+                  if fill_coords: coords[i] = expand_snapshot_backward_connect(coords[i], *filling_paras, place_center = True)
+           if fill_coords: coords = torch.stack(coords)
+        whole_data = torch.stack(data)
+        
+        # get rid of zero components
+        zero_compos = 0
+        for i in range(whole_data.shape[1]):
+            if whole_data[:, i, ...].max() - whole_data[:, i, ...].min() < 1e-8:
+               zero_compos += 1
+               whole_data[:, i:-1, ...] = whole_data[:, i+1:, ...]
+               if fill_coords: coords[:, i:-1, ...] = coords[:, i+1:, ...]
+        if zero_compos > 0 : 
+           whole_data = whole_data[:, :-zero_compos, ...]
+           if fill_coords: coords = coords[:, :-zero_compos, ...]
+
+        if write_out:
+           print("\nWriting Tensors......\n")
+           bar=progressbar.ProgressBar(maxval=len(path_data))
+           bar.start()
+           cnt = 0
+           for i in range(whole_data.shape[0]):
+               torch.save(whole_data[i, :].clone(), 'tensor_%d.pt'%i)
+               cnt += 1
+               bar.update(cnt)
+           bar.finish()
+        
+        return whole_data, torch.from_numpy(num_nodes), coords, cells 
 
 def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu')):
     '''
