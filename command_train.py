@@ -182,9 +182,9 @@ if parameters['mode'] == 'train':
       np.save('train_index', train_index)
       np.save('valid_index', valid_index)
       np.save('test_index', test_index)
-   train_path = get_path_data((parameters['data_dir'] + '*'), train_index - 1)
-   valid_path = get_path_data((parameters['data_dir'] + '*'), valid_index - 1)
-   test_path = get_path_data((parameters['data_dir'] + '*'), test_index - 1)
+   train_path = get_path_data((parameters['data_dir']), train_index - 1)
+   valid_path = get_path_data((parameters['data_dir']), valid_index - 1)
+   test_path = get_path_data((parameters['data_dir']), test_index - 1)
 
    if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
       train_set = full_tensor[train_index].float()
