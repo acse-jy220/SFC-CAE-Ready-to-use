@@ -1185,7 +1185,7 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
     Case 2 - file_format='txt': [torch.FloatTensor] full_stage over times step, time along 0 axis
 
     '''
-    path_data = get_path_data(data_path, file_format, indexes)
+    path_data = get_path_data(data_path, indexes, file_format)
     file_format = '.' + file_format
     cnt_progress = 0
     if (file_format == ".vtu"):
