@@ -43,7 +43,7 @@ from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorData
 
 #################################################### Functions for data pre-processing / data loading ######################################################################
 
-def get_path_data(data_path, file_format='vtu', indexes=None):
+def get_path_data(data_path, indexes=None, file_format='vtu'):
     '''
     This function would return a path list for data with a arbitary indice.
 
@@ -106,7 +106,7 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
     # else: file_prefix = file_prefix[0] + "_"
     # file_format = '.' + file_format
     # print('file_prefix: %s, file_format: %s' % (file_prefix, file_format))
-    path_data = get_path_data(data_path, file_format, indexes)
+    path_data = get_path_data(data_path, indexes, file_format)
     file_format = '.' + file_format
     cnt_progress = 0
     if (file_format == ".vtu"):

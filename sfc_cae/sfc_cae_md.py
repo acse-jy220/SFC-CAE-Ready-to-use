@@ -94,7 +94,7 @@ class SFC_CAE_Encoder_md(nn.Module):
 
     if 'sfcs_for_batch' in kwargs.keys():
         self.sfcs_for_batch = kwargs['sfcs_for_batch']
-    else: self.sfcs_for_batch = None
+    else: self.sfcs_for_batch = False
 
     if 'coords' in kwargs.keys():
        self.coords = kwargs['coords']
