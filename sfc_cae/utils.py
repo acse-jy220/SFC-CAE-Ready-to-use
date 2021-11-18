@@ -932,6 +932,8 @@ def gen_filling_paras(unstructured_size, structured_size):
     end_backward: [int] does this expand sfc ending in a inverse order?
     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
     '''
+    unstructured_size = int(unstructured_size)
+    structured_size = int(structured_size)
     assert structured_size >= unstructured_size, 'Make sure the virtual structured grid you are constructing have more nodes than the original unstructured mesh!'
     n_fold = structured_size // (unstructured_size - 1)
     remainder = structured_size % (unstructured_size - 1)
