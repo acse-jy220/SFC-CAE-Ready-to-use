@@ -1168,7 +1168,7 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
 
 #################################################### Extension functions for data post-processing ######################################################################
 
-def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=False, write_out=False, indexes=None, fill_coords = False):
+def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=False, write_out=False, indexes=None, fill_pads = False):
     '''
     This function reads in the vtu/txt files in a {data_path} as tensors, of shape [snapshots, number of Nodes, Channels]
 
@@ -1230,7 +1230,7 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
             bar.update(cnt_progress)
         bar.finish()
         print(F'most nodes achieved at snapshot %d, is %d' % (most_nodes_index, most_nodes))
-        if adaptive:
+        if adaptive and fill_pads:
            cnt_progress = 0
            print("Fill in paddings for adaptive Data......\n")
            bar=progressbar.ProgressBar(maxval=len(path_data))
@@ -1242,20 +1242,21 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
                if num_nodes[i] != most_nodes:
                   filling_paras = gen_filling_paras(num_nodes[i], most_nodes)
                   data[i] = expand_snapshot_backward_connect(data[i], *filling_paras, place_center = True)
-                  if fill_coords: coords[i] = expand_snapshot_backward_connect(coords[i], *filling_paras, place_center = True)
-           if fill_coords: coords = torch.stack(coords)
-        whole_data = torch.stack(data)
+                  coords[i] = expand_snapshot_backward_connect(coords[i], *filling_paras, place_center = True)
+           coords = torch.stack(coords)
+           whole_data = torch.stack(data)
         
         # get rid of zero components
-        zero_compos = 0
-        for i in range(whole_data.shape[1]):
-            if whole_data[:, i, ...].max() - whole_data[:, i, ...].min() < 1e-8:
-               zero_compos += 1
-               whole_data[:, i:-1, ...] = whole_data[:, i+1:, ...]
-               if fill_coords: coords[:, i:-1, ...] = coords[:, i+1:, ...]
-        if zero_compos > 0 : 
-           whole_data = whole_data[:, :-zero_compos, ...]
-           if fill_coords: coords = coords[:, :-zero_compos, ...]
+        if not adaptive:
+           zero_compos = 0
+           for i in range(whole_data.shape[1]):
+             if whole_data[:, i, ...].max() - whole_data[:, i, ...].min() < 1e-8:
+                zero_compos += 1
+                whole_data[:, i:-1, ...] = whole_data[:, i+1:, ...]
+                coords[:, i:-1, ...] = coords[:, i+1:, ...]
+           if zero_compos > 0 : 
+              whole_data = whole_data[:, :-zero_compos, ...]
+              coords = coords[:, :-zero_compos, ...]
 
         if write_out:
            print("\nWriting Tensors......\n")
