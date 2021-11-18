@@ -1245,7 +1245,7 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
                   coords[i] = expand_snapshot_backward_connect(coords[i], *filling_paras, place_center = True)
            coords = torch.stack(coords)
            whole_data = torch.stack(data)
-        
+        else: whole_data = data
         # get rid of zero components
         if not adaptive:
            zero_compos = 0
