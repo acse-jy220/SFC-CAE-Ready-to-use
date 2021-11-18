@@ -59,9 +59,9 @@ def get_path_data(data_path, indexes=None, file_format='vtu'):
     data = glob.glob(data_path + "*." + file_format)
     num_data = len(data)
     file_prefix = data[0].split('.')[:-1]
-    if len(file_prefix) > 1: file_prefix = '.'.join(file_prefix)
+    file_prefix = '.'.join(file_prefix)
     file_prefix = file_prefix.split('_')[:-1]
-    if len(file_prefix) > 1: file_prefix = '_'.join(file_prefix)
+    file_prefix = '_'.join(file_prefix)
     file_prefix += '_'
     file_format = '.' + file_format
     path_data = []
