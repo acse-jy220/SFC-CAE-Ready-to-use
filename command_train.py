@@ -182,9 +182,10 @@ if parameters['mode'] == 'train':
       np.save('train_index', train_index)
       np.save('valid_index', valid_index)
       np.save('test_index', test_index)
-   train_path = get_path_data((parameters['data_dir']), train_index - 1)
-   valid_path = get_path_data((parameters['data_dir']), valid_index - 1)
-   test_path = get_path_data((parameters['data_dir']), test_index - 1)
+   full_path = get_path_data((parameters['data_dir']), file_format='pt')
+   train_path = get_path_data((parameters['data_dir']), train_index - 1, file_format='pt')
+   valid_path = get_path_data((parameters['data_dir']), valid_index - 1, file_format='pt')
+   test_path = get_path_data((parameters['data_dir']), test_index - 1, file_format='pt')
 
    if parameters['data_type'] == 'vtu' or parameters['data_type'] == 'one_tensor':
       train_set = full_tensor[train_index].float()
@@ -207,7 +208,7 @@ if parameters['mode'] == 'train':
             valid_set = MyTensorDataset(valid_path,  0, 1, tk, tb, md = md)
             test_set = MyTensorDataset(test_path,  0, 1, tk, tb, md = md)
          else: 
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'),  0, 1, md = md)
+            full_set = MyTensorDataset(full_path,  0, 1, md = md)
             train_set = MyTensorDataset(train_path,  0, 1, full_set.tk, full_set.tb, md = md)
             valid_set = MyTensorDataset(valid_path,  0, 1, full_set.tk, full_set.tb, md = md)
             test_set = MyTensorDataset(test_path,  0, 1, full_set.tk, full_set.tb, md = md)
@@ -220,7 +221,7 @@ if parameters['mode'] == 'train':
             valid_set = MyTensorDataset(valid_path,  -1, 1, tk, tb, md = md)
             test_set = MyTensorDataset(test_path,  -1, 1, tk, tb, md = md)
          else: 
-            full_set = MyTensorDataset(glob.glob(parameters['data_dir'] + '*'), -1, 1)
+            full_set = MyTensorDataset(full_path, -1, 1, md = md)
             train_set = MyTensorDataset(train_path,  -1, 1, full_set.tk, full_set.tb, md = md)
             valid_set = MyTensorDataset(valid_path,  -1, 1, full_set.tk, full_set.tb, md = md)
             test_set = MyTensorDataset(test_path,  -1, 1, full_set.tk, full_set.tb, md = md)
