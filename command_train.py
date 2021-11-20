@@ -136,7 +136,7 @@ if parameters['tb_file'] != 'None':
 
 # parallel mode
 if 'parallel_mode' in parameters.keys():
-       parallel_mode = parameters['parallel_mode']
+      parallel_mode = parameters['parallel_mode']
 else: parallel_mode = 'DP'
 
 # training parameters
@@ -252,8 +252,7 @@ else: save_path = None
 
 input_size = space_filling_orderings[0].shape[0]
 
-if 'AE_type' in parameters.keys():
-   if parameters['AE_type'] == 'md':
+if md:
       if 'second_sfc' in parameters.keys():
           second_sfc = torch.tensor(torch.load(parameters['second_sfc']))
           if len(second_sfc.shape) > 1: second_sfc = second_sfc[0]
@@ -294,7 +293,24 @@ else:
                       output_linear = output_linear)
 
 if parameters['mode'] == 'train':
-   if parallel_mode == 'DDP':
+   if parallel_mode == 'DP': 
+      print('\ntraining with DataParallel...\n')   
+      autoencoder = train_model(autoencoder, 
+                                train_loader = train_loader,
+                                valid_loader = valid_loader,
+                                test_loader = test_loader,
+                                optimizer_type = optimizer_type,
+                                state_load = state_load,
+                                n_epochs = n_epoches, 
+                                varying_lr = change_lr,
+                                lr = lr, 
+                                seed = seed,
+                                visualize = visualize,
+                                save_path = save_path,
+                                dict_only = True,
+                                parallel_mode = parallel_mode)
+   elif parallel_mode == 'DDP':
+      print('\ntraining with DataDistributedParallel...\n')  
       if __name__ == '__main__':
         torch.multiprocessing.freeze_support()
       #   mp.spawn(setup_DDP, args=(), nprocs=torch.cuda.device_count(), join=True)
@@ -321,21 +337,6 @@ if parameters['mode'] == 'train':
                      True),
                nprocs=torch.cuda.device_count(),
                join=True)      
-   else: 
-      autoencoder = train_model(autoencoder, 
-                                train_loader = train_loader,
-                                valid_loader = valid_loader,
-                                test_loader = test_loader,
-                                optimizer_type = optimizer_type,
-                                state_load = state_load,
-                                n_epochs = n_epoches, 
-                                varying_lr = change_lr,
-                                lr = lr, 
-                                seed = seed,
-                                visualize = visualize,
-                                save_path = save_path,
-                                dict_only = True,
-                                parallel_mode = parallel_mode)
    
 else: 
    autoencoder.load_state_dict(torch.load(state_load)['model_state_dict'])
