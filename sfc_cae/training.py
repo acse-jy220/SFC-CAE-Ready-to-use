@@ -266,10 +266,11 @@ def train_model(autoencoder,
   else: variational = autoencoder.encoder.variational
   
   print('torch device num:', torch.cuda.device_count(),'\n')
-  if not isinstance(autoencoder, DDP): autoencoder.to(device)
+  # if not isinstance(autoencoder, DDP): autoencoder.to(device)
   if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
+     autoencoder = autoencoder.to(device)
 
   # see if continue training happens
   if state_load is not None:
