@@ -27,8 +27,8 @@ from torch.utils.data import distributed
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # set training device id, always from 0 to n.
-# visible_devices = ','.join(map(str, np.arange(torch.cuda.device_count()).astype('int')))
-# os.environ['CUDA_VISIBLE_DEVICES'] = visible_devices
+visible_devices = ','.join(map(str, np.arange(torch.cuda.device_count()).astype('int')))
+os.environ['CUDA_VISIBLE_DEVICES'] = visible_devices
 
 # CUDA_BLOCKING
 # os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
