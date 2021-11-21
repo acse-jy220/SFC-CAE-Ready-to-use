@@ -414,16 +414,26 @@ class AdaptiveDataset(Dataset):
 
     '''
     def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, indexes = None, send_to_gpu = False):
-        if indexes is None: self.dataset = tensor_list
+        if indexes is None: 
+           self.dataset = tensor_list
+           self.coords = coords_list
+           self.sfcs_list = sfcs_list
+           self.inv_sfcs_list = inv_sfcs_list
+           self.num_nodes = num_nodes
         else: 
             self.dataset = []
-            for index in indexes: self.dataset.append(tensor_list[index])
-        self.coords = coords_list
+            self.coords = []
+            self.sfcs_list = []
+            self.inv_sfcs_list = []
+            self.num_nodes = []           
+            for index in indexes: 
+                self.dataset.append(tensor_list[index])
+                self.coords.append(coords_list[index])
+                self.sfcs_list.append(sfcs_list[index])
+                self.inv_sfcs_list.append(inv_sfcs_list[index])
+                self.num_nodes.append(num_nodes[index])
         self.length = len(self.dataset)
-        self.sfcs_list = sfcs_list
-        self.inv_sfcs_list = inv_sfcs_list
         self.filling_paras = []
-        self.num_nodes = num_nodes
         self.maxnodes = int(num_nodes.max())
         self.sfc_max_num = sfcs_list[0].shape[0]
         t_max = self.dataset[0].max(-1).values.unsqueeze(0)
