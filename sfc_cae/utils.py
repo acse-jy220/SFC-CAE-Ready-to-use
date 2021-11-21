@@ -419,7 +419,7 @@ class AdaptiveDataset(Dataset):
             self.dataset = []
             for index in indexes: self.dataset.append(tensor_list[index])
         self.coords = coords_list
-        self.length = len(tensor_list)
+        self.length = len(self.dataset)
         self.sfcs_list = sfcs_list
         self.inv_sfcs_list = inv_sfcs_list
         self.filling_paras = []
