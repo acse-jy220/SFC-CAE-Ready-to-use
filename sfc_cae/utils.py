@@ -413,8 +413,11 @@ class AdaptiveDataset(Dataset):
 
 
     '''
-    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, fill_pad = True, send_to_gpu = False):
-        self.dataset = tensor_list
+    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, indexes = None, send_to_gpu = False):
+        if indexes is None: self.dataset = tensor_list
+        else: 
+            self.dataset = []
+            for index in indexes: self.dataset.append(tensor_list[index])
         self.coords = coords_list
         self.length = len(tensor_list)
         self.sfcs_list = sfcs_list
