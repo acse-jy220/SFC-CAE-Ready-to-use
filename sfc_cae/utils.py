@@ -386,6 +386,106 @@ class MyTensorDataset(Dataset):
     def __len__(self):
         return self.length
 
+
+class AdaptiveDataset(Dataset):
+    '''
+    This class defines a custom dataset used for command line training, covert all your data to .pt files snapshot by snapshot before using it.
+
+    ___init__:
+       Input:
+       ---
+       tensor_list: [list of Torch.tensors] a list consist of adaptive tensors.
+       lower: [float] the lower bound for standardlisation
+       upper: [float] the upper bound for standardlisation
+       tk: [torch.FloatTensor] pre-load tk numbers, if we have got it for the dataset, default is None.
+       tb: [torch.FloatTensor] pre-load tb numbers, if we have got it for the dataset, default is None.
+       set_bound: [1d-array of list] of shape (2,) used for volume_fraction for slugflow dataset, bound [0, 1]
+    
+    __getitem__(i):
+       Returns on call:
+       ---
+       self.dataset[i]: a single snapshot after standardlisation.
+
+    __len__:
+       Returns on call:
+       ---
+       len: [int] the length of dataset, equal number of time steps/ snapshots
+
+
+    '''
+    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, fill_pad = True, send_to_gpu = False):
+        self.dataset = tensor_list
+        self.coords = coords_list
+        self.length = len(tensor_list)
+        self.sfcs_list = sfcs_list
+        self.inv_sfcs_list = inv_sfcs_list
+        self.filling_paras = []
+        self.num_nodes = num_nodes
+        self.maxnodes = int(num_nodes.max())
+        self.sfc_max_num = sfcs_list[0].shape[0]
+        t_max = self.dataset[0].max(-1).values.unsqueeze(0)
+        t_min = self.dataset[0].min(-1).values.unsqueeze(0)
+        cnt_progress = 0
+        # find tk and tb for the dataset.
+        if tk is None or tb is None:
+            print("Computing min and max......\n")
+            bar=progressbar.ProgressBar(maxval=self.length)
+            bar.start()
+            for i in range(1, self.length):
+              data = self.dataset[i]
+              t_max = torch.cat((t_max, data.max(-1).values.unsqueeze(0)), 0)
+              t_min = torch.cat((t_min, data.min(-1).values.unsqueeze(0)), 0)
+              cnt_progress +=1
+              bar.update(cnt_progress)
+            bar.finish()
+            self.t_max = t_max.max(0).values
+            self.t_min = t_min.min(0).values
+            self.tk = (upper - lower) / (self.t_max - self.t_min)
+            self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
+        else: # jump that process, if we have got tk and tb.
+            self.tk = tk
+            self.tb = tb
+        print('tk: ', self.tk, '\n')
+        print('tb: ', self.tb, '\n')
+
+        self.tk = self.tk.unsqueeze(0).T
+        self.tb = self.tb.unsqueeze(0).T
+
+        cnt_progress = 0
+        print("Generate filling parameters......\n")
+        bar=progressbar.ProgressBar(maxval=self.length)
+        bar.start()    
+        for i in range(self.length): 
+            if self.num_nodes[i] < self.maxnodes:
+               self.filling_paras.append(gen_filling_paras(self.num_nodes[i], self.maxnodes))
+            else:
+               self.filling_paras.append(None) 
+            cnt_progress += 1
+            bar.update(cnt_progress)
+        bar.finish()  
+
+        if send_to_gpu:
+           cnt_progress = 0
+           print("Sending data to GPU......\n")
+           bar=progressbar.ProgressBar(maxval=self.length)
+           bar.start() 
+           for i in range(self.length): 
+             self.dataset[i] = self.dataset[i].to('cuda')
+             cnt_progress += 1
+             bar.update(cnt_progress)
+           self.tk = self.tk.to('cuda')
+           self.tb = self.tb.to('cuda')
+           bar.finish()                    
+
+    def __getitem__(self, index):
+        return_value = (self.dataset[index] * self.tk + self.tb,)
+        if self.sfcs_list and self.inv_sfcs_list is not None: return_value += (self.sfcs_list[index], self.inv_sfcs_list[index])
+        if self.coords is not None: return_value += (self.coords[index],)
+        return list(return_value + (self.filling_paras[index],))
+      
+    def __len__(self):
+        return self.length
+
 ####################################################  Plotting functions for unstructured mesh ######################################################################      
 
 def plot_path_grid_cube(size, ordering, point_color = 'red', line_color = 'blue', show_blocks = True, mark_numbers = True, linewidth = 5, levels = None):    
