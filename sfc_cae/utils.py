@@ -442,14 +442,13 @@ class AdaptiveDataset(Dataset):
             self.t_min = t_min.min(0).values
             self.tk = (upper - lower) / (self.t_max - self.t_min)
             self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
+            self.tk = self.tk.unsqueeze(0).T
+            self.tb = self.tb.unsqueeze(0).T
         else: # jump that process, if we have got tk and tb.
             self.tk = tk
             self.tb = tb
         print('tk: ', self.tk, '\n')
         print('tb: ', self.tb, '\n')
-
-        self.tk = self.tk.unsqueeze(0).T
-        self.tb = self.tb.unsqueeze(0).T
 
         cnt_progress = 0
         print("Generate filling parameters......\n")
