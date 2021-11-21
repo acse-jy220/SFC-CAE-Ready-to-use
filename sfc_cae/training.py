@@ -377,10 +377,11 @@ def train_model(autoencoder,
                 parallel_mode = 'DP',
                 optimizer_type = 'Adam',
                 state_load = None,
-                varying_lr = False, 
+                varying_lr = False,
                 check_gap = 3,
                 weight_decay = 0, 
                 criterion_type = 'MSE',
+                shuffle_sfc = False,
                 rank = None):
   '''
   This function is main function for loading, training, and saving the model.
