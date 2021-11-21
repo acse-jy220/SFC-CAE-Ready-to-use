@@ -471,6 +471,7 @@ class AdaptiveDataset(Dataset):
            bar.start() 
            for i in range(self.length): 
              self.dataset[i] = self.dataset[i].to('cuda')
+             if self.coords is not None: self.coords[i] = self.coords[i].to('cuda')
              cnt_progress += 1
              bar.update(cnt_progress)
            self.tk = self.tk.to('cuda')
