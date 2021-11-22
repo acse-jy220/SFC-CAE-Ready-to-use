@@ -260,7 +260,6 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             if fla is not None: a[k] = expand_snapshot_backward_connect(a[k], *fla, True)
             if coords is not None:
                cds[k] = cds[k][..., sfc[sfc_index]]
-               print(cds[k].shape == x[k].shape)
             if fla is not None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, True)
         a = torch.stack(a)
         if coords is not None and self.coords_option == 1: a = torch.cat((a, torch.stack(cds)), 1)
