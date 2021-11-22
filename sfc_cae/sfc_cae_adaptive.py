@@ -258,10 +258,11 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             a[k] = a[k][..., sfc[sfc_index]]
             if fla is not None: a[k] = expand_snapshot_backward_connect(a[k], *fla, True)
             if coords is not None:
-               coords[k] = coords[k][..., sfc[sfc_index]]
-            if fla is not None: coords[k] = expand_snapshot_backward_connect(coords[k], *fla, True)
+               cds = copy.deepcopy(coords)
+               cds[k] = cds[k][..., sfc[sfc_index]]
+            if fla is not None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, True)
         a = torch.stack(a)
-        if coords is not None and self.coords_option == 1: a = torch.cat((a, torch.stack(coords)), 1)
+        if coords is not None and self.coords_option == 1: a = torch.cat((a, torch.stack(cds)), 1)
         # print(a.shape)
         if self.self_concat > 1: 
            if a.ndim == 2: a = a.unsqueeze(1)
@@ -482,7 +483,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         x = self.activate(self.fcs[i](x))
     # revert torch.cat
     if self.sfc_nums > 1: x = torch.chunk(x, chunks=self.sfc_nums, dim=1)
-    zs = []
+    
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
         b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
