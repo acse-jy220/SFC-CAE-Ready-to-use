@@ -491,7 +491,6 @@ class SFC_CAE_Decoder_md(nn.Module):
     zs = []
 
     self.sfc_indexes = self.encoder.sfc_indexes
-    print(self.sfc_indexes)
 
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
