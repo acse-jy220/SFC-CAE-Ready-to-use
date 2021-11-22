@@ -101,7 +101,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     else: self.share_conv_weights = False
 
     if 'coords' in kwargs.keys():
-       self.coords = kwargs['coords']
+       self.coords = kwargs['coords'].float()
        self.coords_dim = self.coords.shape[0]
        self.components += self.coords_dim
     else: 
