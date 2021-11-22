@@ -433,7 +433,8 @@ def train_model(autoencoder,
   if torch.cuda.device_count() > 1 and parallel_mode == 'DP':
      print("Let's use", torch.cuda.device_count(), "GPUs!")
      autoencoder = torch.nn.DataParallel(autoencoder)
-     autoencoder = autoencoder.to(device)
+  
+  autoencoder = autoencoder.to(device)
 
   # see if continue training happens
   if state_load is not None:
