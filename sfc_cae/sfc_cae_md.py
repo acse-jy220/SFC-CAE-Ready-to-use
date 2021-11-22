@@ -263,7 +263,7 @@ class SFC_CAE_Encoder_md(nn.Module):
 
     if self.self_concat > 1 or self.coords is not None: 
         if x.ndim == 2: x = x.unsqueeze(1)
-        if self.coords is not None: x = torch.cat(x, self.coords.expand((x.shape[0],) + self.coords.shape), dim = 1)
+        if self.coords is not None: x = torch.cat((x, self.coords.expand((x.shape[0],) + self.coords.shape)), dim = 1)
         if self.self_concat > 1: x = torch.cat([x] * self.self_concat, 1)
     # print(x.shape)
     # 1D or MD Conv Layers
