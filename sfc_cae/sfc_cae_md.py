@@ -349,6 +349,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     super(SFC_CAE_Decoder_md, self).__init__()
 
     # pass parameters from the encoder
+    self.encoder = encoder
     self.NN = encoder.NN
     self.variational = encoder.variational
     self.activate = encoder.activate
@@ -486,6 +487,10 @@ class SFC_CAE_Decoder_md(nn.Module):
     # revert torch.cat
     if self.sfc_nums > 1: x = torch.chunk(x, chunks=self.sfc_nums, dim=1)
     zs = []
+
+    self.sfc_indexes = self.encoder.sfc_indexes
+    print(self.sfc_indexes)
+
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
         b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
@@ -529,7 +534,7 @@ class SFC_CAE_Decoder_md(nn.Module):
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
 
         if self.coords_dim != 0: b = b[:, :self.coords_dim]             
-        b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
+        b = b[..., self.orderings[self.sfc_indexes[i]]] # backward order refer to first sfc(s).
         # if self.self_concat > 1:
         #    b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         zs.append(b.unsqueeze(-1))
