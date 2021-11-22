@@ -252,13 +252,13 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     # 1D or MD Conv Layers
     for i in range(self.sfc_nums):
         a = copy.deepcopy(x)
+        if coords is not None: cds = copy.deepcopy(coords)
         for k, (sfc, fla) in enumerate(zip(sfcs, filling_paras)):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
             a[k] = a[k][..., sfc[sfc_index]]
             if fla is not None: a[k] = expand_snapshot_backward_connect(a[k], *fla, True)
             if coords is not None:
-               cds = copy.deepcopy(coords)
                cds[k] = cds[k][..., sfc[sfc_index]]
             if fla is not None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, True)
         a = torch.stack(a)
@@ -483,7 +483,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         x = self.activate(self.fcs[i](x))
     # revert torch.cat
     if self.sfc_nums > 1: x = torch.chunk(x, chunks=self.sfc_nums, dim=1)
-    
+
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
         b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
