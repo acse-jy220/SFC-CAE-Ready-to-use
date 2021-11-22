@@ -26,6 +26,7 @@ class SFC_CAE_Encoder_md(nn.Module):
                variational,
                force_initialising_param=None,
                sfc_mapping_to_structured=None,
+               shuffle_sfc_num = None,
                **kwargs):
     '''
     Class contains the Encoder (snapshot -> latent).
@@ -61,11 +62,18 @@ class SFC_CAE_Encoder_md(nn.Module):
     self.input_size = input_size
     self.components = components
     self.self_concat = self_concat
-    self.input_channel = components * self_concat
     self.num_final_channels = 16
     self.variational = variational
     self.orderings = torch.tensor(space_filling_orderings).long()
-    self.sfc_nums = len(space_filling_orderings)
+    if shuffle_sfc_num is not None: 
+       self.sfc_nums = shuffle_sfc_num
+       self.max_sfc_nums = len(space_filling_orderings)
+       if self.max_sfc_nums < self.sfc_nums:
+          raise ValueError('the number to shuffle should be less or equal to the input sfc nums!!!')
+    else: 
+      self.sfc_nums = len(space_filling_orderings)
+      self.max_sfc_nums = None
+
     # self.NN_neighs = []
     self.num_neigh = 3
     # for i in range(self.sfc_nums):self.NN_neighs.append(get_neighbourhood_md(self.orderings[i], gen_neighbour_keys(1), ordering = True))
@@ -92,15 +100,18 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.share_conv_weights = kwargs['share_conv_weights']
     else: self.share_conv_weights = False
 
-    if 'sfcs_for_batch' in kwargs.keys():
-        self.sfcs_for_batch = kwargs['sfcs_for_batch']
-    else: self.sfcs_for_batch = False
-
     if 'coords' in kwargs.keys():
        self.coords = kwargs['coords']
-    else: self.coords = None
+       self.coords_dim = self.coords.shape[0]
+       self.components += self.coords_dim
+    else: 
+      self.coords = None
+      self.coords_dim = 0
 
+
+    self.input_channel = self.components * self.self_concat
     self.structured = structured
+
     if self.structured: 
        if activation is None:
           self.activate = nn.ReLU()
@@ -158,12 +169,7 @@ class SFC_CAE_Encoder_md(nn.Module):
 
          if 'increase_multi' in kwargs.keys():
                 self.increase_multi = kwargs['increase_multi']
-         else: self.increase_multi = 4
-
-        #  if dimension == 2: 
-        #    self.increase_multi = 2
-        #  elif dimension == 3:
-        #    self.increase_multi = 4      
+         else: self.increase_multi = 4    
 
          # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
          self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
@@ -250,16 +256,19 @@ class SFC_CAE_Encoder_md(nn.Module):
     the last dimension should always represent the component index.
     '''
     xs = []
-    # if self.components > 1: 
-    #     x = x.permute(0, -1, -2)
-    #     x = x.reshape(-1, x.shape[-2] * x.shape[-1])
-    if self.self_concat > 1: 
+
+    if self.max_sfc_nums is not None:
+       self.sfc_indexes = np.random.choice(self.max_sfc_nums, self.sfc_nums, replace=False) # sfc_index, to shuffle
+    else: self.sfc_indexes = np.arange(self.sfc_nums).astype('int')
+
+    if self.self_concat > 1 or self.coords is not None: 
         if x.ndim == 2: x = x.unsqueeze(1)
-        x = torch.cat([x] * self.self_concat, 1)
+        if self.coords is not None: x = torch.cat(x, self.coords.expand((x.shape[0],) + self.coords.shape), dim = 1)
+        if self.self_concat > 1: x = torch.cat([x] * self.self_concat, 1)
     # print(x.shape)
     # 1D or MD Conv Layers
     for i in range(self.sfc_nums):
-        a = x[..., self.orderings[i]]
+        a = x[..., self.orderings[self.sfc_indexes[i]]]
         # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None: 
@@ -364,6 +373,9 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.neighbour_range = encoder.neighbour_range
     self.place_center = encoder.place_center
     self.reduce = reduce_strategy
+
+    self.coords = encoder.coords
+    self.coords_dim = encoder.coords_dim
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
@@ -502,7 +514,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
             # print(b.shape)
             # b = b[..., :self.input_size] # simple truncate
-            b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
+            # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
         else: 
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
@@ -515,7 +527,9 @@ class SFC_CAE_Decoder_md(nn.Module):
                del tt_nn
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
-            b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
+
+        if self.coords_dim != 0: b = b[:, :self.coords_dim]             
+        b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
         # if self.self_concat > 1:
         #    b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         zs.append(b.unsqueeze(-1))
