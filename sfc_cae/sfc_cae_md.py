@@ -104,6 +104,7 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.coords = kwargs['coords']
        self.coords_dim = self.coords.shape[0]
        self.components += self.coords_dim
+       self.register_buffer('coords', self.coords)
     else: 
       self.coords = None
       self.coords_dim = 0
@@ -376,6 +377,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.reduce = reduce_strategy
 
     self.coords = encoder.coords
+    if self.coords is not None: self.register_buffer('coords', self.coords)
     self.coords_dim = encoder.coords_dim
 
     # inherit weight sharing from encoder
