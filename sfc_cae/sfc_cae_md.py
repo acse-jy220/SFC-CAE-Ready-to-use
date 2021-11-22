@@ -104,7 +104,6 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.coords = kwargs['coords']
        self.coords_dim = self.coords.shape[0]
        self.components += self.coords_dim
-       self.register_buffer('coords', self.coords)
     else: 
       self.coords = None
       self.coords_dim = 0
@@ -264,7 +263,9 @@ class SFC_CAE_Encoder_md(nn.Module):
 
     if self.self_concat > 1 or self.coords is not None: 
         if x.ndim == 2: x = x.unsqueeze(1)
-        if self.coords is not None: x = torch.cat((x, self.coords.expand((x.shape[0],) + self.coords.shape)), dim = 1)
+        if self.coords is not None: 
+          coords = self.coords.expand((x.shape[0],) + self.coords.shape).to(x.device)
+          x = torch.cat((x, coords), dim = 1)
         if self.self_concat > 1: x = torch.cat([x] * self.self_concat, 1)
     # print(x.shape)
     # 1D or MD Conv Layers
@@ -377,7 +378,6 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.reduce = reduce_strategy
 
     self.coords = encoder.coords
-    if self.coords is not None: self.register_buffer('coords', self.coords)
     self.coords_dim = encoder.coords_dim
 
     # inherit weight sharing from encoder
