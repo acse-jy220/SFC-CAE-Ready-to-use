@@ -16,6 +16,7 @@ import numpy as np
 from .utils import *
 from .sfc_cae import *
 from .sfc_cae_md import *
+from .sfc_cae_adaptive import *
 # for other custom Pytorch Optimizers
 from timm import optim as tioptim
 # Distributed Data Parallel
@@ -100,7 +101,7 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path, dict_only = Fa
       print('model saved to', model_name)
     print('model_dict saved to', model_dictname)
 
-def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode, rank = None):
+def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, shuffle_sfc, rank = None):
   '''
   This function is implemented for training the model.
 
@@ -158,7 +159,7 @@ def train(autoencoder, variational, optimizer, criterion, other_metric, dataload
   if variational: return train_loss / data_length, train_loss_other/ data_length, whole_MSE/ data_length, whole_KL/ data_length  # Return Loss, MSE, KL separately.
   else: return train_loss / data_length, train_loss_other/ data_length  # Return MSE
 
-def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader, parallel_mode, rank = None):
+def validate(autoencoder, variational, optimizer, criterion, other_metric, dataloader, shuffle_sfc, rank = None):
   '''
   This function is implemented for validating the model.
 
@@ -414,8 +415,18 @@ def train_model(autoencoder,
   set_seed(seed)
   if isinstance(autoencoder, DDP): 
      variational = autoencoder.module.encoder.variational
+     adaptive = isinstance(autoencoder.module, SFC_CAE_Adaptive)
      # device = rank
-  else: variational = autoencoder.encoder.variational
+  else: 
+    variational = autoencoder.encoder.variational
+    adaptive = isinstance(autoencoder, SFC_CAE_Adaptive)
+
+  if adaptive: 
+     train_function = train_adaptive
+     valid_function = validate_adaptive
+  else:
+     train_function = train
+     valid_function = validate
   
   print('torch device num:', torch.cuda.device_count(),'\n')
   # if not isinstance(autoencoder, DDP): autoencoder.to(device)
@@ -478,11 +489,11 @@ def train_model(autoencoder,
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
     if variational:
-      train_loss, train_loss_other, real_train_MSE, train_KL = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode, rank) 
-      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode, rank)
+      train_loss, train_loss_other, real_train_MSE, train_KL = train_function(autoencoder, variational, optimizer, criterion, other_metric, train_loader, shuffle_sfc, rank) 
+      valid_loss, valid_loss_other, real_valid_MSE, valid_KL = valid_function(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, shuffle_sfc, rank)
     else:
-      train_loss, train_loss_other = train(autoencoder, variational, optimizer, criterion, other_metric, train_loader, parallel_mode, rank)
-      valid_loss, valid_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, parallel_mode, rank)
+      train_loss, train_loss_other = train_function(autoencoder, variational, optimizer, criterion, other_metric, train_loader, shuffle_sfc, rank)
+      valid_loss, valid_loss_other = valid_function(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, shuffle_sfc, rank)
 
     if isinstance(autoencoder, DDP):
       dist.all_reduce(train_loss, reduce_op=dist.ReduceOp.SUM)
