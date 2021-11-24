@@ -269,12 +269,12 @@ class SFC_CAE_Encoder_md(nn.Module):
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
           if self.coords is not None and not self.ban_shuffle_sp:
-            self.sps.append(nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
+            self.sps.append(nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
           else: 
             self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
       else: 
         if self.coords is not None and not self.ban_shuffle_sp:
-            self.sps = nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+            self.sps = nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
         else: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
 
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
@@ -529,11 +529,11 @@ class SFC_CAE_Decoder_md(nn.Module):
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
             if self.coords is not None and not self.ban_shuffle_sp:
-              self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, self.input_channel // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
+              self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, (self.components * self.self_concat) // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
             else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
        else:
           if self.coords is not None and not self.ban_shuffle_sp:
-             self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, self.input_channel // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+             self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, (self.components * self.self_concat) // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
           else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
