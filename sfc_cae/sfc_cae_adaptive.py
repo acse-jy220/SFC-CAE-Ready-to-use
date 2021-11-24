@@ -527,7 +527,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         for k, (inv_sfc, fla) in enumerate(zip(inv_sfcs, filling_paras)):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
-            if fla is not None: b[k] = reduce_expanded_snapshot(b[k], *fla, True, self.reduce)
+            if fla is not None: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
             b[k] = b[k][..., inv_sfc[sfc_index]]
             if self.coords_dimension is not None: 
                coords_b_list.append(b[k][self.coords_dimension:])
