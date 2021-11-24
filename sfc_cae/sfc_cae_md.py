@@ -436,6 +436,11 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.coords = encoder.coords
     self.coords_dim = encoder.coords_dim
 
+    if self.coords is not None:
+       self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
+       self.shuffle_sp_padding = encoder.shuffle_sp_padding
+       self.shuffle_sp_channel = encoder.shuffle_sp_channel
+
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
     self.share_conv_weights = encoder.share_conv_weights
@@ -506,12 +511,12 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            if self.coords is not None: 
-              # when coordinates are input, we use a special sparse layer: 1-D conv layers with stride 1.
-              self.sps.append(nn.ConvTranspose1d(encoder, encoder.channels[0]))
+            if self.coords is not None:
+              self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, self.input_channel // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
             else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
        else:
-          if self.coords is not None: pass
+          if self.coords is not None:
+             self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, self.input_channel // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
           else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
