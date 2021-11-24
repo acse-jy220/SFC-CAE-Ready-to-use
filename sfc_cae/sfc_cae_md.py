@@ -62,7 +62,6 @@ class SFC_CAE_Encoder_md(nn.Module):
     self.input_size = input_size
     self.components = components
     self.self_concat = self_concat
-    self.num_final_channels = 16
     self.variational = variational
 
     if isinstance(space_filling_orderings, np.ndarray):
@@ -93,6 +92,10 @@ class SFC_CAE_Encoder_md(nn.Module):
     self.NN_neigh_1d = get_neighbourhood_md(torch.arange(self.input_size).long(), gen_neighbour_keys(1), ordering = True)
     self.second_sfc = sfc_mapping_to_structured
 
+    if 'num_final_channels' in kwargs.keys():
+        self.num_final_channels = kwargs['num_final_channels']
+    else: self.num_final_channels = 16   
+
     if 'direct_neigh' in kwargs.keys():
         self.direct_neigh = kwargs['direct_neigh']
     else: self.direct_neigh = False
@@ -117,11 +120,28 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.coords = kwargs['coords'].float()
        self.coords_dim = self.coords.shape[0]
        self.components += self.coords_dim
+
+       if 'shuffle_sp_kernel_size' in kwargs.keys():
+          self.shuffle_sp_kernel_size = kwargs['shuffle_sp_kernel_size']
+          if self.shuffle_sp_kernel_size % 2 == 0:
+             raise ValueError("the 'shuffle_sp' layer should have an odd kernel size!!!")
+       else: self.shuffle_sp_kernel_size = 31
+       self.shuffle_sp_padding = self.shuffle_sp_kernel_size // 2
+
+       if 'shuffle_sp_channel' in kwargs.keys():
+              self.shuffle_sp_channel = kwargs['shuffle_sp_channel']
+       else: self.shuffle_sp_channel = 32       
+
+       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True:
+          self.first_conv_channel = self.shuffle_sp_channel
+       else: self.first_conv_channel = None
+
     else: 
       self.coords = None
       self.coords_dim = 0
+      self.first_conv_channel = None
 
-
+    
     self.input_channel = self.components * self.self_concat
     self.structured = structured
 
@@ -165,7 +185,7 @@ class SFC_CAE_Encoder_md(nn.Module):
 
       # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
       self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
-      = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels)
+      = find_size_conv_layers_and_fc_layers(self.input_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi, self.num_final_channels, self.first_conv_channel)
     
     elif sfc_mapping_to_structured is not None: 
          if 'kernel_size' in kwargs.keys():
@@ -237,8 +257,13 @@ class SFC_CAE_Encoder_md(nn.Module):
         #   if sfc_mapping_to_structured is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-          self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
-      else: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
+          if self.coords is not None:
+            self.sps.append(nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
+          else: 
+            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
+      else: 
+        self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
+        self.sps = nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
 
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
@@ -481,9 +506,13 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+            if self.coords is not None: 
+              # when coordinates are input, we use a special sparse layer: 1-D conv layers with stride 1.
+              self.sps.append(nn.ConvTranspose1d(encoder, encoder.channels[0]))
+            else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
        else:
-          self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
+          if self.coords is not None: pass
+          else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
     if self.NN: 

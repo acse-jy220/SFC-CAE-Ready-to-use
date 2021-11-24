@@ -1223,7 +1223,7 @@ def expend_SFC_NUM(sfc_ordering, partitions):
         sfc_ext[i * size : (i+1) * size] = i * size + sfc_ordering
     return sfc_ext
 
-def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels, ndim=1):
+def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels, first_sp_channel=None, ndim=1):
     '''
     This function contains the algorithm for finding 1D convolutional layers and fully-connected layers depend on the input, see thesis
 
@@ -1238,7 +1238,8 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     input_channel: [int] the number of input_channels of the tensor, equals to components * self_concat, see 'sfc_cae.py'
     increase_multi: [int] an muliplication factor we have for consecutive 1D Conv Layers.
     num_final_channels: [int] the maximum number we defined for all Layers.
-    ndim: [int] the dimension of ConvLayers, only used when second sfc(s) is used.
+    first_sp_channel: [int] used for shuffle sfc smoothing layers, we could choose whether to hughly decrease the number of channels at the 1st Conv layer.
+    ndim: [int] the dimension of ConvLayers, only used when (a) second sfc(s) is used.
 
     Output:
     ---
@@ -1249,12 +1250,19 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     inv_conv_start: [int] the size of the penultimate fully-connected layer, equals to size_fc[-2], just before dims_latent.
     np.array(output_paddings[::-1][1:]): [1d-array] the output_paddings, used for the Decoder.
     '''
-    channels = [input_channel]
     output_paddings = [(size + 2 * padding - kernel_size) % stride]
     conv_size = [size]
 
+    if first_sp_channel is not None: 
+       channels = [first_sp_channel]
+       size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
+       conv_size.append(size)
+       output_paddings.append((size + 2 * padding - kernel_size) % stride)
+       channels.append(input_channel)
+    else: channels = [input_channel]
+
     # find size of convolutional layers 
-    while size ** ndim * num_final_channels * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
+    while size ** ndim * channels[-1] * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
         size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
         conv_size.append(size)
         if num_final_channels >= input_channel * increase_multi: 
