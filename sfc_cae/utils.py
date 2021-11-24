@@ -1256,6 +1256,7 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     if first_sp_channel is not None: 
        channels = [first_sp_channel]
        size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
+       input_channel *= increase_multi
        conv_size.append(size)
        output_paddings.append((size + 2 * padding - kernel_size) % stride)
        channels.append(input_channel)
@@ -1264,6 +1265,7 @@ def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims
     # find size of convolutional layers 
     while size ** ndim * channels[-1] * sfc_nums > 4000: # a intuiative value of 4000 is hard-coded here, to prohibit large size of FC layers, which would lead to huge memory cost.
         size = (size + 2 * padding - kernel_size) // stride + 1 # see the formula for computing shape for 1D conv layers
+        print(size)
         conv_size.append(size)
         if num_final_channels >= input_channel * increase_multi: 
             input_channel *= increase_multi
