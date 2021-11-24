@@ -120,6 +120,7 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.coords = kwargs['coords'].float()
        self.coords_dim = self.coords.shape[0]
        self.components += self.coords_dim
+       self.input_channel = self.components * self.self_concat
 
        if 'ban_shuffle_sp' in kwargs.keys():
           self.ban_shuffle_sp = kwargs['ban_shuffle_sp']
@@ -136,20 +137,20 @@ class SFC_CAE_Encoder_md(nn.Module):
               self.shuffle_sp_channel = kwargs['shuffle_sp_channel']
        else: self.shuffle_sp_channel = 32       
 
-       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True:
-          if not self.ban_shuffle_sp: 
-            self.first_conv_channel = self.shuffle_sp_channel
-          else: self.first_conv_channel = None
-       else: self.first_conv_channel = None
+       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True and not self.ban_shuffle_sp: 
+           self.first_conv_channel = self.shuffle_sp_channel
+       else: 
+           self.first_conv_channel = None
+           self.input_channel = self.shuffle_sp_channel
+           if self.num_final_channels <= self.input_channel: self.num_final_channels = self.input_channel
 
     else: 
       self.coords = None
       self.coords_dim = 0
       self.first_conv_channel = None
       self.ban_shuffle_sp = True
+      self.input_channel = self.components * self.self_concat
 
-    
-    self.input_channel = self.components * self.self_concat
     self.structured = structured
 
     if self.structured: 
