@@ -79,11 +79,11 @@ class SFC_CAE_Encoder_md(nn.Module):
 
     if shuffle_sfc_num is not None: 
        self.sfc_nums = shuffle_sfc_num
-       self.max_sfc_nums = len(space_filling_orderings)
+       self.max_sfc_nums = self.orderings.shape[-2]
        if self.max_sfc_nums < self.sfc_nums:
           raise ValueError('the number to shuffle should be less or equal to the input sfc nums!!!')
     else: 
-      self.sfc_nums = len(space_filling_orderings)
+      self.sfc_nums = self.orderings.shape[-2]
       self.max_sfc_nums = None
 
     # self.NN_neighs = []
