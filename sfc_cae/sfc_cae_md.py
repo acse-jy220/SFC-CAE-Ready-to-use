@@ -68,6 +68,8 @@ class SFC_CAE_Encoder_md(nn.Module):
       self.orderings = torch.from_numpy(space_filling_orderings).long()
     elif isinstance(space_filling_orderings, torch.Tensor):
       self.orderings = space_filling_orderings.long()
+    elif isinstance(space_filling_orderings, list):
+      self.orderings = torch.tensor(space_filling_orderings).long()
     else:
       raise ValueError("expect sfc orderings to be 'numpy.ndarray' or 'torch.tensor' input!!!!")  
     
@@ -134,8 +136,9 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.shuffle_sp_padding = self.shuffle_sp_kernel_size // 2
 
        if 'shuffle_sp_channel' in kwargs.keys():
-              self.shuffle_sp_channel = kwargs['shuffle_sp_channel']
-       else: self.shuffle_sp_channel = 32       
+           self.shuffle_sp_channel = kwargs['shuffle_sp_channel']
+       else: 
+           self.shuffle_sp_channel = 32       
 
        if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True and not self.ban_shuffle_sp: 
            self.first_conv_channel = self.shuffle_sp_channel
@@ -427,6 +430,8 @@ class SFC_CAE_Decoder_md(nn.Module):
       self.orderings = torch.from_numpy(inv_space_filling_orderings).long()
     elif isinstance(inv_space_filling_orderings, torch.Tensor):
       self.orderings = inv_space_filling_orderings.long()
+    elif isinstance(inv_space_filling_orderings, list):
+      self.orderings = torch.tensor(inv_space_filling_orderings).long()
     else:
       raise ValueError("expect invsfc orderings to be 'numpy.ndarray' or 'torch.tensor' input!!!!")  
 
