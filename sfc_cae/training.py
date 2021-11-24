@@ -255,6 +255,13 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
       for i in range(len(data_x)): data_x[i] = data_x[i].to(device).float()
       sfcs = batch[1] # adaptive sfcs
       inv_sfcs = batch[2] # adaptive inv_sfcs
+      if len(sfcs[0].shape) == 3: 
+         # if multiple sfc pair input, we just randomly choose a pair of it.
+         pair_index = np.random.randint(low = 0, high = sfcs[0].shape[0])
+         for i in range(c_batch_size):
+             sfcs[i] = sfcs[i][pair_index]
+             inv_sfcs[i] = inv_sfcs[i][pair_index]
+
       if len(batch) == 5: 
          coords = batch[-2] # adaptive coords
          for i in range(len(coords)): coords[i] = coords[i].to(device).float()

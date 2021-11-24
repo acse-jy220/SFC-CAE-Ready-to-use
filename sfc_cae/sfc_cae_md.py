@@ -64,7 +64,20 @@ class SFC_CAE_Encoder_md(nn.Module):
     self.self_concat = self_concat
     self.num_final_channels = 16
     self.variational = variational
-    self.orderings = torch.tensor(space_filling_orderings).long()
+
+    if isinstance(space_filling_orderings, np.ndarray):
+      self.orderings = torch.from_numpy(space_filling_orderings).long()
+    elif isinstance(space_filling_orderings, torch.tensor):
+      self.orderings = space_filling_orderings.long()
+    else:
+      raise ValueError("expect sfc orderings to be 'numpy.ndarray' or 'torch.tensor' input!!!!")  
+    
+    if self.orderings.ndim == 3:
+      print('inputing sfc pairs of shape: ', self.orderings.shape)
+      self.pair_lists = self.orderings
+    else:
+      self.pair_lists = None    
+
     if shuffle_sfc_num is not None: 
        self.sfc_nums = shuffle_sfc_num
        self.max_sfc_nums = len(space_filling_orderings)
@@ -257,6 +270,11 @@ class SFC_CAE_Encoder_md(nn.Module):
     '''
     xs = []
 
+    if self.pair_lists is not None: 
+      # if multiple sfc pair input, we just randomly choose a pair of it.
+      self.pair_index = np.random.randint(low = 0, high = self.pair_lists.shape[0])
+      self.orderings = self.pair_index[self.pair_index]
+
     if self.max_sfc_nums is not None:
        self.sfc_indexes = np.random.choice(self.max_sfc_nums, self.sfc_nums, replace=False) # sfc_index, to shuffle
     else: self.sfc_indexes = np.arange(self.sfc_nums).astype('int')
@@ -368,9 +386,22 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.output_linear = output_linear
     self.size_conv = encoder.size_conv
     self.inv_conv_start = encoder.inv_conv_start
+
+    if isinstance(inv_space_filling_orderings, np.ndarray):
+      self.orderings = torch.from_numpy(inv_space_filling_orderings).long()
+    elif isinstance(inv_space_filling_orderings, torch.tensor):
+      self.orderings = inv_space_filling_orderings.long()
+    else:
+      raise ValueError("expect invsfc orderings to be 'numpy.ndarray' or 'torch.tensor' input!!!!")  
+
+    if self.orderings.ndim == 3:
+      print('inputing invsfc pairs of shape: ', self.orderings.shape)
+      self.pair_lists = self.orderings
+    else:
+      self.pair_lists = None 
+
     self.input_channel = self.components * self.self_concat
     self.sfc_nums = encoder.sfc_nums
-    self.orderings = torch.tensor(inv_space_filling_orderings).long()
     self.shape = encoder.shape
     
     self.neighbour_range = encoder.neighbour_range
@@ -491,6 +522,10 @@ class SFC_CAE_Decoder_md(nn.Module):
     zs = []
 
     self.sfc_indexes = self.encoder.sfc_indexes
+
+    if self.pair_lists is not None:
+       self.pair_index = self.encoder.pair_index
+       self.orderings = self.pair_lists[self.pair_index]
 
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
