@@ -531,13 +531,15 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             b[k] = b[k][..., inv_sfc[sfc_index]]
             if self.coords_dimension is not None: 
                coords_b_list.append(b[k][self.coords_dimension:])
-               b[k] = b[k][:self.coords_dimension]
-        if i == 0: data_z = b
+               b[k] = b[k][:self.coords_dimension].unsqueeze(0)
+        if i == 0: 
+           data_z = copy.deepcopy(b)
         else: 
-            for i in range(len(b)): data_z[i] += b[i]         
+            for k in range(len(b)): data_z[k] = torch.cat((data_z[k], b[k]), dim=0)         
     # if self.inv_second_sfc is not None: return z[..., :self.input_size]
     # else: 
     for i in range(len(data_z)): 
+        data_z[i] = data_z[i].sum(0) 
         data_z[i] = self.activate(data_z[i])
     return data_z
 
