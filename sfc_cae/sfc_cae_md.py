@@ -298,7 +298,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     if self.pair_lists is not None: 
       # if multiple sfc pair input, we just randomly choose a pair of it.
       self.pair_index = np.random.randint(low = 0, high = self.pair_lists.shape[0])
-      self.orderings = self.pair_index[self.pair_index]
+      self.orderings = self.pair_lists[self.pair_index]
 
     if self.max_sfc_nums is not None:
        self.sfc_indexes = np.random.choice(self.max_sfc_nums, self.sfc_nums, replace=False) # sfc_index, to shuffle
@@ -555,11 +555,11 @@ class SFC_CAE_Decoder_md(nn.Module):
     if self.sfc_nums > 1: x = torch.chunk(x, chunks=self.sfc_nums, dim=1)
     zs = []
 
-    self.sfc_indexes = self.encoder.sfc_indexes
-
     if self.pair_lists is not None:
        self.pair_index = self.encoder.pair_index
        self.orderings = self.pair_lists[self.pair_index]
+
+    self.sfc_indexes = self.encoder.sfc_indexes
 
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
