@@ -321,7 +321,8 @@ class SFC_CAE_Encoder_md(nn.Module):
             # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
-               tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
+               if self.coords is None: tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
+               else: tt_list = a
             #    print(tt_list.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
@@ -331,7 +332,8 @@ class SFC_CAE_Encoder_md(nn.Module):
             a = a.reshape(a.shape[:-1] + self.shape)
         else: 
             if self.NN:
-               tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
+               if self.coords is None: tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
+               else: tt_list = a
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                a = self.activate(tt_nn)
@@ -576,7 +578,8 @@ class SFC_CAE_Decoder_md(nn.Module):
             if self.NN:
               #  print('before decoder concat..')
               #  print(b.shape)
-               tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
+               if self.coords is None: tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
+               else: tt_list = b
               #  print(tt_list.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
@@ -594,7 +597,9 @@ class SFC_CAE_Decoder_md(nn.Module):
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
-               tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
+               if self.coords is None: tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
+               else: tt_list = b
+               
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
