@@ -121,6 +121,10 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.coords_dim = self.coords.shape[0]
        self.components += self.coords_dim
 
+       if 'ban_shuffle_sp' in kwargs.keys():
+          self.ban_shuffle_sp = kwargs['ban_shuffle_sp']
+       else: self.ban_shuffle_sp = False
+
        if 'shuffle_sp_kernel_size' in kwargs.keys():
           self.shuffle_sp_kernel_size = kwargs['shuffle_sp_kernel_size']
           if self.shuffle_sp_kernel_size % 2 == 0:
@@ -133,13 +137,15 @@ class SFC_CAE_Encoder_md(nn.Module):
        else: self.shuffle_sp_channel = 32       
 
        if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True:
-          self.first_conv_channel = self.shuffle_sp_channel
+          if not self.ban_shuffle_sp: 
+            self.first_conv_channel = self.shuffle_sp_channel
        else: self.first_conv_channel = None
 
     else: 
       self.coords = None
       self.coords_dim = 0
       self.first_conv_channel = None
+      self.ban_shuffle_sp = True
 
     
     self.input_channel = self.components * self.self_concat
@@ -257,13 +263,14 @@ class SFC_CAE_Encoder_md(nn.Module):
         #   if sfc_mapping_to_structured is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-          if self.coords is not None:
+          if self.coords is not None and not self.ban_shuffle_sp:
             self.sps.append(nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
           else: 
             self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
       else: 
-        self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
-        self.sps = nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+        if self.coords is not None and not self.ban_shuffle_sp:
+            self.sps = nn.Conv1d(self.input_channel, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+        else: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
 
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
@@ -321,8 +328,8 @@ class SFC_CAE_Encoder_md(nn.Module):
             # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
-               if self.coords is None: tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
-               else: tt_list = a
+               if self.coords is not None and not self.ban_shuffle_sp: tt_list = a
+               else:  tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
             #    print(tt_list.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
@@ -332,8 +339,8 @@ class SFC_CAE_Encoder_md(nn.Module):
             a = a.reshape(a.shape[:-1] + self.shape)
         else: 
             if self.NN:
-               if self.coords is None: tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
-               else: tt_list = a
+               if self.coords is not None and not self.ban_shuffle_sp: tt_list = a
+               else: tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                a = self.activate(tt_nn)
@@ -437,6 +444,7 @@ class SFC_CAE_Decoder_md(nn.Module):
 
     self.coords = encoder.coords
     self.coords_dim = encoder.coords_dim
+    self.ban_shuffle_sp = encoder.ban_shuffle_sp
 
     if self.coords is not None:
        self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
@@ -513,11 +521,11 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
-            if self.coords is not None:
+            if self.coords is not None and not self.ban_shuffle_sp:
               self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, self.input_channel // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
             else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
        else:
-          if self.coords is not None:
+          if self.coords is not None and not self.ban_shuffle_sp:
              self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, self.input_channel // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
           else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
@@ -578,8 +586,8 @@ class SFC_CAE_Decoder_md(nn.Module):
             if self.NN:
               #  print('before decoder concat..')
               #  print(b.shape)
-               if self.coords is None: tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
-               else: tt_list = b
+               if self.coords is None and not self.ban_shuffle_sp: tt_list = b
+               else: tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
               #  print(tt_list.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
@@ -597,12 +605,13 @@ class SFC_CAE_Decoder_md(nn.Module):
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
-               if self.coords is None: tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
-               else: tt_list = b
-               
+               if self.coords is None and not self.ban_shuffle_sp: tt_list = b
+               else: tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
+
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
+              #  if self.coords is None and self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
                del tt_list
                del tt_nn
             else: 
