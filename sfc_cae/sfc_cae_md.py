@@ -139,6 +139,7 @@ class SFC_CAE_Encoder_md(nn.Module):
        if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True:
           if not self.ban_shuffle_sp: 
             self.first_conv_channel = self.shuffle_sp_channel
+          else: self.first_conv_channel = None
        else: self.first_conv_channel = None
 
     else: 
