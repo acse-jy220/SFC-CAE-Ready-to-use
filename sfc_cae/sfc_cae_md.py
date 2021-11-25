@@ -315,7 +315,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     if self.max_sfc_nums is not None:
        self.sfc_indexes = np.random.choice(self.max_sfc_nums, self.sfc_nums, replace=False) # sfc_index, to shuffle
     else: self.sfc_indexes = np.arange(self.sfc_nums).astype('int')
-    print(self.sfc_indexes)
+    # print(self.sfc_indexes)
 
     if self.self_concat > 1 or self.coords is not None: 
         if x.ndim == 2: x = x.unsqueeze(1)
@@ -578,7 +578,7 @@ class SFC_CAE_Decoder_md(nn.Module):
        self.orderings = self.pair_lists[self.pair_index]
 
     self.sfc_indexes = self.encoder.sfc_indexes
-    print(self.sfc_indexes)
+    # print(self.sfc_indexes)
 
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
@@ -627,7 +627,7 @@ class SFC_CAE_Decoder_md(nn.Module):
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
 
         if self.coords_dim != 0: b = b[:, :self.coords_dim] 
-        print((self.encoder.orderings[self.encoder.sfc_indexes[i]][self.orderings[self.sfc_indexes[i]]] == torch.arange(self.input_size)).all())            
+        # print((self.encoder.orderings[self.encoder.sfc_indexes[i]][self.orderings[self.sfc_indexes[i]]] == torch.arange(self.input_size)).all())            
         b = b[..., self.orderings[self.sfc_indexes[i]]] # backward order refer to first sfc(s).
         # if self.self_concat > 1:
         #    b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
