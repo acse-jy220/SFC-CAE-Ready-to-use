@@ -215,6 +215,38 @@ def read_parameters(setting_file = 'parameters.ini'):
     
     return list_p  
 
+def sparsify(array, sparse_n):
+  '''
+  a sparsify function, extract {sparse_n} elements with equal gaps from {array}, altered from Andrea Pozzetti's function 'sparsify'.
+
+  Input: 
+  ---
+  array: [torch.tensor] original indexes.
+  sparse_n: [int] sparsified num of indexes. 
+
+  Output:
+  ---
+  sparsed_array: [torch.tensor] of shape (sparse_n,), the sparsified array.
+  '''
+  length = array.shape[-1]
+  gap = length // sparse_n
+  remain = length - sparse_n * gap
+  sp_array = array[..., ::gap]
+  if remain == 0: pass
+  else:
+    if isinstance(array, np.ndarray): cat_func = np.concatenate
+    elif isinstance(array, torch.Tensor): cat_func = torch.cat
+    left_pad = remain // 2 
+    right_pad = remain - left_pad 
+    small_gap_n = sp_array.shape[-1] - sparse_n + remain
+    small_gap_lp = small_gap_n // 2
+    small_gap_rp = small_gap_n - small_gap_lp
+    sp_array = sp_array[..., small_gap_lp:-small_gap_rp] - 1
+    spp_array = array[..., ::gap+1]
+    if left_pad !=0: sp_array = cat_func((spp_array[..., :left_pad], sp_array), -1)
+    if right_pad !=0: sp_array = cat_func((sp_array, spp_array[..., -right_pad:]), -1)
+  return sp_array
+
 def normalize_tensor(tensor):
     '''
     This function normalize a torch.tensor with the operation channel-wisely. x = (x - mu) / sigma, where mu is the mean, sigma is std.
