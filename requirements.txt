@@ -7,7 +7,7 @@ meshio[all]
 timm
 cmocean ~= 2.0
 torch >= 1.8.0
-dash >= 1.20.0
+# dash >= 1.20.0
 pytest >= 3.6.0
 progressbar2
 #atari-py==0.2.6
