@@ -492,11 +492,6 @@ class SFC_CAE_Decoder_md(nn.Module):
        self.shuffle_sp_padding = encoder.shuffle_sp_padding
        self.shuffle_sp_channel = encoder.shuffle_sp_channel
        self.coords_channels = encoder.coords_channels
-       if self.coords_option != 1:
-          # ctoa_reverse = copy.deepcopy(encoder.ctoa)
-          # ctoa_reverse.reverse()
-          # self.ctoa = ctoa_reverse
-          self.ctoa = encoder.ctoa
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
@@ -632,6 +627,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         #     b = x[..., i].view(-1, self.num_final_channels, self.inv_conv_start)
         if self.share_conv_weights: conv_layer = self.convTrans
         else: conv_layer = self.convTrans[i]
+        if self.coords is not None and self.coords_option == 2: self.ctoa = self.encoder.ctoa
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
@@ -674,7 +670,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
 
-        if self.coords_dim != 0: b = b[:, :self.coords_dim] 
+        if self.coords_dim != 0: b = b[:, :self.components - self.coords_dim] 
         # print((self.encoder.orderings[self.encoder.sfc_indexes[i]][self.orderings[self.sfc_indexes[i]]] == torch.arange(self.input_size)).all())            
         b = b[..., self.orderings[self.sfc_indexes[i]]] # backward order refer to first sfc(s).
         # if self.self_concat > 1:
