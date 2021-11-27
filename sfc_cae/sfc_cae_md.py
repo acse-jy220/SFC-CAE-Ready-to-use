@@ -238,7 +238,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     
     if self.coords is not None:
        self.coords_channels = []
-       for i in range(self.size_conv): 
+       for i in range(len(self.channels)): 
         self.coords_channels.append(int(self.channels[i] * self.coords_dim / self.components))
     
     if not self.share_conv_weights:
@@ -280,11 +280,11 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.ctoa = []
        if not self.share_conv_weights:
           for i in range(self.sfc_nums):
-             for j in range(self.size_conv):
+             for j in range(len(self.conv_size)):
                 if j == 0: self.ctoa.append(self.coords)   
                 else: self.ctoa.append(sparsify(self.coords, self.conv_size[j]))
        else:
-          for i in range(self.size_conv):
+          for i in range(len(self.conv_size)):
               if i == 0: self.ctoa.append(self.coords)   
               else: self.ctoa.append(sparsify(self.coords, self.conv_size[i]))                
        
