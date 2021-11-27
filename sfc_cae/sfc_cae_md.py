@@ -385,7 +385,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         # else: a = a.unsqueeze(1)
         if self.share_conv_weights: conv_layer = self.convs
         else: conv_layer = self.convs[i]
-        if self.coords is None and self.coords_option == 2: self.build_coarsened_coords(self.coords[..., self.orderings[self.sfc_indexes[i]]])
+        if self.coords is not None and self.coords_option == 2: self.build_coarsened_coords(self.coords[..., self.orderings[self.sfc_indexes[i]]])
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
