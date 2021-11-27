@@ -275,19 +275,6 @@ class SFC_CAE_Encoder_md(nn.Module):
               self.convs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
               self.convs[i].bias.data.fill_(0.001)       
     
-    # build coarsened coords
-    if self.coords is not None and self.coords_option != 1:
-       self.ctoa = []
-       if not self.share_conv_weights:
-          for i in range(self.sfc_nums):
-             for j in range(len(self.conv_size)):
-                if j == 0: self.ctoa.append(self.coords)   
-                else: self.ctoa.append(sparsify(self.coords, self.conv_size[j]))
-       else:
-          for i in range(len(self.conv_size)):
-              if i == 0: self.ctoa.append(self.coords)   
-              else: self.ctoa.append(sparsify(self.coords, self.conv_size[i]))                
-       
     self.convs = nn.ModuleList(self.convs)   
 
     if self.NN:
@@ -328,6 +315,18 @@ class SFC_CAE_Encoder_md(nn.Module):
             self.fcs[-1].weight.data.uniform_(self.init_param[0], self.init_param[1])
             self.fcs[-1].bias.data.fill_(0.001)
     self.fcs = nn.ModuleList(self.fcs)
+
+  def build_coarsened_coords(self , ordered_coords):
+       self.ctoa = []
+       if not self.share_conv_weights:
+          for i in range(self.sfc_nums):
+             for j in range(len(self.conv_size)):
+                if j == 0: self.ctoa.append(ordered_coords)   
+                else: self.ctoa.append(sparsify(ordered_coords, self.conv_size[j]))
+       else:
+          for i in range(len(self.conv_size)):
+              if i == 0: self.ctoa.append(ordered_coords)   
+              else: self.ctoa.append(sparsify(ordered_coords, self.conv_size[i]))  
 
   def forward(self, x):
     '''
@@ -386,6 +385,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         # else: a = a.unsqueeze(1)
         if self.share_conv_weights: conv_layer = self.convs
         else: conv_layer = self.convs[i]
+        if self.coords is None and self.coords_option == 2: self.build_coarsened_coords(self.coords[..., self.orderings[self.sfc_indexes[i]]])
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
