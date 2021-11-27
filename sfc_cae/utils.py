@@ -223,7 +223,7 @@ def sparsify(array, sparse_n=None, conv_layer=None):
   ---
   array: [torch.tensor] original indexes.
   sparse_n: [int] sparsified num of indexes.
-  conv_layer: [torch.nn.module] a example layer, with 1 in weight, 0 in bias, the purpose of it is to simulate a True Torch layer for corasening.
+  conv_layer: [torch.nn.module] a example layer, with 1 in weight, 0 in bias, the purpose of it is to simulate a True Torch layer for coarsening.
 
   Output:
   ---

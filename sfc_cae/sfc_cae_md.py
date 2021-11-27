@@ -147,6 +147,11 @@ class SFC_CAE_Encoder_md(nn.Module):
            self.input_channel = self.shuffle_sp_channel
            if self.num_final_channels <= self.input_channel: self.num_final_channels = self.input_channel
 
+       if 'coords_option' in kwargs.keys():
+          self.coords_option = kwargs['coords_option']
+       else:
+          self.coords_option = 1
+
     else: 
       self.coords = None
       self.coords_dim = 0
@@ -235,31 +240,50 @@ class SFC_CAE_Encoder_md(nn.Module):
       for i in range(self.sfc_nums):
        self.convs.append([])
        for j in range(self.size_conv):
+           in_channels = self.channels[j]
+           if self.coords_option == 2: in_channels += self.coords_dim
+           out_channels = self.channels[j+1]
            if sfc_mapping_to_structured is None: 
-              self.convs[i].append(nn.Conv1d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+              self.convs[i].append(nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
            else:
               if self.dimension == 2:
-                  self.convs[i].append(nn.Conv2d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+                  self.convs[i].append(nn.Conv2d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
               elif self.dimension == 3:
-                  self.convs[i].append(nn.Conv3d(self.channels[j], self.channels[j+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+                  self.convs[i].append(nn.Conv3d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
            if self.init_param is not None: 
               self.convs[i][j].weight.data.uniform_(self.init_param[0], self.init_param[1])
               self.convs[i][j].bias.data.fill_(0.001)
        self.convs[i] = nn.ModuleList(self.convs[i])
     else:
        for i in range(self.size_conv):
+           in_channels = self.channels[i]
+           if self.coords_option == 2: in_channels += self.coords_dim
+           out_channels = self.channels[i+1]
            if sfc_mapping_to_structured is None: 
-              self.convs.append(nn.Conv1d(self.channels[i], self.channels[i+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+              self.convs.append(nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
            else:
               if self.dimension == 2:
-                  self.convs.append(nn.Conv2d(self.channels[i], self.channels[i+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+                  self.convs.append(nn.Conv2d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
               elif self.dimension == 3:
-                  self.convs.append(nn.Conv3d(self.channels[i], self.channels[i+1], kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
+                  self.convs.append(nn.Conv3d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
            if self.init_param is not None: 
               self.convs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
               self.convs[i].bias.data.fill_(0.001)       
-
-    self.convs = nn.ModuleList(self.convs)
+    
+    # build coarsened coords
+    if self.coords is not None and self.coords_option != 1:
+       self.ctoa = []
+       if not self.share_conv_weights:
+          for i in range(self.sfc_nums):
+             for j in range(self.size_conv):
+                if j == 0: self.ctoa.append(self.coords)   
+                else: self.ctoa.append(sparsify(self.coords, self.size_conv[j]))
+       else:
+          for i in range(self.size_conv):
+              if i == 0: self.ctoa.append(self.coords)   
+              else: self.ctoa.append(sparsify(self.coords, self.size_conv[i]))                
+       
+    self.convs = nn.ModuleList(self.convs)   
 
     if self.NN:
       if not self.share_sp_weights: 
@@ -358,6 +382,9 @@ class SFC_CAE_Encoder_md(nn.Module):
         if self.share_conv_weights: conv_layer = self.convs
         else: conv_layer = self.convs[i]
         for j in range(self.size_conv):
+            if self.coords_option == 2: 
+               # we feed the coarsened coords in each conv layer
+               a = torch.cat((a, self.ctoa[j].repeat(a.shape[0],1,1)),1)
             a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
         a = a.reshape(a.shape[0], -1)
@@ -452,12 +479,14 @@ class SFC_CAE_Decoder_md(nn.Module):
 
     self.coords = encoder.coords
     self.coords_dim = encoder.coords_dim
+    self.coords_option = encoder.coords_option
     self.ban_shuffle_sp = encoder.ban_shuffle_sp
 
     if self.coords is not None:
        self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
        self.shuffle_sp_padding = encoder.shuffle_sp_padding
        self.shuffle_sp_channel = encoder.shuffle_sp_channel
+       if self.coords_option != 1: self.ctoa = encoder.ctoa.reverse()
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
@@ -499,26 +528,32 @@ class SFC_CAE_Decoder_md(nn.Module):
       for i in range(self.sfc_nums):
         self.convTrans.append([])
         for j in range(1, encoder.size_conv + 1):
+           in_channels = encoder.channels[-j]
+           if self.coords_option == 2: in_channels == self.coords_dim
+           out_channels = encoder.channels[-j-1]
            if encoder.second_sfc is None:
-              self.convTrans[i].append(nn.ConvTranspose1d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
+              self.convTrans[i].append(nn.ConvTranspose1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
            else:
               if self.dimension == 2:
-                  self.convTrans[i].append(nn.ConvTranspose2d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
+                  self.convTrans[i].append(nn.ConvTranspose2d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
               elif self.dimension == 3:
-                  self.convTrans[i].append(nn.ConvTranspose3d(encoder.channels[-j], encoder.channels[-j-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))               
+                  self.convTrans[i].append(nn.ConvTranspose3d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))               
            if encoder.init_param is not None: 
               self.convTrans[i][j - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
               self.convTrans[i][j - 1].bias.data.fill_(0.001)       
         self.convTrans[i] = nn.ModuleList(self.convTrans[i])
     else:
         for i in range(1, encoder.size_conv + 1):
+            in_channels = encoder.channels[-i]
+            if self.coords_option == 2: in_channels == self.coords_dim
+            out_channels = encoder.channels[-i-1]
             if encoder.second_sfc is None:
-              self.convTrans.append(nn.ConvTranspose1d(encoder.channels[-i], encoder.channels[-i-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
+              self.convTrans.append(nn.ConvTranspose1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
             else:
               if self.dimension == 2:
-                  self.convTrans.append(nn.ConvTranspose2d(encoder.channels[-i], encoder.channels[-i-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
+                  self.convTrans.append(nn.ConvTranspose2d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
               elif self.dimension == 3:
-                  self.convTrans.append(nn.ConvTranspose3d(encoder.channels[-i], encoder.channels[-i-1], kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))               
+                  self.convTrans.append(nn.ConvTranspose3d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))               
             if encoder.init_param is not None: 
               self.convTrans[i - 1].weight.data.uniform_(encoder.init_param[0], encoder.init_param[1])
               self.convTrans[i - 1].bias.data.fill_(0.001)       
@@ -588,6 +623,9 @@ class SFC_CAE_Decoder_md(nn.Module):
         if self.share_conv_weights: conv_layer = self.convTrans
         else: conv_layer = self.convTrans[i]
         for j in range(self.size_conv):
+            if self.coords_option == 2: 
+               # we feed the coarsened coords in each conv layer
+               b = torch.cat((b, self.ctoa[j].repeat(b.shape[0],1,1)),1)
             b = self.activate(conv_layer[j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
