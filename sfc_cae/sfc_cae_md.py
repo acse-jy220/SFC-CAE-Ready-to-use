@@ -389,7 +389,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
-               a = torch.cat((a, self.ctoa[j].repeat(a.shape[0],self.coords_channels[j],1).to(a.device)),1)
+               a = torch.cat((a, self.ctoa[j].repeat(a.shape[0],self.coords_channels[j] // self.coords_dim,1).to(a.device)),1)
             a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
         a = a.reshape(a.shape[0], -1)
@@ -493,9 +493,10 @@ class SFC_CAE_Decoder_md(nn.Module):
        self.shuffle_sp_channel = encoder.shuffle_sp_channel
        self.coords_channels = encoder.coords_channels
        if self.coords_option != 1:
-          ctoa_reverse = copy.deepcopy(encoder.ctoa)
-          ctoa_reverse.reverse()
-          self.ctoa = ctoa_reverse
+          # ctoa_reverse = copy.deepcopy(encoder.ctoa)
+          # ctoa_reverse.reverse()
+          # self.ctoa = ctoa_reverse
+          self.ctoa = encoder.ctoa
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
@@ -634,7 +635,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
-               b = torch.cat((b, self.ctoa[j].repeat(b.shape[0],self.coords_channels[j],1).to(b.device)),1)
+               b = torch.cat((b, self.ctoa[-j].repeat(b.shape[0],self.coords_channels[-j] // self.coords_dim,1).to(b.device)),1)
             b = self.activate(conv_layer[j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
