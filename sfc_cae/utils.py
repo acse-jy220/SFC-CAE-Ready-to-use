@@ -215,36 +215,48 @@ def read_parameters(setting_file = 'parameters.ini'):
     
     return list_p  
 
-def sparsify(array, sparse_n):
+def sparsify(array, sparse_n=None, conv_layer=None):
   '''
   a sparsify function, extract {sparse_n} elements with equal gaps from {array}, altered from Andrea Pozzetti's function 'sparsify'.
 
   Input: 
   ---
   array: [torch.tensor] original indexes.
-  sparse_n: [int] sparsified num of indexes. 
+  sparse_n: [int] sparsified num of indexes.
+  conv_layer: [torch.nn.module] a example layer, with 1 in weight, 0 in bias, the purpose of it is to simulate a True Torch layer for corasening.
 
   Output:
   ---
   sparsed_array: [torch.tensor] of shape (sparse_n,), the sparsified array.
   '''
-  length = array.shape[-1]
-  gap = length // sparse_n
-  remain = length - sparse_n * gap
-  sp_array = array[..., ::gap]
-  if remain == 0: pass
-  else:
+  if conv_layer is None:
+   length = array.shape[-1]
+   gap = length // sparse_n
+   remain = length - sparse_n * gap
+   sp_array = array[..., ::gap]
+   if remain == 0: pass
+   else:
     if isinstance(array, np.ndarray): cat_func = np.concatenate
     elif isinstance(array, torch.Tensor): cat_func = torch.cat
-    left_pad = remain // 2 
+    left_pad = np.ceil(remain / 2).astype('int')
     right_pad = remain - left_pad 
     small_gap_n = sp_array.shape[-1] - sparse_n + remain
-    small_gap_lp = small_gap_n // 2
+    small_gap_lp = np.ceil(small_gap_n / 2).astype('int')
     small_gap_rp = small_gap_n - small_gap_lp
-    sp_array = sp_array[..., small_gap_lp:-small_gap_rp] - 1
+    sp_array = sp_array[..., small_gap_lp:-small_gap_rp]
+    sp_array += small_gap_lp * gap - left_pad * (gap + 1)
     spp_array = array[..., ::gap+1]
     if left_pad !=0: sp_array = cat_func((spp_array[..., :left_pad], sp_array), -1)
     if right_pad !=0: sp_array = cat_func((sp_array, spp_array[..., -right_pad:]), -1)
+  else: 
+    if isinstance(array, np.ndarray): array = torch.from_numpy(array)
+    # layer_para = (array.shape[1], array.shape[1]) + conv_layer.kernel_size + conv_layer.stride + conv_layer.padding
+    layer_para = (1, 1, 2, conv_layer.stride, 1)
+    conv_id = type(conv_layer)(*layer_para)
+    conv_id.weight.data.fill_(1)
+    conv_id.bias.data.fill_(0)
+    with torch.no_grad(): sp_array = torch.cat([conv_id(arr.unsqueeze(0).unsqueeze(0).float()) for arr in array], 1)
+    sp_array = sp_array.squeeze(0)
   return sp_array
 
 def normalize_tensor(tensor):
