@@ -486,7 +486,10 @@ class SFC_CAE_Decoder_md(nn.Module):
        self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
        self.shuffle_sp_padding = encoder.shuffle_sp_padding
        self.shuffle_sp_channel = encoder.shuffle_sp_channel
-       if self.coords_option != 1: self.ctoa = encoder.ctoa.reverse()
+       if self.coords_option != 1:
+          ctoa_reverse = copy.deepcopy(encoder.ctoa)
+          ctoa_reverse.reverse()
+          self.ctoa = ctoa_reverse
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
