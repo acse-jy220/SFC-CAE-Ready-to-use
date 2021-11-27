@@ -239,7 +239,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     if self.coords is not None:
        self.coords_channels = []
        for i in range(self.size_conv): 
-        self.coords_channels.append(int(self.channels[i] * self.components / self.coords_dim))
+        self.coords_channels.append(int(self.channels[i] * self.coords_dim / self.components))
     
     if not self.share_conv_weights:
       for i in range(self.sfc_nums):
