@@ -144,8 +144,9 @@ class SFC_CAE_Encoder_md(nn.Module):
            self.first_conv_channel = self.shuffle_sp_channel
        else: 
            self.first_conv_channel = None
-           self.input_channel = self.shuffle_sp_channel
-           if self.num_final_channels <= self.input_channel: self.num_final_channels = self.input_channel
+           if self.NN: 
+              self.input_channel = self.shuffle_sp_channel
+              if self.num_final_channels <= self.input_channel: self.num_final_channels = self.input_channel
 
        if 'coords_option' in kwargs.keys():
           self.coords_option = kwargs['coords_option']
