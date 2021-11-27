@@ -277,11 +277,11 @@ class SFC_CAE_Encoder_md(nn.Module):
           for i in range(self.sfc_nums):
              for j in range(self.size_conv):
                 if j == 0: self.ctoa.append(self.coords)   
-                else: self.ctoa.append(sparsify(self.coords, self.size_conv[j]))
+                else: self.ctoa.append(sparsify(self.coords, self.conv_size[j]))
        else:
           for i in range(self.size_conv):
               if i == 0: self.ctoa.append(self.coords)   
-              else: self.ctoa.append(sparsify(self.coords, self.size_conv[i]))                
+              else: self.ctoa.append(sparsify(self.coords, self.conv_size[i]))                
        
     self.convs = nn.ModuleList(self.convs)   
 
