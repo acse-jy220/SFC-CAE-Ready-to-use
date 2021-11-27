@@ -236,12 +236,17 @@ class SFC_CAE_Encoder_md(nn.Module):
     self.fcs = []
     self.convs = []
     
+    if self.coords is not None:
+       self.coords_channels = []
+       for i in range(self.size_conv): 
+        self.coords_channels.append(int(self.channels[i] * self.components / self.coords_dim))
+    
     if not self.share_conv_weights:
       for i in range(self.sfc_nums):
        self.convs.append([])
        for j in range(self.size_conv):
            in_channels = self.channels[j]
-           if self.coords_option == 2: in_channels += self.coords_dim
+           if self.coords_option == 2: in_channels += self.coords_channels[j]
            out_channels = self.channels[j+1]
            if sfc_mapping_to_structured is None: 
               self.convs[i].append(nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
@@ -257,7 +262,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     else:
        for i in range(self.size_conv):
            in_channels = self.channels[i]
-           if self.coords_option == 2: in_channels += self.coords_dim
+           if self.coords_option == 2: in_channels += self.coords_channels[i]
            out_channels = self.channels[i+1]
            if sfc_mapping_to_structured is None: 
               self.convs.append(nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
@@ -384,7 +389,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
-               a = torch.cat((a, self.ctoa[j].repeat(a.shape[0],1,1)),1)
+               a = torch.cat((a, self.ctoa[j].repeat(a.shape[0],self.coords_channels[j],1).to(a.device)),1)
             a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
         a = a.reshape(a.shape[0], -1)
@@ -486,6 +491,7 @@ class SFC_CAE_Decoder_md(nn.Module):
        self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
        self.shuffle_sp_padding = encoder.shuffle_sp_padding
        self.shuffle_sp_channel = encoder.shuffle_sp_channel
+       self.coords_channels = encoder.coords_channels
        if self.coords_option != 1:
           ctoa_reverse = copy.deepcopy(encoder.ctoa)
           ctoa_reverse.reverse()
@@ -532,7 +538,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.convTrans.append([])
         for j in range(1, encoder.size_conv + 1):
            in_channels = encoder.channels[-j]
-           if self.coords_option == 2: in_channels == self.coords_dim
+           if self.coords_option == 2: in_channels == self.coords_channels[j]
            out_channels = encoder.channels[-j-1]
            if encoder.second_sfc is None:
               self.convTrans[i].append(nn.ConvTranspose1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
@@ -548,7 +554,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     else:
         for i in range(1, encoder.size_conv + 1):
             in_channels = encoder.channels[-i]
-            if self.coords_option == 2: in_channels == self.coords_dim
+            if self.coords_option == 2: in_channels == self.coords_channels[i]
             out_channels = encoder.channels[-i-1]
             if encoder.second_sfc is None:
               self.convTrans.append(nn.ConvTranspose1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
@@ -628,7 +634,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         for j in range(self.size_conv):
             if self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
-               b = torch.cat((b, self.ctoa[j].repeat(b.shape[0],1,1)),1)
+               b = torch.cat((b, self.ctoa[j].repeat(b.shape[0],self.coords_channels[j],1).to(b.device)),1)
             b = self.activate(conv_layer[j](b))
         if self.inv_second_sfc is not None: 
             b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
