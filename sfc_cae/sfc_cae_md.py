@@ -247,7 +247,7 @@ class SFC_CAE_Encoder_md(nn.Module):
        self.convs.append([])
        for j in range(self.size_conv):
            in_channels = self.channels[j]
-           if self.coords_option == 2: in_channels += self.coords_channels[j]
+           if self.coords is not None and self.coords_option == 2: in_channels += self.coords_channels[j]
            out_channels = self.channels[j+1]
            if sfc_mapping_to_structured is None: 
               self.convs[i].append(nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
@@ -388,7 +388,7 @@ class SFC_CAE_Encoder_md(nn.Module):
         else: conv_layer = self.convs[i]
         if self.coords is not None and self.coords_option == 2: self.build_coarsened_coords(self.coords[..., self.orderings[self.sfc_indexes[i]]])
         for j in range(self.size_conv):
-            if self.coords_option == 2: 
+            if self.coords is not None and self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
                a = torch.cat((a, self.ctoa[j].repeat(a.shape[0],self.coords_channels[j] // self.coords_dim,1).to(a.device)),1)
             a = self.activate(conv_layer[j](a))
@@ -535,7 +535,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.convTrans.append([])
         for j in range(1, encoder.size_conv + 1):
            in_channels = encoder.channels[-j]
-           if self.coords_option == 2: in_channels += self.coords_channels[-j]
+           if self.coords is not None and self.coords_option == 2: in_channels += self.coords_channels[-j]
            out_channels = encoder.channels[-j-1]
            if encoder.second_sfc is None:
               self.convTrans[i].append(nn.ConvTranspose1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[j - 1]))
@@ -630,7 +630,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         else: conv_layer = self.convTrans[i]
         if self.coords is not None and self.coords_option == 2: self.ctoa = self.encoder.ctoa
         for j in range(self.size_conv):
-            if self.coords_option == 2: 
+            if self.coords is not None and self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
                b = torch.cat((b, self.ctoa[-j-1].repeat(b.shape[0],self.coords_channels[-j-1] // self.coords_dim,1).to(b.device)),1)
             b = self.activate(conv_layer[j](b))
