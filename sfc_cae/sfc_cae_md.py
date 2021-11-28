@@ -482,11 +482,12 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.neighbour_range = encoder.neighbour_range
     self.place_center = encoder.place_center
     self.reduce = reduce_strategy
-
-    self.coords = encoder.coords
-    self.coords_dim = encoder.coords_dim
-    self.coords_option = encoder.coords_option
-    self.ban_shuffle_sp = encoder.ban_shuffle_sp
+    
+    if encoder.coords is not None:
+      self.coords = encoder.coords
+      self.coords_dim = encoder.coords_dim
+      self.coords_option = encoder.coords_option
+      self.ban_shuffle_sp = encoder.ban_shuffle_sp
 
     if self.coords is not None:
        self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
