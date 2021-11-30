@@ -430,7 +430,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
 
     # pass parameters from the encoder
     self.encoder = encoder
-    
+
     self.NN = encoder.NN
     self.variational = encoder.variational
     self.activate = encoder.activate
@@ -620,7 +620,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
-               tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
+               if self.coords is not None and not self.ban_shuffle_sp: tt_list = b
+               else: tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
