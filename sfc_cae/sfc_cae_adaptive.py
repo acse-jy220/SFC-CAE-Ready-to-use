@@ -337,9 +337,11 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             if coords is not None:
                cds[k] = cds[k][..., sfc[sfc_index]]
             if fla is not None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, True)
-            if coords is not None and self.coords_option == 2: self.build_coarsened_coords(cds)
+            if coords is not None:
+               cds = torch.stack(cds)
+               if self.coords_option == 2: self.build_coarsened_coords(cds)
         a = torch.stack(a)
-        if coords is not None and self.coords_option == 1: a = torch.cat((a, torch.stack(cds)), 1)
+        if coords is not None and self.coords_option == 1: a = torch.cat((a, cds), 1)
         # print(a.shape)
         if self.self_concat > 1: 
            if a.ndim == 2: a = a.unsqueeze(1)
