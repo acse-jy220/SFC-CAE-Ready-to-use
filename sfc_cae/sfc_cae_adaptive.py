@@ -23,7 +23,6 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
                sfc_nums,
                activation,
                variational,
-               coords_option = None,
                coords_dimension = None,
                force_initialising_param=None,
                sfc_mapping_to_structured=None,
@@ -93,8 +92,8 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     else: self.share_conv_weights = False
 
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
-       self.coords = kwargs['coords'].float()
-       self.coords_dim = self.coords.shape[0]
+       self.coords = kwargs['coords']
+       self.coords_dim = coords_dimension
        self.components += self.coords_dim
        self.input_channel = self.components * self.self_concat
 
