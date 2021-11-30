@@ -256,12 +256,12 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
       sfcs = batch[1] # adaptive sfcs
       inv_sfcs = batch[2] # adaptive inv_sfcs
 
-      if len(sfcs[0].shape) == 3: 
-         # if multiple sfc pair input, we just randomly choose a pair of it.
-         pair_index = np.random.randint(low = 0, high = sfcs[0].shape[0])
-         for i in range(c_batch_size):
-             sfcs[i] = sfcs[i][pair_index]
-             inv_sfcs[i] = inv_sfcs[i][pair_index]
+      # if len(sfcs[0].shape) == 3: 
+      #    # if multiple sfc pair input, we just randomly choose a pair of it.
+      #    pair_index = np.random.randint(low = 0, high = sfcs[0].shape[0])
+      #    for i in range(c_batch_size):
+      #        sfcs[i] = sfcs[i][pair_index]
+      #        inv_sfcs[i] = inv_sfcs[i][pair_index]
 
       if len(batch) == 5: 
          coords = batch[-2] # adaptive coords
@@ -277,7 +277,7 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
            with torch.no_grad(): other_MSE += other_metric(data_x_i, x_hat_i)        
         if torch.cuda.device_count() > 1: KL = KL.sum()
         whole_KL += KL.detach().cpu().numpy() * c_batch_size
-        whole_MSE += MSE.item() * c_batch_size
+        whole_MSE += MSE.item()
         Loss = MSE.add_(KL) # MSE loss plus KL divergence
       else: 
           x_hat = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
@@ -287,8 +287,8 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
 
       Loss.backward()  # Back-propagate
       optimizer.step()
-      train_loss += Loss * c_batch_size
-      train_loss_other += other_MSE * c_batch_size
+      train_loss += Loss
+      train_loss_other += other_MSE
 
       del x_hat
       del batch
@@ -352,7 +352,7 @@ def validate_adaptive(autoencoder, variational, optimizer, criterion, other_metr
            other_MSE += other_metric(data_x_i, x_hat_i)        
         if torch.cuda.device_count() > 1: KL = KL.sum()
         whole_KL += KL.detach().cpu().numpy() * c_batch_size
-        whole_MSE += MSE.item() * c_batch_size
+        whole_MSE += MSE.item()
         Loss = MSE.add_(KL) # MSE loss plus KL divergence
       else: 
           x_hat = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
@@ -360,8 +360,8 @@ def validate_adaptive(autoencoder, variational, optimizer, criterion, other_metr
             Loss += criterion(data_x_i, x_hat_i)
             other_MSE += other_metric(data_x_i, x_hat_i)
 
-      validation_loss += Loss * c_batch_size
-      valid_loss_other += other_MSE * c_batch_size
+      validation_loss += Loss
+      valid_loss_other += other_MSE
 
       del batch
       del x_hat

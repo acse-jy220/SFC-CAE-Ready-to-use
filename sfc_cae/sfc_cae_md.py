@@ -672,7 +672,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
 
-        if self.coords_dim != 0: b = b[:, :self.components - self.coords_dim] 
+        if self.coords is not None: b = b[:, :self.components - self.coords_dim] 
         # print((self.encoder.orderings[self.encoder.sfc_indexes[i]][self.orderings[self.sfc_indexes[i]]] == torch.arange(self.input_size)).all())            
         b = b[..., self.orderings[self.sfc_indexes[i]]] # backward order refer to first sfc(s).
         # if self.self_concat > 1:

@@ -180,8 +180,6 @@ def read_in_files(data_path, file_format='vtu', vtu_fields=None, write_out = Fal
         bar.finish()
         return torch.cat(data, -1)
 
-
-
 def get_simulation_index(num, simulation):
     '''
     This function returns the indexes for a square grid simulation that implemented in advection_block_analytical.py.

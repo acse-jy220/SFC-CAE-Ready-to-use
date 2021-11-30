@@ -377,7 +377,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
         for j in range(self.size_conv):
             if self.coords is not None and self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
-               a = torch.cat((a, self.ctoa[j].repeat(1,self.coords_channels[j] // self.coords_dim,1).to(a.device)),1)
+               a = torch.cat((a, self.ctoa[j].repeat(1, self.coords_channels[j] // self.coords_dim,1).to(a.device)),1)
             a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
         a = a.reshape(a.shape[0], -1)
