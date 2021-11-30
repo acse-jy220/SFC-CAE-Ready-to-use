@@ -483,8 +483,9 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.place_center = encoder.place_center
     self.reduce = reduce_strategy
     
-    if encoder.coords is not None:
-      self.coords = encoder.coords
+    self.coords = encoder.coords
+
+    if self.coords is not None:
       self.coords_dim = encoder.coords_dim
       self.coords_option = encoder.coords_option
       self.ban_shuffle_sp = encoder.ban_shuffle_sp
@@ -492,6 +493,7 @@ class SFC_CAE_Decoder_md(nn.Module):
       self.shuffle_sp_padding = encoder.shuffle_sp_padding
       self.shuffle_sp_channel = encoder.shuffle_sp_channel
       self.coords_channels = encoder.coords_channels
+
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
