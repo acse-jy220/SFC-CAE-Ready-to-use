@@ -488,12 +488,10 @@ class SFC_CAE_Decoder_md(nn.Module):
       self.coords_dim = encoder.coords_dim
       self.coords_option = encoder.coords_option
       self.ban_shuffle_sp = encoder.ban_shuffle_sp
-
-    if self.coords is not None:
-       self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
-       self.shuffle_sp_padding = encoder.shuffle_sp_padding
-       self.shuffle_sp_channel = encoder.shuffle_sp_channel
-       self.coords_channels = encoder.coords_channels
+      self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
+      self.shuffle_sp_padding = encoder.shuffle_sp_padding
+      self.shuffle_sp_channel = encoder.shuffle_sp_channel
+      self.coords_channels = encoder.coords_channels
 
     # inherit weight sharing from encoder
     self.share_sp_weights = encoder.share_sp_weights
