@@ -362,7 +362,8 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             a = a.reshape(a.shape[:-1] + self.shape)
         else: 
             if self.NN:
-               tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
+               if self.coords is not None and not self.ban_shuffle_sp: tt_list = a
+               else: tt_list = get_concat_list_md(a, self.NN_neigh_1d, self.num_neigh)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                a = self.activate(tt_nn)
@@ -599,7 +600,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             if self.NN:
               #  print('before decoder concat..')
               #  print(b.shape)
-               tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
+               if self.coords is not None and not self.ban_shuffle_sp: tt_list = b
+               else: tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
               #  print(tt_list.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
