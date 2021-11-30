@@ -550,7 +550,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     else:
         for i in range(1, encoder.size_conv + 1):
             in_channels = encoder.channels[-i]
-            if self.coords_option == 2: in_channels += self.coords_channels[-i]
+            if self.coords is not None and self.coords_option == 2: in_channels += self.coords_channels[-i]
             out_channels = encoder.channels[-i-1]
             if encoder.second_sfc is None:
               self.convTrans.append(nn.ConvTranspose1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=encoder.padding, output_padding = encoder.output_paddings[i - 1]))
