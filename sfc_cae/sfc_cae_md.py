@@ -263,7 +263,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     else:
        for i in range(self.size_conv):
            in_channels = self.channels[i]
-           if self.coords_option == 2: in_channels += self.coords_channels[i]
+           if self.coords is not None and self.coords_option == 2: in_channels += self.coords_channels[i]
            out_channels = self.channels[i+1]
            if sfc_mapping_to_structured is None: 
               self.convs.append(nn.Conv1d(in_channels, out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding))
