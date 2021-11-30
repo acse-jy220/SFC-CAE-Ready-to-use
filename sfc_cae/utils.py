@@ -457,7 +457,7 @@ class AdaptiveDataset(Dataset):
 
 
     '''
-    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, indexes = None, send_to_gpu = False):
+    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False):
         if indexes is None: 
            self.dataset = tensor_list
            self.coords = coords_list
@@ -481,7 +481,9 @@ class AdaptiveDataset(Dataset):
         self.maxnodes = int(num_nodes.max())
         self.sfc_max_num = sfcs_list[0].shape[0]
         t_max = self.dataset[0].max(-1).values.unsqueeze(0)
+        coords_max = self.coords[0].max(-1).values.unsqueeze(0)
         t_min = self.dataset[0].min(-1).values.unsqueeze(0)
+        coords_min = self.coords[0].min(-1).values.unsqueeze(0)
         cnt_progress = 0
         # find tk and tb for the dataset.
         if tk is None or tb is None:
@@ -490,22 +492,35 @@ class AdaptiveDataset(Dataset):
             bar.start()
             for i in range(1, self.length):
               data = self.dataset[i]
+              if self.coords is not None: coords = self.coords[i]
               t_max = torch.cat((t_max, data.max(-1).values.unsqueeze(0)), 0)
+              coords_max = torch.cat((coords_max, coords.max(-1).values.unsqueeze(0)), 0)
               t_min = torch.cat((t_min, data.min(-1).values.unsqueeze(0)), 0)
+              coords_min = torch.cat((coords_min, coords.min(-1).values.unsqueeze(0)), 0)
               cnt_progress +=1
               bar.update(cnt_progress)
             bar.finish()
             self.t_max = t_max.max(0).values
+            self.coords_max = coords_max.min(0).values
             self.t_min = t_min.min(0).values
+            self.coords_min = coords_min.min(0).values
             self.tk = (upper - lower) / (self.t_max - self.t_min)
             self.tb = (self.t_max * lower - self.t_min * upper) / (self.t_max - self.t_min)
             self.tk = self.tk.unsqueeze(0).T
             self.tb = self.tb.unsqueeze(0).T
+            self.coords_tk = (upper - lower) / (self.coords_max - self.coords_min)
+            self.coords_tb = (self.coords_max * lower - self.coords_min * upper) / (self.coords_max - self.coords_min)
+            self.coords_tk = self.coords_tk.unsqueeze(0).T
+            self.coords_tb = self.coords_tb.unsqueeze(0).T
         else: # jump that process, if we have got tk and tb.
             self.tk = tk
             self.tb = tb
+            self.coords_tk = coords_tk
+            self.coords_tb = coords_tb
         print('tk: ', self.tk, '\n')
         print('tb: ', self.tb, '\n')
+        print('coords tk: ', self.coords_tk, '\n')
+        print('coords tb: ', self.coords_tb, '\n')
 
         cnt_progress = 0
         print("Generate filling parameters......\n")
@@ -537,7 +552,8 @@ class AdaptiveDataset(Dataset):
     def __getitem__(self, index):
         return_value = (self.dataset[index] * self.tk + self.tb,)
         if self.sfcs_list and self.inv_sfcs_list is not None: return_value += (self.sfcs_list[index], self.inv_sfcs_list[index])
-        if self.coords is not None: return_value += (self.coords[index],)
+        if self.coords is not None: 
+           return_value += (self.coords[index] * self.coords_tk + self.coords_tb,)
         return list(return_value + (self.filling_paras[index],))
       
     def __len__(self):
