@@ -429,6 +429,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
     super(SFC_CAE_Decoder_Adaptive, self).__init__()
 
     # pass parameters from the encoder
+    self.encoder = encoder
+    
     self.NN = encoder.NN
     self.variational = encoder.variational
     self.activate = encoder.activate
@@ -589,6 +591,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
         if self.share_conv_weights: conv_layer = self.convTrans
         else: conv_layer = self.convTrans[i]
+        if self.coords is not None and self.coords_option == 2: self.ctoa = self.encoder.ctoa
         for j in range(self.size_conv):
             if self.coords is not None and self.coords_option == 2: 
                # we feed the coarsened coords in each conv layer
