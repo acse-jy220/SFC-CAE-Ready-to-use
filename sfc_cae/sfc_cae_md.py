@@ -317,7 +317,7 @@ class SFC_CAE_Encoder_md(nn.Module):
             self.fcs[-1].bias.data.fill_(0.001)
     self.fcs = nn.ModuleList(self.fcs)
 
-  def build_coarsened_coords(self , ordered_coords):
+  def build_coarsened_coords(self, ordered_coords):
        self.ctoa = []
        if not self.share_conv_weights:
           for i in range(self.sfc_nums):
