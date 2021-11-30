@@ -630,7 +630,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         
-        print(b.shape)
+        # print(b.shape)
         b = list(b)
         if self.coords_dim is not None: coords_b_list = []
         for k, (inv_sfc, fla) in enumerate(zip(inv_sfcs, filling_paras)):
@@ -641,7 +641,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             if self.coords_dim is not None: 
                coords_b_list.append(b[k][-self.coords_dim:])
                b[k] = b[k][:self.components - self.coords_dim].unsqueeze(-1)
-               print('b[k] shape:', b[k].shape)
+              #  print('b[k] shape:', b[k].shape)
         if i == 0: 
            data_z = []
            for k in range(len(b)): 
@@ -649,7 +649,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         else: 
             for k in range(len(b)): 
               data_z[k] = torch.cat((data_z[k], b[k]), dim=-1)      
-              print('z[k] shape:', data_z[k].shape)   
+              # print('z[k] shape:', data_z[k].shape)   
     # if self.inv_second_sfc is not None: return z[..., :self.input_size]
     # else: 
     for i in range(len(data_z)): 
