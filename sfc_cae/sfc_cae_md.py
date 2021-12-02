@@ -223,7 +223,7 @@ class SFC_CAE_Encoder_md(nn.Module):
 
          # find size of convolutional layers and fully-connected layers, see the funtion 'find_size_conv_layers_and_fc_layers()' in utils.py
          self.conv_size, self.size_conv, self.size_fc, self.channels, self.inv_conv_start, self.output_paddings \
-         = find_size_conv_layers_and_fc_layers(self.structured_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi,  self.num_final_channels, self.dimension)
+         = find_size_conv_layers_and_fc_layers(self.structured_size, self.kernel_size, self.padding, self.stride, self.dims_latent, self.sfc_nums, self.input_channel, self.increase_multi, self.num_final_channels, self.first_conv_channel, self.dimension)
          
          self.Ax = gen_neighbour_keys(ndim=self.dimension, range=self.neighbour_range, direct_neigh=self.direct_neigh)
         #  self.neigh_md = get_neighbourhood_md(self.second_sfc.reshape(self.shape), self.Ax, ordering = True)
