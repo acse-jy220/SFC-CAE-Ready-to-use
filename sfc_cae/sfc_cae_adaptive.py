@@ -134,7 +134,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
           self.coords_option = 1
        
        if 'extract_by_sp' in kwargs.keys():
-          self.extract_by_sp = kwargs['place_center']
+          self.extract_by_sp = kwargs['extract_by_sp']
        else: self.extract_by_sp = False
 
     else: 
@@ -659,9 +659,13 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
                del tt_nn
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
+
+        if not self.extract_by_sp: b[k] = b[k][:self.components - self.coords_dim]
         
-        if self.collect_loss_inside: self.loss += nn.MSELoss()(b, self.encoder.a_s[i])
+        if self.collect_loss_inside:  
+           self.loss += nn.MSELoss()(b, self.encoder.a_s[i])
         # print(b.shape)
+  
         b = list(b)
         if self.coords_dim is not None: coords_b_list = []
         for k, (inv_sfc, fla) in enumerate(zip(inv_sfcs, filling_paras)):
@@ -669,10 +673,11 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             else: sfc_index = i
             if fla is not None: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
-            if self.coords_dim is not None: 
-               coords_b_list.append(b[k][-self.coords_dim:])
-               if not self.extract_by_sp: b[k] = b[k][:self.components - self.coords_dim].unsqueeze(-1)
-               else: b[k] = b[k].unsqueeze(-1)
+            # if self.coords_dim is not None: 
+            #    coords_b_list.append(b[k][-self.coords_dim:])
+            #    if not self.extract_by_sp: b[k] = b[k][:self.components - self.coords_dim].unsqueeze(-1)
+            #    else: b[k] = b[k].unsqueeze(-1)
+            b[k] = b[k].unsqueeze(-1)
               #  print('b[k] shape:', b[k].shape)
         if i == 0: 
            data_z = []
