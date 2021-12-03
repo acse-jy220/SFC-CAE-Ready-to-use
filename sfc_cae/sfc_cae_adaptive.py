@@ -120,7 +120,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
            self.first_conv_channel = self.shuffle_sp_channel
        else: 
            self.first_conv_channel = None
-           if self.NN: 
+           if self.NN and not self.ban_shuffle_sp: 
               self.input_channel = self.shuffle_sp_channel
               if self.num_final_channels <= self.input_channel: self.num_final_channels = self.input_channel
 
