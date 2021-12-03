@@ -600,6 +600,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         x = self.activate(self.fcs[i](x))
     # revert torch.cat
     if self.sfc_nums > 1: x = torch.chunk(x, chunks=self.sfc_nums, dim=1)
+    else: x = (x,)
 
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
