@@ -660,7 +660,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
 
-        if not self.extract_by_sp: b[k] = b[k][:self.components - self.coords_dim]
+        if not self.extract_by_sp: b = b[:self.components - self.coords_dim]
         
         if self.collect_loss_inside:  
            self.loss += nn.MSELoss()(b, self.encoder.a_s[i])
