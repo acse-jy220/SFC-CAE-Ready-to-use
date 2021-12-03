@@ -544,8 +544,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
               self.convTrans[i - 1].bias.data.fill_(0.001)       
   
     if self.NN:
-       if self.extract_by_sp: out_channel = self.components
-       else: out_channel = (self.components * self.self_concat) // self.self_concat  
+       if self.coords is not None and self.extract_by_sp: out_channel = self.components - self.coords_dim
+       else: out_channel = self.components
 
        if not self.share_sp_weights:
           for i in range(self.sfc_nums):
