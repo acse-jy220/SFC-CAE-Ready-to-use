@@ -62,7 +62,6 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     self.input_size = input_size
     self.components = components
     self.self_concat = self_concat
-    self.num_final_channels = 16
     self.variational = variational
     self.sfc_nums = sfc_nums
     # self.NN_neighs = []
@@ -70,6 +69,10 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     # for i in range(self.sfc_nums):self.NN_neighs.append(get_neighbourhood_md(self.orderings[i], gen_neighbour_keys(1), ordering = True))
     self.NN_neigh_1d = get_neighbourhood_md(torch.arange(self.input_size).long(), gen_neighbour_keys(1), ordering = True)
     self.second_sfc = sfc_mapping_to_structured
+
+    if 'num_final_channels' in kwargs.keys():
+        self.num_final_channels = kwargs['num_final_channels']
+    else: self.num_final_channels = 16  
 
     if 'direct_neigh' in kwargs.keys():
         self.direct_neigh = kwargs['direct_neigh']
