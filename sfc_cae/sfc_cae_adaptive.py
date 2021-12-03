@@ -636,7 +636,10 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             # b = b.reshape(b.shape[:2] + (self.input_size, ))
             if self.NN:
                if self.coords is not None and not self.ban_shuffle_sp: tt_list = b
-               else: tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, self.self_concat)
+               else: 
+                 if self.extract_by_sp: concats = self.self_concat * self.coords_dim
+                 else: concats = self.self_concat
+                 tt_list = get_concat_list_md(b, self.NN_neigh_1d, self.num_neigh, concats)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
