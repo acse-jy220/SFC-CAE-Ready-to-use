@@ -544,8 +544,12 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
               self.convTrans[i - 1].bias.data.fill_(0.001)       
   
     if self.NN:
-       if self.coords is not None and self.extract_by_sp: out_channel = self.components - self.coords_dim
-       else: out_channel = self.components
+       if self.coords is not None and self.extract_by_sp: 
+          out_channel = self.components - self.coords_dim
+          concats = self.self_concat * self.coords_dim
+       else: 
+          out_channel = self.components
+          concats = self.self_concat
 
        if not self.share_sp_weights:
           for i in range(self.sfc_nums):
@@ -554,10 +558,10 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         #   else:
             if self.coords is not None and not self.ban_shuffle_sp:
                   self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
-            else: self.sps.append(NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, self.self_concat)) 
+            else: self.sps.append(NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, concats)) 
        else:
           if self.coords is not None and not self.ban_shuffle_sp: self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
-          else: self.sps = NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, self.self_concat)
+          else: self.sps = NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, concats)
 
     self.convTrans = nn.ModuleList(self.convTrans)
     if self.NN: 
