@@ -95,7 +95,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     else: self.share_conv_weights = False
 
     if 'collect_loss_inside' in kwargs.keys():
-        self.collect_loss_inside = kwargs['share_conv_weights']
+        self.collect_loss_inside = kwargs['collect_loss_inside']
     else: self.collect_loss_inside = False
 
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
