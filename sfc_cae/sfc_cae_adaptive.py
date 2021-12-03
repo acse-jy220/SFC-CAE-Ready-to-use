@@ -128,6 +128,10 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
           self.coords_option = kwargs['coords_option']
        else:
           self.coords_option = 1
+       
+       if 'extract_by_sp' in kwargs.keys():
+          self.extract_by_sp = kwargs['place_center']
+       else: self.extract_by_sp = False
 
     else: 
       self.coords = None
@@ -463,6 +467,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
       self.shuffle_sp_padding = encoder.shuffle_sp_padding
       self.shuffle_sp_channel = encoder.shuffle_sp_channel
       self.coords_channels = encoder.coords_channels
+      self.extract_by_sp = encoder.extract_by_sp
     
     self.neighbour_range = encoder.neighbour_range
     self.place_center = encoder.place_center
@@ -539,16 +544,19 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
               self.convTrans[i - 1].bias.data.fill_(0.001)       
   
     if self.NN:
+       if self.extract_by_sp: out_channel = self.components
+       else: out_channel = (self.components * self.self_concat) // self.self_concat  
+
        if not self.share_sp_weights:
           for i in range(self.sfc_nums):
         #   if encoder.second_sfc is None:
         #     self.sps.append(NearestNeighbouring(size = self.input_size * self.input_channel, initial_weight= (1/3), num_neigh = 3))
         #   else:
             if self.coords is not None and not self.ban_shuffle_sp:
-                  self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, (self.components * self.self_concat) // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
+                  self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
             else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
        else:
-          if self.coords is not None and not self.ban_shuffle_sp: self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, (self.components * self.self_concat) // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+          if self.coords is not None and not self.ban_shuffle_sp: self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
           else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
@@ -643,7 +651,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
             if self.coords_dim is not None: 
                coords_b_list.append(b[k][-self.coords_dim:])
-               b[k] = b[k][:self.components - self.coords_dim].unsqueeze(-1)
+               if not self.extract_by_sp: b[k] = b[k][:self.components - self.coords_dim].unsqueeze(-1)
+               else: b[k] = b[k].unsqueeze(-1)
               #  print('b[k] shape:', b[k].shape)
         if i == 0: 
            data_z = []
