@@ -94,6 +94,10 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
         self.share_conv_weights = kwargs['share_conv_weights']
     else: self.share_conv_weights = False
 
+    if 'collect_loss_inside' in kwargs.keys():
+        self.collect_loss_inside = kwargs['share_conv_weights']
+    else: self.collect_loss_inside = False
+
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
        self.coords = kwargs['coords']
        self.coords_dim = coords_dimension
@@ -331,6 +335,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     '''
 
     xs = []
+    if self.collect_loss_inside: self.a_s = []
 
     # 1D or MD Conv Layers
     for i in range(self.sfc_nums):
@@ -348,6 +353,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             cds = torch.stack(cds)
             if self.coords_option == 2: self.build_coarsened_coords(cds)
         a = torch.stack(a)
+        self.a_s.append(a)
         if coords is not None: a = torch.cat((a, cds), 1)
         # print(a.shape)
         if self.self_concat > 1: 
@@ -457,6 +463,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
     self.input_channel = self.components * self.self_concat
     self.sfc_nums = encoder.sfc_nums
     self.shape = encoder.shape
+
+    self.collect_loss_inside = encoder.collect_loss_inside
 
     if encoder.coords is not None:
       self.coords = encoder.coords
@@ -602,6 +610,9 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
     if self.sfc_nums > 1: x = torch.chunk(x, chunks=self.sfc_nums, dim=1)
     else: x = (x,)
 
+    # collect loss inside
+    if self.collect_loss_inside: self.loss = 0
+
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
         b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
@@ -649,6 +660,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             else: 
               if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
         
+        if self.collect_loss_inside: self.loss += nn.MSELoss()(b, self.encoder.a_s[i])
         # print(b.shape)
         b = list(b)
         if self.coords_dim is not None: coords_b_list = []

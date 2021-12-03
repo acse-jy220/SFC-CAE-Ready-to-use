@@ -282,7 +282,8 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
       else: 
           x_hat = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
           for (data_x_i, x_hat_i) in zip(data_x, x_hat): 
-            Loss += criterion(data_x_i, x_hat_i)
+            if autoencoder.encoder.collect_loss_inside: Loss += autoencoder.decoder.loss
+            else: Loss += criterion(data_x_i, x_hat_i)
             with torch.no_grad(): other_MSE += other_metric(data_x_i, x_hat_i)
 
       Loss.backward()  # Back-propagate
@@ -357,7 +358,8 @@ def validate_adaptive(autoencoder, variational, optimizer, criterion, other_metr
       else: 
           x_hat = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
           for (data_x_i, x_hat_i) in zip(data_x, x_hat): 
-            Loss += criterion(data_x_i, x_hat_i)
+            if autoencoder.encoder.collect_loss_inside: Loss += autoencoder.decoder.loss
+            else: Loss += criterion(data_x_i, x_hat_i)
             other_MSE += other_metric(data_x_i, x_hat_i)
 
       validation_loss += Loss
