@@ -554,10 +554,10 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         #   else:
             if self.coords is not None and not self.ban_shuffle_sp:
                   self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
-            else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+            else: self.sps.append(NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, self.self_concat)) 
        else:
           if self.coords is not None and not self.ban_shuffle_sp: self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
-          else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
+          else: self.sps = NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, self.self_concat)
 
     self.convTrans = nn.ModuleList(self.convTrans)
     if self.NN: 
