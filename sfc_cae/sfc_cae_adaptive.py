@@ -116,7 +116,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
        else: 
            self.shuffle_sp_channel = 32       
 
-       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True and not self.ban_shuffle_sp: 
+       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True and not self.ban_shuffle_sp and self.NN: 
            self.first_conv_channel = self.shuffle_sp_channel
        else: 
            self.first_conv_channel = None
