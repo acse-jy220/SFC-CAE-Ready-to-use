@@ -455,7 +455,7 @@ class AdaptiveDataset(Dataset):
 
 
     '''
-    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False):
+    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False, fill_nodes_for_standardlize=False):
         if indexes is None: 
            self.dataset = tensor_list
            self.coords = coords_list
@@ -482,6 +482,21 @@ class AdaptiveDataset(Dataset):
         coords_max = self.coords[0].max(-1).values.unsqueeze(0)
         t_min = self.dataset[0].min(-1).values.unsqueeze(0)
         coords_min = self.coords[0].min(-1).values.unsqueeze(0)
+         
+        # gen filling parameters for the dataset
+        cnt_progress = 0
+        print("Generate filling parameters......\n")
+        bar=progressbar.ProgressBar(maxval=self.length)
+        bar.start()    
+        for i in range(self.length): 
+            if self.num_nodes[i] < self.maxnodes:
+               self.filling_paras.append(gen_filling_paras(self.num_nodes[i], self.maxnodes))
+            else:
+               self.filling_paras.append(None) 
+            cnt_progress += 1
+            bar.update(cnt_progress)
+        bar.finish()
+
         cnt_progress = 0
         # find tk and tb for the dataset.
         if tk is None or tb is None:
@@ -491,6 +506,9 @@ class AdaptiveDataset(Dataset):
             for i in range(1, self.length):
               data = self.dataset[i]
               if self.coords is not None: coords = self.coords[i]
+              if fill_nodes_for_standardlize: 
+                 data = expand_snapshot_backward_connect(data, *self.filling_paras[i])
+                 coords = expand_snapshot_backward_connect(coords, *self.filling_paras[i])
               t_max = torch.cat((t_max, data.max(-1).values.unsqueeze(0)), 0)
               coords_max = torch.cat((coords_max, coords.max(-1).values.unsqueeze(0)), 0)
               t_min = torch.cat((t_min, data.min(-1).values.unsqueeze(0)), 0)
@@ -518,20 +536,7 @@ class AdaptiveDataset(Dataset):
         print('tk: ', self.tk, '\n')
         print('tb: ', self.tb, '\n')
         print('coords tk: ', self.coords_tk, '\n')
-        print('coords tb: ', self.coords_tb, '\n')
-
-        cnt_progress = 0
-        print("Generate filling parameters......\n")
-        bar=progressbar.ProgressBar(maxval=self.length)
-        bar.start()    
-        for i in range(self.length): 
-            if self.num_nodes[i] < self.maxnodes:
-               self.filling_paras.append(gen_filling_paras(self.num_nodes[i], self.maxnodes))
-            else:
-               self.filling_paras.append(None) 
-            cnt_progress += 1
-            bar.update(cnt_progress)
-        bar.finish()  
+        print('coords tb: ', self.coords_tb, '\n') 
 
         if send_to_gpu:
            cnt_progress = 0
