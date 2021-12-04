@@ -351,9 +351,11 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
             a[k] = a[k][..., sfc[sfc_index]]
+            print(a[k].shape, sfc[sfc_index].shape)
             if fla is not None: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
             if coords is not None:
                cds[k] = cds[k][..., sfc[sfc_index]]
+               print(cds[k].shape, sfc[sfc_index].shape)
             if fla is not None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
         if coords is not None:
             cds = torch.stack(cds)

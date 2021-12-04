@@ -277,7 +277,7 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
          for i in range(c_batch_size):
              sfc = batch[1][shuffle_index[i]]
              inv_sfc = batch[2][shuffle_index[i]]
-             print(batch[1][i].shape[-1])
+             print(sfc.shape[-1])
              if sfc.shape[-1] < batch[1][i].shape[-1]:
                 paras = gen_filling_paras(sfc.shape[-1], batch[1][i].shape[-1])
                 sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False, True))
@@ -285,7 +285,6 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
              else: 
                 sfcs.append(sfc[..., :batch[1][i].shape[-1]])
                 inv_sfcs.append(inv_sfc[..., :batch[1][i].shape[-1]])
-             print(batch[1][i].shape[-1], sfcs[i].shape[-1])
       if variational:
         x_hat, KL = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
         for (data_x_i, x_hat_i) in zip(data_x, x_hat): 
