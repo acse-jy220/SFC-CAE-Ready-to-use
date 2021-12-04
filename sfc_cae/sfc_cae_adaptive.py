@@ -353,7 +353,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             cds = torch.stack(cds)
             if self.coords_option == 2: self.build_coarsened_coords(cds)
         a = torch.stack(a)
-        self.a_s.append(a)
+        if self.collect_loss_inside: self.a_s.append(a)
         if coords is not None: a = torch.cat((a, cds), 1)
         # print(a.shape)
         if self.self_concat > 1: 
