@@ -626,7 +626,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
         # b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
-        b = x[i].view(-1, np.prod(self.init_convTrans_shape))
+        b = x[i].view((-1,) + self.init_convTrans_shape)
         # else: 
         #     b = x[..., i].view(-1, self.num_final_channels, self.inv_conv_start)
         if self.share_conv_weights: conv_layer = self.convTrans
