@@ -274,18 +274,21 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
          sfcs = []
          inv_sfcs = []
          shuffle_index = np.random.permutation(c_batch_size)
+         diff_nodes = sfc.shape[-1] - batch[1][i].shape[-1]
          for i in range(c_batch_size):
              sfc = batch[1][shuffle_index[i]]
              inv_sfc = batch[2][shuffle_index[i]]
-             if sfc.shape[-1] < batch[1][i].shape[-1]:
+             if diff_nodes < 0:
                 paras = gen_filling_paras(sfc.shape[-1], batch[1][i].shape[-1])
                 sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False, return_clone = True))
                 inv_sfcs.append(expand_snapshot_backward_connect(inv_sfc, *paras, False, return_clone = True))
              else: 
                 sfc = sfc[..., :batch[1][i].shape[-1]]
                 inv_sfc = inv_sfc[..., :batch[1][i].shape[-1]]
-                sfc[sfc >= batch[1][i].shape[-1]] -= sfc.shape[-1] - batch[1][i].shape[-1]
-                inv_sfc[inv_sfc >= batch[1][i].shape[-1]] -= sfc.shape[-1] - batch[1][i].shape[-1]
+                print(sfc[sfc >= batch[1][i].shape[-1]], inv_sfc[inv_sfc >= batch[1][i].shape[-1]])
+                sfc[sfc >= batch[1][i].shape[-1]] -= diff_nodes
+                inv_sfc[inv_sfc >= batch[1][i].shape[-1]] -= diff_nodes
+                print(sfc[sfc >= batch[1][i].shape[-1]], inv_sfc[inv_sfc >= batch[1][i].shape[-1]])
                 sfcs.append(sfc)
                 inv_sfcs.append(inv_sfc)
       if variational:
