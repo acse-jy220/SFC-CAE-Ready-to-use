@@ -285,10 +285,8 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
              else: 
                 sfc = sfc[..., :batch[1][i].shape[-1]]
                 inv_sfc = inv_sfc[..., :batch[1][i].shape[-1]]
-                print(sfc[sfc >= batch[1][i].shape[-1]], inv_sfc[inv_sfc >= batch[1][i].shape[-1]])
                 sfc[sfc >= batch[1][i].shape[-1]] -= diff_nodes
                 inv_sfc[inv_sfc >= batch[1][i].shape[-1]] -= diff_nodes
-                print(sfc[sfc >= batch[1][i].shape[-1]], inv_sfc[inv_sfc >= batch[1][i].shape[-1]])
                 sfcs.append(sfc)
                 inv_sfcs.append(inv_sfc)
       if variational:
