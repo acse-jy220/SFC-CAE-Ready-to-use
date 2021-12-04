@@ -100,9 +100,11 @@ if 'share_sp_weights' in parameters.keys():
    kwargs.update({'share_sp_weights': bool(parameters['share_sp_weights'])})
 if 'share_conv_weights' in parameters.keys():
    kwargs.update({'share_conv_weights': bool(parameters['share_conv_weights'])})
-
-# always place the unstructured FEM mesh at the center at the 2nd sfc
-kwargs.update({'place_center': True})
+if 'place_center' in parameters.keys():
+   kwargs.update({'place_center': bool(parameters['place_center'])})    
+else: kwargs.update({'place_center': False}) # always place the unstructured FEM mesh at the center at the 2nd sfc
+if 'num_final_channels' in parameters.keys():
+       kwargs.update({'num_final_channels': int(parameters['num_final_channels'])})    
 
 optimizer_type = parameters['optimizer']
 
