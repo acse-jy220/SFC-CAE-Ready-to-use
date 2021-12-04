@@ -1117,7 +1117,7 @@ def gen_filling_paras(unstructured_size, structured_size):
     end_backward = bool(n_fold % 2)
     return n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size
 
-def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center):
+def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, return_clone = False):
     '''
     Fill the node number difference from unstructured and (virtual) structured grids.
 
@@ -1131,6 +1131,7 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
     end_backward: [int] does this expand sfc ending in a inverse order?
     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
     place_center: [bool] whether to place the unstructured mesh in the middle of the expanded structured mesh.
+    return_clone: [bool] to return clone of tensor, for issue: 'CUDA error: device-side assert triggered'.
 
     Output:
     ---  
@@ -1152,7 +1153,9 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
       backward_x = torch.flip(x, (-1,))[..., :num_nodes]
       if flip_time > 0:
          flipped = torch.cat((forward_x, backward_x), -1)
-         if flip_time > 1: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
+         if flip_time > 1:
+            if not return_clone: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
+            else: flipped = torch.cat([flipped] * flip_time, -1)
       else: flipped = None
       if end_backward:
          remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
