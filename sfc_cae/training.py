@@ -271,9 +271,11 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
       if shuffle_sfc: sfc_shuffle_index = np.random.choice(dataloader.dataset.sfc_max_num, autoencoder.encoder.sfc_nums, replace=False) # sfc_index, to shuffle
       else: sfc_shuffle_index = None
       if shuffle_sfc_with_batch:
+         print('enter batch shuffleing...')
          sfcs = []
          inv_sfcs = []
          shuffle_index = np.random.permutation(c_batch_size)
+         print(shuffle_index)
          for i in range(c_batch_size):
              sfc = batch[1][shuffle_index[i]]
              inv_sfc = batch[2][shuffle_index[i]]
@@ -284,6 +286,7 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
              else: 
                 sfcs.append(sfc[..., :batch[1][i].shape[-1]])
                 inv_sfcs.append(inv_sfc[..., :batch[1][i].shape[-1]])
+             print(len(sfcs), len(inv_sfcs))
       if variational:
         x_hat, KL = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
         for (data_x_i, x_hat_i) in zip(data_x, x_hat): 
