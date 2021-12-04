@@ -271,14 +271,14 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
         #   else:
           if self.coords is not None and not self.ban_shuffle_sp: 
              self.sps.append(nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
-             self.sps[i].weight.data.fill_(1)
-             self.sps[i].bias.data.fill_(0)
+            #  self.sps[i].weight.data.fill_(1)
+            #  self.sps[i].bias.data.fill_(0)
           else: self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
       else: 
         if self.coords is not None and not self.ban_shuffle_sp: 
            self.sps = nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
-           self.sps.weight.data.fill_(1)
-           self.sps.bias.data.fill_(0)
+         #   self.sps.weight.data.fill_(1)
+         #   self.sps.bias.data.fill_(0)
         else: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
 
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
@@ -573,14 +573,14 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         #   else:
             if self.coords is not None and not self.ban_shuffle_sp:
                   self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
-                  self.sps[i].weight.data.fill_(1)
-                  self.sps[i].bias.data.fill_(0)
+                  # self.sps[i].weight.data.fill_(1)
+                  # self.sps[i].bias.data.fill_(0)
             else: self.sps.append(NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, concats)) 
        else:
           if self.coords is not None and not self.ban_shuffle_sp: 
              self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, out_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
-             self.sps.weight.data.fill_(1)
-             self.sps.bias.data.fill_(0)
+            #  self.sps.weight.data.fill_(1)
+            #  self.sps.bias.data.fill_(0)
           else: self.sps = NearestNeighbouring_md(self.shape, None, out_channel, self.num_neigh_md, concats)
 
     self.convTrans = nn.ModuleList(self.convTrans)
