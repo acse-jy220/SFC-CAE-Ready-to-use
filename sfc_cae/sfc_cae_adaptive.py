@@ -393,7 +393,8 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
                a = torch.cat((a, self.ctoa[j].repeat(1, self.coords_channels[j] // self.coords_dim,1).to(a.device)),1)
             a = self.activate(conv_layer[j](a))
         # xs.append(a.view(-1, a.size(1)*a.size(2)))
-        a = a.reshape(a.shape[0], -1)
+      #   a = a.reshape(a.shape[0], -1)
+        a = a.view(-1, np.prod(a.shape[1:]))
         xs.append(a)
         # print(a.shape)
         del a
@@ -615,7 +616,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
 
     for i in range(self.sfc_nums):
         # if self.inv_second_sfc is not None: 
-        b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
+      #   b = x[i].reshape((x[i].shape[0],) + self.init_convTrans_shape)
+        b = x[i].view((-1,) + self.init_convTrans_shape)
         if self.share_conv_weights: conv_layer = self.convTrans
         else: conv_layer = self.convTrans[i]
         if self.coords is not None and self.coords_option == 2: self.ctoa = self.encoder.ctoa
