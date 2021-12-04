@@ -507,8 +507,8 @@ class AdaptiveDataset(Dataset):
               data = self.dataset[i]
               if self.coords is not None: coords = self.coords[i]
               if fill_nodes_for_standardlize and self.filling_paras[i] is not None: 
-                 data = expand_snapshot_backward_connect(data, *self.filling_paras[i])
-                 coords = expand_snapshot_backward_connect(coords, *self.filling_paras[i])
+                 data = expand_snapshot_backward_connect(data, *self.filling_paras[i], False)
+                 coords = expand_snapshot_backward_connect(coords, *self.filling_paras[i], False)
               t_max = torch.cat((t_max, data.max(-1).values.unsqueeze(0)), 0)
               coords_max = torch.cat((coords_max, coords.max(-1).values.unsqueeze(0)), 0)
               t_min = torch.cat((t_min, data.min(-1).values.unsqueeze(0)), 0)
