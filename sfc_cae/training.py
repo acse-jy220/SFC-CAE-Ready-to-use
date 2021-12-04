@@ -101,7 +101,7 @@ def save_model(model, optimizer, check_gap, n_epoches, save_path, dict_only = Fa
       print('model saved to', model_name)
     print('model_dict saved to', model_dictname)
 
-def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, shuffle_sfc, rank = None):
+def train(autoencoder, variational, optimizer, criterion, other_metric, dataloader, shuffle_sfc, shuffle_sfc_with_batch, rank = None):
   '''
   This function is implemented for training the model.
 
@@ -214,7 +214,7 @@ def validate(autoencoder, variational, optimizer, criterion, other_metric, datal
   else: return validation_loss / data_length, valid_loss_other/ data_length  # Return MSE
 
 
-def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric, dataloader, shuffle_sfc, rank = None):
+def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric, dataloader, shuffle_sfc, shuffle_sfc_with_batch, rank = None):
   '''
   This function is implemented for training the model for adaptive datasets.
 
@@ -270,6 +270,20 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
       filling_paras = batch[-1] # adaptive filling_paras
       if shuffle_sfc: sfc_shuffle_index = np.random.choice(dataloader.dataset.sfc_max_num, autoencoder.encoder.sfc_nums, replace=False) # sfc_index, to shuffle
       else: sfc_shuffle_index = None
+      if shuffle_sfc_with_batch:
+         sfcs = []
+         inv_sfcs = []
+         shuffle_index = np.random.permutation(c_batch_size)
+         for i in range(c_batch_size):
+             sfc = batch[1][shuffle_index[i]]
+             inv_sfc = batch[2][shuffle_index[i]]
+             if sfc.shape[-1] < batch[1][i].shape[-1]:
+                paras = gen_filling_paras(sfc.shape[-1], sfcs[i].shape[-1])
+                sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False))
+                inv_sfcs.append(expand_snapshot_backward_connect(inv_sfc, *paras, False))
+             else: 
+                sfcs.append(sfc[..., :batch[1][i].shape[-1]])
+                inv_sfcs.append(inv_sfc[..., :batch[1][i].shape[-1]])
       if variational:
         x_hat, KL = autoencoder(data_x, sfcs, inv_sfcs, filling_paras, coords, sfc_shuffle_index)
         for (data_x_i, x_hat_i) in zip(data_x, x_hat): 
@@ -393,7 +407,8 @@ def train_model(autoencoder,
                 weight_decay = 0, 
                 criterion_type = 'MSE',
                 shuffle_sfc = False,
-                rank = None):
+                rank = None,
+                **kwargs):
   '''
   This function is main function for loading, training, and saving the model.
 
@@ -423,6 +438,11 @@ def train_model(autoencoder,
   autoencoder: [SFC_CAE object] the trained SFC_(V)CAE.  
   '''
   set_seed(seed)
+
+  if 'shuffle_sfc_with_batch' in kwargs.keys():
+      shuffle_sfc_with_batch = kwargs['shuffle_sfc_with_batch']
+  else: shuffle_sfc_with_batch = False
+
   if isinstance(autoencoder, DDP): 
      variational = autoencoder.module.encoder.variational
      adaptive = isinstance(autoencoder.module, SFC_CAE_Adaptive)
@@ -500,10 +520,10 @@ def train_model(autoencoder,
     print("epoch %d starting......"%(epoch))
     time_start = time.time()
     if variational:
-      train_loss, train_loss_other, real_train_MSE, train_KL = train_function(autoencoder, variational, optimizer, criterion, other_metric, train_loader, shuffle_sfc, rank) 
+      train_loss, train_loss_other, real_train_MSE, train_KL = train_function(autoencoder, variational, optimizer, criterion, other_metric, train_loader, shuffle_sfc, shuffle_sfc_with_batch, rank) 
       valid_loss, valid_loss_other, real_valid_MSE, valid_KL = valid_function(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, shuffle_sfc, rank)
     else:
-      train_loss, train_loss_other = train_function(autoencoder, variational, optimizer, criterion, other_metric, train_loader, shuffle_sfc, rank)
+      train_loss, train_loss_other = train_function(autoencoder, variational, optimizer, criterion, other_metric, train_loader, shuffle_sfc, shuffle_sfc_with_batch, rank)
       valid_loss, valid_loss_other = valid_function(autoencoder, variational, optimizer, criterion, other_metric, valid_loader, shuffle_sfc, rank)
 
     if isinstance(autoencoder, DDP):
