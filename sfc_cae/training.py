@@ -280,8 +280,8 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
              print(sfc.shape[-1])
              if sfc.shape[-1] < batch[1][i].shape[-1]:
                 paras = gen_filling_paras(sfc.shape[-1], batch[1][i].shape[-1])
-                sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False, True))
-                inv_sfcs.append(expand_snapshot_backward_connect(inv_sfc, *paras, False, True))
+                sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False, return_clone = True))
+                inv_sfcs.append(expand_snapshot_backward_connect(inv_sfc, *paras, False, return_clone = True))
              else: 
                 sfcs.append(sfc[..., :batch[1][i].shape[-1]])
                 inv_sfcs.append(inv_sfc[..., :batch[1][i].shape[-1]])

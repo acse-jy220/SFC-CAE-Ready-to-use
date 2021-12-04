@@ -1154,8 +1154,8 @@ def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remaind
       if flip_time > 0:
          flipped = torch.cat((forward_x, backward_x), -1)
          if flip_time > 1:
-            if not return_clone: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
-            else: flipped = torch.cat([flipped] * flip_time, -1)
+            if return_clone: flipped = torch.cat([flipped] * flip_time, -1)
+            else: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
       else: flipped = None
       if end_backward:
          remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
