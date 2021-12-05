@@ -315,7 +315,7 @@ class TestStructured(object):
 
 
 #################################################### test for sfc_cae.py/ utils.py ######################################################
-dict_path = '../decompressing_examples/'
+dict_path = 'decompressing_examples/'
 
 @fixture(scope='module')
 def autoenocoder_FPC_CG():
