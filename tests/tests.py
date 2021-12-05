@@ -315,6 +315,8 @@ class TestStructured(object):
 
 
 #################################################### test for sfc_cae.py/ utils.py ######################################################
+dict_path = '../decompressing_examples/'
+
 @fixture(scope='module')
 def autoenocoder_FPC_CG():
     """
@@ -333,8 +335,8 @@ def autoenocoder_FPC_CG():
     dims_latent = 16
     activation = nn.Tanh()
     variational = False
-    space_filling_orderings = torch.load('fpc_cg_sfc_2.pt')
-    invert_space_filling_orderings = torch.load('fpc_cg_invsfc_2.pt')
+    space_filling_orderings = torch.load(dict_path + 'fpc_cg_sfc_2.pt')
+    invert_space_filling_orderings = torch.load(dict_path + 'fpc_cg_invsfc_2.pt')
 
     autoencoder = SFC_CAE(input_size,
                           dimension,
@@ -364,8 +366,8 @@ def autoenocoder_FPC_CG_VCAE():
     dims_latent = 16
     activation = nn.Tanh()
     variational = True
-    space_filling_orderings = torch.load('fpc_cg_sfc_2.pt')
-    invert_space_filling_orderings = torch.load('fpc_cg_invsfc_2.pt')
+    space_filling_orderings = torch.load(dict_path + 'fpc_cg_sfc_2.pt')
+    invert_space_filling_orderings = torch.load(dict_path + 'fpc_cg_invsfc_2.pt')
 
     autoencoder = SFC_CAE(input_size,
                           dimension,
