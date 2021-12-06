@@ -275,8 +275,8 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
          inv_sfcs = []
          shuffle_index = np.random.permutation(c_batch_size)
          for i in range(c_batch_size):
-             sfc = batch[1][shuffle_index[i]].clone()
-             inv_sfc = batch[2][shuffle_index[i]].clone()
+             sfc = copy.deepcopy(batch[1][shuffle_index[i]])
+             inv_sfc = copy.deepcopy(batch[2][shuffle_index[i]])
              diff_nodes = sfc.shape[-1] - batch[1][i].shape[-1]
              if diff_nodes < 0:
                 paras = gen_filling_paras(sfc.shape[-1], batch[1][i].shape[-1])
