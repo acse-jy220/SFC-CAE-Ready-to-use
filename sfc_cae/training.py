@@ -601,9 +601,9 @@ def train_model(autoencoder,
     # torch.cuda.empty_cache() # clean cache after every epoch
   
   if variational:
-    test_loss, test_loss_other, real_test_MSE, test_KL = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
+    test_loss, test_loss_other, real_test_MSE, test_KL = valid_function(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
   else:
-    test_loss, test_loss_other = validate(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
+    test_loss, test_loss_other = valid_function(autoencoder, variational, optimizer, criterion, other_metric, test_loader, parallel_mode, rank)
 
   if criterion_type == 'MSE':
     test_MSE_re = test_loss_other.cpu().numpy()
