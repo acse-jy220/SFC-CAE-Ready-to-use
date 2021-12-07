@@ -694,8 +694,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             if fla is not None: 
                if not self.interpol: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
                else: 
-                    x, conc = (b[k].detach().cpu().numpy(),) * 2
-                    x, conc = interpol.x_conv_fixed_length(x, conc, fla[-2], self.input_size, self.coords_dim, self.components - self.coords_dim)
+                    cd, conc = (b[k].detach().cpu().numpy(),) * 2
+                    cd, conc = interpol.x_conv_fixed_length(cd, conc, fla[-2], self.input_size, self.coords_dim, self.components - self.coords_dim)
                     b[k] = torch.from_numpy(conc).to(self.encoder.device)
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
             # if self.coords_dim is not None: 
