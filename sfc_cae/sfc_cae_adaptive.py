@@ -342,14 +342,16 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
 
     # 1D or MD Conv Layers
     for i in range(self.sfc_nums):
-        a = copy.deepcopy(x)
-        if coords is not None: cds = copy.deepcopy(coords)
+        a = []
+        if coords is not None: 
+           cds = []
+         #   cds = copy.deepcopy(coords)
         for k, (sfc, fla) in enumerate(zip(sfcs, filling_paras)):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
-            a[k] = a[k][..., sfc[sfc_index]]
+            a.append(x[k].clone()[..., sfc[sfc_index]])
             if coords is not None:
-                   cds[k] = cds[k][..., sfc[sfc_index]]            
+                   cds.append(coords[k].clone()[..., sfc[sfc_index]])            
             if fla is not None: 
                if not self.interpol: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
                if coords is not None:                  
