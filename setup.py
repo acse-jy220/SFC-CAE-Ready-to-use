@@ -16,9 +16,11 @@ for ir in required:
 if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
    # on windows
    compile_command = 'f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32'
+   compile_command += 'f2py -c x_conv_fixed_length.f90 -m sfc_interpolate --compiler=mingw32'
 elif sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'darwin':
    # on linux
-   compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'   
+   compile_command = 'python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new'
+   compile_command += 'python3 -m numpy.f2py -c x_conv_fixed_length.f90 -m sfc_interpolate'  
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
@@ -27,7 +29,7 @@ setup(name='SFC-CAE',
       author_email='jin.yu20@imperial.ac.uk',
       install_requires=reqs,
       test_suite='tests',
-      version='0.2.7',
+      version='0.2.8',
       packages=['sfc_cae'])
 
 # compile fortran

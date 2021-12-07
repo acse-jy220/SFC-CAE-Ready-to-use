@@ -7,6 +7,7 @@ Github handle: acse-jy220
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
+import sfc_interpolate as interpol 
 from .utils import *
 
 ###############################################################   Encoder Part ###################################################################
@@ -97,6 +98,16 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     if 'collect_loss_inside' in kwargs.keys():
         self.collect_loss_inside = kwargs['collect_loss_inside']
     else: self.collect_loss_inside = False
+
+    if 'interpolate' in kwargs.keys():
+        self.interpol = kwargs['interpolate']
+    else: self.interpol = False
+
+    if 'interpolate_multi' in kwargs.keys():
+        self.interpol_multi = kwargs['interpolate_multi']
+    else: self.interpol_multi = 2
+
+    if self.interpol: self.input_size *= self.interpol_multi
 
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
        self.coords = kwargs['coords']
@@ -304,21 +315,6 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             self.fcs[-1].bias.data.fill_(0.001)
     self.fcs = nn.ModuleList(self.fcs)
 
-  # def build_coarsened_coords(self, ordered_coords):
-  #      self.ctoa = []
-  #      for coords in ordered_coords:  
-  #         ctoa = []        
-  #         if not self.share_conv_weights:
-  #            for i in range(self.sfc_nums):
-  #               for j in range(len(self.conv_size)):
-  #                   if j == 0: ctoa.append(coords)   
-  #                   else: ctoa.append(sparsify(coords, self.conv_size[j]))
-  #         else:
-  #            for i in range(len(self.conv_size)):
-  #               if i == 0: ctoa.append(coords)   
-  #               else: ctoa.append(sparsify(coords, self.conv_size[i]))
-  #         self.ctoa.append(ctoa)
-
   def build_coarsened_coords(self, ordered_coords):
        self.ctoa = []
        if not self.share_conv_weights:
@@ -351,10 +347,13 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
             a[k] = a[k][..., sfc[sfc_index]]
-            if fla is not None: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
             if coords is not None:
-               cds[k] = cds[k][..., sfc[sfc_index]]
-            if fla is not None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
+                   cds[k] = cds[k][..., sfc[sfc_index]]            
+            if fla is not None: 
+               if not self.interpol: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
+               if coords is not None:                  
+                 if not self.interpol: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
+                 else: cds[k], a[k] = interpol.x_conv_fixed_length(cds[k], a[k], self.input_size, fla[-2], self.coords_dim, self.components)
         if coords is not None:
             cds = torch.stack(cds)
             if self.coords_option == 2: self.build_coarsened_coords(cds)
@@ -472,6 +471,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
     self.shape = encoder.shape
 
     self.collect_loss_inside = encoder.collect_loss_inside
+    self.interpol = encoder.interpol
+    self.interpol_multi = encoder.interpol_multi
 
     if encoder.coords is not None:
       self.coords = encoder.coords
@@ -684,7 +685,9 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         for k, (inv_sfc, fla) in enumerate(zip(inv_sfcs, filling_paras)):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
-            if fla is not None: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
+            if fla is not None: 
+               if not self.interpol: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
+               else: _, b[k] = interpol.x_conv_fixed_length(b[k], b[k], fla[-2], self.input_size, self.coords_dim, self.components)
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
             # if self.coords_dim is not None: 
             #    coords_b_list.append(b[k][-self.coords_dim:])
