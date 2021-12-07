@@ -359,7 +359,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
                  else: 
                     cd, conc = cds[k].detach().cpu().numpy(), a[k].detach().cpu().numpy()
                     cd, conc = interpol.x_conv_fixed_length(cd, conc, self.input_size, fla[-2], self.coords_dim, self.components - self.coords_dim)
-                    cds[k], a[k] = torch.from_numpy(x).to(self.device), torch.from_numpy(conc).to(self.device)
+                    cds[k], a[k] = torch.from_numpy(cd).to(self.device), torch.from_numpy(conc).to(self.device)
         if coords is not None:
             cds = torch.stack(cds)
             if self.coords_option == 2: self.build_coarsened_coords(cds)
