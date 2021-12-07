@@ -356,7 +356,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
                  if not self.interpol: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
                  else: 
                     x, conc = cds[k].detach().cpu().numpy(), a[k].detach().cpu().numpy()
-                    x, conc = interpol.x_conv_fixed_length(x, conc, self.input_size, fla[-2], self.coords_dim, self.components)
+                    x, conc = interpol.x_conv_fixed_length(x, conc, self.input_size, fla[-2], self.coords_dim, self.components - self.coords_dim)
                     cds[k], a[k] = torch.from_numpy(x).to(self.device), torch.from_numpy(conc).to(self.device)
         if coords is not None:
             cds = torch.stack(cds)
@@ -693,7 +693,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
                if not self.interpol: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
                else: 
                     x, conc = (b[k].detach().cpu().numpy(),) * 2
-                    x, conc = interpol.x_conv_fixed_length(x, conc, fla[-2], self.input_size, self.coords_dim, self.components)
+                    x, conc = interpol.x_conv_fixed_length(x, conc, fla[-2], self.input_size, self.coords_dim, self.components - self.coords_dim)
                     conc = torch.from_numpy(conc).to(self.device)
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
             # if self.coords_dim is not None: 
