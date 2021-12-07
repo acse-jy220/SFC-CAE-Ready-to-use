@@ -696,7 +696,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
                else: 
                     x, conc = (b[k].detach().cpu().numpy(),) * 2
                     x, conc = interpol.x_conv_fixed_length(x, conc, fla[-2], self.input_size, self.coords_dim, self.components - self.coords_dim)
-                    conc = torch.from_numpy(conc).to(self.device)
+                    b[k] = torch.from_numpy(conc).to(self.encoder.device)
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
             # if self.coords_dim is not None: 
             #    coords_b_list.append(b[k][-self.coords_dim:])
