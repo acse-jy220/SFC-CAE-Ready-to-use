@@ -402,19 +402,18 @@ class SFC_CAE_Encoder_md(nn.Module):
             else: a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
             # print(a.shape)
             a = a[..., self.second_sfc]
-            if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
             if self.NN:
                if (self.coords is not None and not self.ban_shuffle_sp) or self.conv_smooth_layer: tt_list = a
                else:  tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
             #    print(tt_list.shape)
-               if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
+               if self.conv_smooth_layer: a = a.reshape(a.shape[:2] + self.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
-               print('after conv sp layer...')
+              #  print('after conv sp layer...')
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn
-            if not self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
+            if not self.conv_smooth_layer: a = a.reshape(a.shape[:2] + self.shape)
         else: 
             if self.NN:
                if self.coords is not None and not self.ban_shuffle_sp: tt_list = a
