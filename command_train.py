@@ -83,6 +83,8 @@ if parameters['state_load'] != 'None':
    state_load = parameters['state_load']
 else: state_load = None
 
+optimizer_type = parameters['optimizer']
+
 # read in extra arguments
 kwargs={}
 
@@ -105,8 +107,11 @@ if 'place_center' in parameters.keys():
 else: kwargs.update({'place_center': False}) # always place the unstructured FEM mesh at the center at the 2nd sfc
 if 'num_final_channels' in parameters.keys():
        kwargs.update({'num_final_channels': int(parameters['num_final_channels'])})    
+if 'interpolation' in parameters.keys():
+       kwargs.update({'interpolation': bool(parameters['interpolation'])}) 
+if 'conv_smooth_layer' in parameters.keys():
+       kwargs.update({'conv_smooth_layer': bool(parameters['conv_smooth_layer'])}) 
 
-optimizer_type = parameters['optimizer']
 
 samples = len(glob.glob(parameters['data_dir'] + '*'))
 
