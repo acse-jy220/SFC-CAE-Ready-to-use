@@ -43,7 +43,9 @@ jobs:
       
       # compile fortran code with MinGW
       - name: Compile Fortran Library
-        run: f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+        run: |
+             f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+             f2py -c x_conv_fixed_length.f90 -m sfc_interpolate --compiler=mingw32
 
       # download CG dataset for testing
       - name: Download FPC CG Dataset
