@@ -526,6 +526,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.reduce = reduce_strategy
     
     self.coords = encoder.coords
+    self.coords_dim = encoder.coords_dim
     self.interpolation = encoder.interpolation
     
     self.extrapolate_params_coords = encoder.extrapolate_params_coords
@@ -535,7 +536,6 @@ class SFC_CAE_Decoder_md(nn.Module):
     if self.conv_smooth_layer: self.conv_smooth_channels = encoder.conv_smooth_channels
 
     if self.coords is not None:
-      self.coords_dim = encoder.coords_dim
       self.coords_option = encoder.coords_option
       self.ban_shuffle_sp = encoder.ban_shuffle_sp
       self.shuffle_sp_kernel_size = encoder.shuffle_sp_kernel_size
