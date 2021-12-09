@@ -172,7 +172,7 @@ class SFC_CAE_Encoder_md(nn.Module):
     if self.conv_smooth_layer: 
        if 'conv_smooth_channels' in kwargs.keys(): self.conv_smooth_channels = kwargs['conv_smooth_channels']
        else: self.conv_smooth_channels = 64
-       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True: self.first_conv_channel = self.shuffle_sp_channel 
+       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True: self.first_conv_channel = self.conv_smooth_channels 
 
     self.structured = structured
 
