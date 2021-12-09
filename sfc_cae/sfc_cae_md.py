@@ -168,11 +168,14 @@ class SFC_CAE_Encoder_md(nn.Module):
       self.first_conv_channel = None
       self.ban_shuffle_sp = True
       self.input_channel = self.components * self.self_concat
-
+    
+    print(self.first_conv_channel)
     if self.conv_smooth_layer: 
+       print('enter here')
        if 'conv_smooth_channels' in kwargs.keys(): self.conv_smooth_channels = kwargs['conv_smooth_channels']
        else: self.conv_smooth_channels = 64
        self.first_conv_channel = self.conv_smooth_channels  #default decrease channel
+    print(self.first_conv_channel)
 
     self.structured = structured
 
