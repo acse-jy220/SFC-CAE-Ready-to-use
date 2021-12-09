@@ -406,7 +406,7 @@ class SFC_CAE_Encoder_md(nn.Module):
                if (self.coords is not None and not self.ban_shuffle_sp) or self.conv_smooth_layer: tt_list = a
                else:  tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
             #    print(tt_list.shape)
-               if self.conv_smooth_layer: a = a.reshape(a.shape[:2] + self.shape)
+               if self.conv_smooth_layer: tt_list = tt_list.reshape(tt_list.shape[:2] + self.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
               #  print('after conv sp layer...')
