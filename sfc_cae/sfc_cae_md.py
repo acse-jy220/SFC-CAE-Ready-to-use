@@ -169,6 +169,11 @@ class SFC_CAE_Encoder_md(nn.Module):
       self.ban_shuffle_sp = True
       self.input_channel = self.components * self.self_concat
 
+    if self.conv_smooth_layer: 
+       if 'conv_smooth_channels' in kwargs.keys(): self.conv_smooth_channels = kwargs['conv_smooth_channels']
+       else: self.conv_smooth_channels = 64
+       if 'decrease_in_channel' in kwargs.keys() and kwargs['decrease_in_channel'] is True: self.first_conv_channel = self.shuffle_sp_channel 
+
     self.structured = structured
 
     if self.structured: 
@@ -305,12 +310,12 @@ class SFC_CAE_Encoder_md(nn.Module):
               self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md))
             else:
                if sfc_mapping_to_structured is None: 
-                  self.sps.append(nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
+                  self.sps.append(nn.Conv1d(self.components * self.self_concat, self.conv_smooth_channels, self.kernel_size, 1, self.padding))
                else:
                   if self.dimension == 2:
-                    self.sps.append(nn.Conv2d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)) 
+                    self.sps.append(nn.Conv2d(self.components * self.self_concat, self.conv_smooth_channels, self.kernel_size, 1, self.padding)) 
                   elif self.dimension == 3:
-                    self.sps.append(nn.Conv3d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))  
+                    self.sps.append(nn.Conv3d(self.components * self.self_concat, self.conv_smooth_channels, self.kernel_size, 1, self.padding))  
       else: 
         if self.coords is not None and not self.ban_shuffle_sp:
             self.sps = nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
@@ -319,12 +324,12 @@ class SFC_CAE_Encoder_md(nn.Module):
             self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
           else:
             if sfc_mapping_to_structured is None: 
-              self.sps = nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+              self.sps = nn.Conv1d(self.components * self.self_concat, self.conv_smooth_channels, self.kernel_size, 1, self.padding)
             else:
               if self.dimension == 2:
-                self.sps = nn.Conv2d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+                self.sps = nn.Conv2d(self.components * self.self_concat, self.conv_smooth_channels, self.kernel_size, 1, self.padding)
               elif self.dimension == 3:
-                self.sps = nn.Conv3d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding) 
+                self.sps = nn.Conv3d(self.components * self.self_concat, self.conv_smooth_channels, self.kernel_size, 1, self.padding) 
 
 
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
@@ -524,6 +529,9 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.extrapolate_params_coords = encoder.extrapolate_params_coords
     self.extrapolate_params_conc = encoder.extrapolate_params_conc
 
+    self.conv_smooth_layer = encoder.conv_smooth_layer
+    if self.conv_smooth_layer: self.conv_smooth_channels = encoder.conv_smooth_channels
+
     if self.coords is not None:
       self.coords_dim = encoder.coords_dim
       self.coords_option = encoder.coords_option
@@ -612,11 +620,31 @@ class SFC_CAE_Decoder_md(nn.Module):
         #   else:
             if self.coords is not None and not self.ban_shuffle_sp:
               self.sps.append(nn.ConvTranspose1d(self.shuffle_sp_channel, (self.components * self.self_concat) // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
-            else: self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+            else:
+              if not self.conv_smooth_layer: 
+                 self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
+              else:
+                if encoder.sfc_mapping_to_structured is None: 
+                  self.sps.append(nn.ConvTranspose1d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding))
+                else:
+                  if self.dimension == 2:
+                    self.sps.append(nn.ConvTranspose2d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding)) 
+                  elif self.dimension == 3:
+                    self.sps.append(nn.ConvTranspose3d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding)) 
        else:
           if self.coords is not None and not self.ban_shuffle_sp:
              self.sps = nn.ConvTranspose1d(self.shuffle_sp_channel, (self.components * self.self_concat) // self.self_concat, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
-          else: self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
+          else:
+            if not self.conv_smooth_layer:  
+              self.sps = NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)
+            else:
+                if encoder.sfc_mapping_to_structured is None: 
+                  self.sps = nn.ConvTranspose1d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding)
+                else:
+                  if self.dimension == 2:
+                    self.sps = nn.ConvTranspose2d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding)
+                  elif self.dimension == 3:
+                    self.sps = nn.ConvTranspose3d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding)              
 
     self.convTrans = nn.ModuleList(self.convTrans)
     if self.NN: 
