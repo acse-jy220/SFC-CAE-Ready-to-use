@@ -624,7 +624,7 @@ class SFC_CAE_Decoder_md(nn.Module):
               if not self.conv_smooth_layer: 
                  self.sps.append(NearestNeighbouring_md(self.shape, None, self.components, self.num_neigh_md, self.self_concat)) 
               else:
-                if encoder.sfc_mapping_to_structured is None: 
+                if encoder.second_sfc is None: 
                   self.sps.append(nn.ConvTranspose1d(self.conv_smooth_channels, self.components, self.kernel_size, 1, self.padding))
                 else:
                   if self.dimension == 2:
