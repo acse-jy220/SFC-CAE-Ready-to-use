@@ -1223,6 +1223,137 @@ def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, uns
             return xx[..., start:start + unstructured_size]
         else: return xx[..., :unstructured_size]
 
+def optimal_back_interpolate(nonods, nonods_l, x_regular, x_l_regular, nod_prev_list, nod_next_list, map_back, tol=1e-6, dtype=np.float32):
+    '''
+    This function is a adapted from Fortran routine 'x_conv_fixed_length.f90', which generates an optimal extrapolate for 
+    the linear interpolation.
+
+    Input:
+    ---
+    nonods: [int] number of nodes to extrapolate from.
+    nonods_l: [int] number of nodes to extrapolate to.
+    x_regular: [1d-float np.ndarray] the array contains x-coordinates to extrapolate from.
+    x_l_regular: [1d-float np.ndarray] the array contains x-coordinates to extrapolate to.
+    nod_prev_list: [1d-int np.ndarray] index array, which contains the left neighbour node in x_regular w.r.t x_l_regular.
+    nod_next_list: [1d-int np.ndarray] index array, which contains the right neighbour node in x_regular w.r.t x_l_regular.
+    map_back: [bool] whether return 4 weights for 4-point extrapolation.
+    tol: [float] a tolerence number for the numerical scheme.
+    dtype: [datatype] datatype for computation.
+
+    Output:
+    ---  
+    w2 * rate_2, w1 * rate_1, w2 * (1 - rate_2), w1 * (1 - rate_1): the optimal weights for range-2 neighbour points of x.
+                                                             or                                   
+                                                          NoneType: indicates no optimal extrapolation happens. 
+
+    '''
+    if nonods >= 2 * nonods_l and map_back:
+       nod_prev_list_internal = nod_prev_list[1:-1]
+       nod_next_list_internal = nod_next_list[1:-1]
+       gaps_1 = np.abs(x_l_regular[1:-1] - x_regular[nod_next_list_internal])
+       gaps_2 = np.abs(x_l_regular[1:-1] - x_regular[nod_prev_list_internal])
+       gaps_1[gaps_1 < tol] = tol
+       gaps_2[gaps_2 < tol] = tol
+       w1 = 1 / gaps_1
+       w2 = 1 / gaps_2
+       rsum = w1 + w2
+       w1 /= rsum
+       w2 /= rsum
+           
+       nod_next_list_p1 = nod_next_list_internal + 1
+       nod_next_prev_p1 = nod_prev_list_internal - 1
+
+       rate_1 = 1 - (x_regular[nod_next_list_internal] - x_l_regular[1:-1]) / (x_regular[nod_next_list_internal] - x_regular[nod_next_list_p1])
+       rate_2 = 1 - (x_regular[nod_prev_list_internal] - x_l_regular[1:-1]) / (x_regular[nod_prev_list_internal] - x_regular[nod_next_prev_p1])
+
+       return w2 * rate_2, w1 * rate_1, w2 * (1 - rate_2), w1 * (1 - rate_1)
+
+    else: return None
+
+def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6, dtype=np.float32):
+    '''
+    This function is a adapted from Fortran routine 'x_conv_fixed_length.f90', which generates an optimal interpolation for 
+    the linear interpolation.
+
+    Input:
+    ---
+    nonods: [int] number of nodes to extrapolate from.
+    nonods_l: [int] number of nodes to extrapolate to.
+    map_back: [bool] whether return 4 weights for 4-point extrapolation.
+    tol: [float] a tolerence number for the numerical scheme.
+    dtype: [datatype] datatype for computation.
+
+    Output:
+    ---  
+    nod_prev_list: [1d-int np.ndarray] index array, which contains the left neighbour node in x_regular w.r.t x_l_regular.
+    nod_next_list: [1d-int np.ndarray] index array, which contains the right neighbour node in x_regular w.r.t x_l_regular. 
+    weight_prev: [1d-float np.ndarray] the weights for left neighbour of x
+    weight_next: [1d-float np.ndarray] the weights for right neighbour of x
+    back_mapping_params: [tuples of length 4 or NoneType] the parameters for optimal extrapolation, if not happen it is None.
+    '''
+
+    x_regular = np.arange(0, nonods, dtype=dtype)
+    x_l_regular = np.arange(0, nonods_l, dtype=dtype)
+    x_regular = np.divide(x_regular, nonods - 1, dtype=dtype)
+    x_l_regular = np.divide(x_l_regular, nonods_l - 1, dtype=dtype)
+    nod_prev_list = np.zeros(nonods_l).astype('int')
+    nod_prev_list[0] = 0
+    for nod_l in range(1, nonods_l):
+        nod_prev_list[nod_l] = np.where(x_l_regular[nod_l] >= x_regular)[0][-1]
+    nod_prev_list[-1] = nonods - 2 
+    nod_next_list = nod_prev_list + 1
+    weight_interp = (x_l_regular - x_regular[nod_prev_list]) / (x_regular[nod_next_list] - x_regular[nod_prev_list])
+       
+    # in Fortran: weight_interp = max( min(weight_interp,1.0), 0.0)
+    weight_interp[weight_interp > 1] = dtype(1)
+    weight_interp[weight_interp < 0] = dtype(0)
+
+    weight_prev = dtype(1) - weight_interp
+    weight_next = weight_interp
+
+    back_mapping_params = \
+        optimal_back_interpolate(nonods, nonods_l, x_regular, x_l_regular, nod_prev_list, nod_next_list, map_back, tol, dtype)
+
+    return nod_prev_list, nod_next_list, weight_prev, weight_next, back_mapping_params
+
+def linear_interpolate_python(x, prev_nodes, next_nodes, weight_prev, weight_next, back_mapping_params, dtype=np.float32):
+    '''
+    This function is a adapted from Fortran routine 'x_conv_fixed_length.f90', which generates an optimal interpolation for 
+    the linear interpolation.
+
+    Input:
+    ---
+    prev_nodes: [1d-int np.ndarray] index array, which contains the left neighbour node in x_regular w.r.t x_l_regular.
+    next_nodes: [1d-int np.ndarray] index array, which contains the right neighbour node in x_regular w.r.t x_l_regular.
+    weight_prev: [1d-float np.ndarray] the weights for left neighbour of x
+    weight_next: [1d-float np.ndarray] the weights for right neighbour of x
+    back_mapping_params: [tuples of length 4 or NoneType] the parameters for optimal extrapolation, if not happen it is None.
+    dtype: [datatype] datatype for computation.
+
+    Output:
+    ---  
+    x_out: [np.ndarray or torch.Tensor, same type of input x] the output after interpolation (extrapolation).
+    '''
+    if isinstance(x, torch.Tensor): 
+        # x = x.float()
+        weight_prev = torch.from_numpy(weight_prev).to(x.device)
+        weight_next = torch.from_numpy(weight_next).to(x.device)
+    if isinstance(x, np.ndarray) and x.dtype != dtype: x = dtype(x)
+    x_out = x[..., prev_nodes] * weight_prev + x[..., next_nodes] * weight_next
+    x_out[..., -1] = x[..., -1]
+    if back_mapping_params is not None:
+       (w2, w1, weight_prev_p1, weight_next_p1) = back_mapping_params
+       if isinstance(x, torch.Tensor): 
+           w2 = torch.from_numpy(w2).to(x.device)
+           w1 = torch.from_numpy(w1).to(x.device)
+           weight_prev_p1 = torch.from_numpy(weight_prev_p1).to(x.decice)
+           weight_next_p1 = torch.from_numpy(weight_next_p1).to(x.device)
+       x_out[..., 1:-1] = w2 * x[..., prev_nodes[1:-1]] + \
+                     weight_prev_p1 * (x[..., prev_nodes[1:-1] - 1]) + \
+                     w1 * x[..., next_nodes[1:-1]] + \
+                     weight_next_p1 * (x[..., next_nodes[1:-1] + 1])
+    return x_out
+
 def ordering_tensor(tensor, ordering):
     '''
     This function orders the tensor in the 0-axis with a provided ordering.
