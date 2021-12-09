@@ -455,7 +455,7 @@ class AdaptiveDataset(Dataset):
 
 
     '''
-    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False, fill_nodes_for_standardlize=False):
+    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False, interpolate_to_num = None, fill_nodes_for_standardlize=False):
         if indexes is None: 
            self.dataset = tensor_list
            self.coords = coords_list
@@ -482,6 +482,8 @@ class AdaptiveDataset(Dataset):
         coords_max = self.coords[0].max(-1).values.unsqueeze(0)
         t_min = self.dataset[0].min(-1).values.unsqueeze(0)
         coords_min = self.coords[0].min(-1).values.unsqueeze(0)
+
+        self.interpolate_to_num = interpolate_to_num
          
         # gen filling parameters for the dataset
         cnt_progress = 0
@@ -490,7 +492,12 @@ class AdaptiveDataset(Dataset):
         bar.start()    
         for i in range(self.length): 
             if self.num_nodes[i] < self.maxnodes:
-               self.filling_paras.append(gen_filling_paras(self.num_nodes[i], self.maxnodes))
+                if self.interpolate_to_num is not None: 
+                    interpol_params = linear_interpolate_python_weights(self.num_nodes[i], self.interpolate_to_num)
+                    extrapolate_params_coords = linear_interpolate_python_weights(self.interpolate_to_num, self.num_nodes[i])
+                    extrapolate_params_conc = linear_interpolate_python_weights(self.interpolate_to_num, self.num_nodes[i], map_back=True)                    
+                    self.filling_paras.append((interpol_params, extrapolate_params_coords, extrapolate_params_conc))
+                else: self.filling_paras.append(gen_filling_paras(self.num_nodes[i], self.maxnodes))
             else:
                self.filling_paras.append(None) 
             cnt_progress += 1
