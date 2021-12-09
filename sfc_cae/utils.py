@@ -1296,11 +1296,12 @@ def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6
     x_l_regular = np.arange(0, nonods_l, dtype=dtype)
     x_regular = np.divide(x_regular, nonods - 1, dtype=dtype)
     x_l_regular = np.divide(x_l_regular, nonods_l - 1, dtype=dtype)
-    nod_prev_list = np.zeros(nonods_l).astype('int')
-    nod_prev_list[0] = 0
-    for nod_l in range(1, nonods_l):
-        nod_prev_list[nod_l] = np.where(x_l_regular[nod_l] >= x_regular)[0][-1]
-    nod_prev_list[-1] = nonods - 2 
+    # nod_prev_list = np.zeros(nonods_l).astype('int')
+    # nod_prev_list[0] = 0
+    # for nod_l in range(1, nonods_l):
+    #     nod_prev_list[nod_l] = np.where(x_l_regular[nod_l] >= x_regular)[0][-1]
+    # nod_prev_list[-1] = nonods - 2 
+    nod_prev_list = np.floor((nonods - 1) * x_l_regular).astype('int')
     nod_next_list = nod_prev_list + 1
     weight_interp = (x_l_regular - x_regular[nod_prev_list]) / (x_regular[nod_next_list] - x_regular[nod_prev_list])
        
