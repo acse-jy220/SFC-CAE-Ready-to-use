@@ -557,7 +557,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.num_neigh_md = encoder.num_neigh_md   
         self.neigh_md = encoder.neigh_md   
         self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
-        self.expand_paras = encoder.expand_paras
+        if not self.interpolation: self.expand_paras = encoder.expand_paras
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
