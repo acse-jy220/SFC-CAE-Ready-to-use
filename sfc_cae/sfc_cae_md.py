@@ -119,6 +119,14 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.share_conv_weights = kwargs['share_conv_weights']
     else: self.share_conv_weights = False
 
+    if 'interpolation' in kwargs.keys():
+        self.interpolation = kwargs['interpolation']
+    else: self.interpolation = False
+
+    if 'conv_smooth_layer' in kwargs.keys():
+        self.conv_smooth_layer = kwargs['conv_smooth_layer']
+    else: self.conv_smooth_layer = False
+
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
        self.coords = kwargs['coords'].float()
        self.coords_dim = self.coords.shape[0]
@@ -232,7 +240,11 @@ class SFC_CAE_Encoder_md(nn.Module):
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
 
          # parameters for expand snapshots
-         self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
+         if not self.interpolation: self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
+         else: 
+          self.interpol_params = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
+          self.extrapolate_params_coords = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
+          self.extrapolate_params_conc = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
 
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
@@ -289,11 +301,31 @@ class SFC_CAE_Encoder_md(nn.Module):
           if self.coords is not None and not self.ban_shuffle_sp:
             self.sps.append(nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
           else: 
-            self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)) 
+            if not self.conv_smooth_layer:
+              self.sps.append(NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md))
+            else:
+               if sfc_mapping_to_structured is None: 
+                  self.sps.append(nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))
+               else:
+                  if self.dimension == 2:
+                    self.sps.append(nn.Conv2d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)) 
+                  elif self.dimension == 3:
+                    self.sps.append(nn.Conv3d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding))  
       else: 
         if self.coords is not None and not self.ban_shuffle_sp:
             self.sps = nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
-        else: self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
+        else: 
+          if not self.conv_smooth_layer:
+            self.sps = NearestNeighbouring_md(shape = self.shape, initial_weight= None, channels = self.components * self.self_concat, num_neigh_md = self.num_neigh_md)
+          else:
+            if sfc_mapping_to_structured is None: 
+              self.sps = nn.Conv1d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+            else:
+              if self.dimension == 2:
+                self.sps = nn.Conv2d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding)
+              elif self.dimension == 3:
+                self.sps = nn.Conv3d(self.components * self.self_concat, self.shuffle_sp_channel, self.shuffle_sp_kernel_size, 1, self.shuffle_sp_padding) 
+
 
     if self.NN and not self.share_sp_weights: self.sps = nn.ModuleList(self.sps)
     for i in range(len(self.size_fc) - 2):
