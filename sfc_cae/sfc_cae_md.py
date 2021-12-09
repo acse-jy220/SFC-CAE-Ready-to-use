@@ -407,12 +407,13 @@ class SFC_CAE_Encoder_md(nn.Module):
                if (self.coords is not None and not self.ban_shuffle_sp) or self.conv_smooth_layer: tt_list = a
                else:  tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
             #    print(tt_list.shape)
+               if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn
-            if not self.interpolation or not self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
+            if not self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
         else: 
             if self.NN:
                if self.coords is not None and not self.ban_shuffle_sp: tt_list = a
