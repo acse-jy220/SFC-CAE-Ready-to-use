@@ -1347,8 +1347,8 @@ def linear_interpolate_python(x, prev_nodes, next_nodes, weight_prev, weight_nex
         weight_prev = torch.from_numpy(weight_prev)
         weight_next = torch.from_numpy(weight_next)
         if x.is_cuda:
-           weight_prev.to(x.device)
-           weight_next.to(x.device)
+           weight_prev = weight_prev.to(x.device)
+           weight_next = weight_next.to(x.device)
     if isinstance(x, np.ndarray) and x.dtype != dtype: x = dtype(x)
     x_out = x[..., prev_nodes] * weight_prev + x[..., next_nodes] * weight_next
     x_out[..., -1] = x[..., -1]
@@ -1360,10 +1360,10 @@ def linear_interpolate_python(x, prev_nodes, next_nodes, weight_prev, weight_nex
            weight_prev_p1 = torch.from_numpy(weight_prev_p1)
            weight_next_p1 = torch.from_numpy(weight_next_p1)
            if x.is_cuda:
-               w2.to(x.device)
-               w1.to(x.device)
-               weight_prev_p1.to(x.device)
-               weight_next_p1.to(x.device)
+               w2 = w2.to(x.device)
+               w1 = w1.to(x.device)
+               weight_prev_p1 = weight_prev_p1.to(x.device)
+               weight_next_p1 = weight_next_p1.to(x.device)
        x_out[..., 1:-1] = w2 * x[..., prev_nodes[1:-1]] + \
                      weight_prev_p1 * (x[..., prev_nodes[1:-1] - 1]) + \
                      w1 * x[..., next_nodes[1:-1]] + \
