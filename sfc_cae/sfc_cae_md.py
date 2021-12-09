@@ -399,11 +399,10 @@ class SFC_CAE_Encoder_md(nn.Module):
         if self.second_sfc is not None: 
             if self.interpolation: 
                a = linear_interpolate_python(a, *self.interpol_params)
-               if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
             else: a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
-            print(a.shape)
             # print(a.shape)
             a = a[..., self.second_sfc]
+            if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
             if self.NN:
                if (self.coords is not None and not self.ban_shuffle_sp) or self.conv_smooth_layer: tt_list = a
                else:  tt_list = get_concat_list_md(a, self.neigh_md, self.num_neigh_md)
