@@ -7,7 +7,7 @@ Github handle: acse-jy220
 import torch  # Pytorch
 import torch.nn as nn  # Neural network module
 import torch.nn.functional as fn  # Function module
-import sfc_interpolate as interpol
+# import sfc_interpolate as interpol
 from .utils import *
 
 
