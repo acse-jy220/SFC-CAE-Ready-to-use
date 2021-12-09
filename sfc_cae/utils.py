@@ -493,11 +493,11 @@ class AdaptiveDataset(Dataset):
         for i in range(self.length): 
             if self.num_nodes[i] < self.maxnodes:
                 if self.interpolate_to_num is not None: 
-                    interpol_params = linear_interpolate_python_weights(self.num_nodes[i], self.interpolate_to_num)
-                    extrapolate_params_coords = linear_interpolate_python_weights(self.interpolate_to_num, self.num_nodes[i])
-                    extrapolate_params_conc = linear_interpolate_python_weights(self.interpolate_to_num, self.num_nodes[i], map_back=True)                    
+                    interpol_params = linear_interpolate_python_weights(int(self.num_nodes[i]), self.interpolate_to_num)
+                    extrapolate_params_coords = linear_interpolate_python_weights(self.interpolate_to_num, int(self.num_nodes[i]))
+                    extrapolate_params_conc = linear_interpolate_python_weights(self.interpolate_to_num, int(self.num_nodes[i]), map_back=True)                    
                     self.filling_paras.append((interpol_params, extrapolate_params_coords, extrapolate_params_conc))
-                else: self.filling_paras.append(gen_filling_paras(self.num_nodes[i], self.maxnodes))
+                else: self.filling_paras.append(gen_filling_paras(int(self.num_nodes[i]), self.maxnodes))
             else:
                self.filling_paras.append(None) 
             cnt_progress += 1
@@ -1307,8 +1307,7 @@ def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6
     # nod_prev_list[0] = 0
     # for nod_l in range(1, nonods_l):
     #     nod_prev_list[nod_l] = np.where(x_l_regular[nod_l] >= x_regular)[0][-1]
-    nod_prev_list = np.floor(float(nonods - 1) * x_l_regular)
-    nod_prev_list = np.int32(nod_prev_list)
+    nod_prev_list = np.floor(float(nonods - 1) * x_l_regular).astype('int')
     nod_prev_list[-1] = nonods - 2 
     nod_next_list = nod_prev_list + 1
     weight_interp = (x_l_regular - x_regular[nod_prev_list]) / (x_regular[nod_next_list] - x_regular[nod_prev_list])
