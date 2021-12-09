@@ -397,7 +397,9 @@ class SFC_CAE_Encoder_md(nn.Module):
         # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None: 
-            if self.interpolation: a = linear_interpolate_python(a, *self.interpol_params)
+            if self.interpolation: 
+               a = linear_interpolate_python(a, *self.interpol_params)
+               if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
             else: a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
             # print(a.shape)
             a = a[..., self.second_sfc]
@@ -410,7 +412,7 @@ class SFC_CAE_Encoder_md(nn.Module):
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn
-            a = a.reshape(a.shape[:-1] + self.shape)
+            if not self.interpolation or not self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
         else: 
             if self.NN:
                if self.coords is not None and not self.ban_shuffle_sp: tt_list = a
@@ -704,17 +706,18 @@ class SFC_CAE_Decoder_md(nn.Module):
                b = torch.cat((b, self.ctoa[-j-1].repeat(b.shape[0],self.coords_channels[-j-1] // self.coords_dim,1).to(b.device)),1)
             b = self.activate(conv_layer[j](b))
         if self.inv_second_sfc is not None: 
-            b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
+            if not self.conv_smooth_layer: b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
             # b = b[..., self.inv_second_sfc]
             if self.NN:
               #  print('before decoder concat..')
               #  print(b.shape)
                if self.coords is not None and not self.ban_shuffle_sp: tt_list = b
-               else: tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
+               elif not self.conv_smooth_layer: tt_list = get_concat_list_md(b, self.neigh_md, self.num_neigh_md, self.self_concat)
               #  print(tt_list.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
                b = self.activate(tt_nn)
+               if self.conv_smooth_layer: b = b.reshape(b.shape[:2] + (self.structured_size_input, ))
                del tt_list 
                del tt_nn  
             else:
