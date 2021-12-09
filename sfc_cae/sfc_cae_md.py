@@ -401,6 +401,7 @@ class SFC_CAE_Encoder_md(nn.Module):
                a = linear_interpolate_python(a, *self.interpol_params)
                if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
             else: a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
+            print(a.shape)
             # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
@@ -410,6 +411,7 @@ class SFC_CAE_Encoder_md(nn.Module):
                if self.conv_smooth_layer: a = a.reshape(a.shape[:-1] + self.shape)
                if not self.share_sp_weights: tt_nn = self.sps[i](tt_list)
                else: tt_nn = self.sps(tt_list)
+               print('after conv sp layer...')
                a = self.activate(tt_nn)
                del tt_list
                del tt_nn
