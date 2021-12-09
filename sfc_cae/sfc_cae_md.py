@@ -392,7 +392,8 @@ class SFC_CAE_Encoder_md(nn.Module):
         # print(a.shape)
         # a = ordering_tensor(x, self.orderings[i]) 
         if self.second_sfc is not None: 
-            a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
+            if self.interpolation: a = linear_interpolate_python(a, *self.interpol_params)
+            else: a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
             # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
@@ -518,6 +519,10 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.reduce = reduce_strategy
     
     self.coords = encoder.coords
+    self.interpolation = encoder.interpolation
+    
+    self.extrapolate_params_coords = encoder.extrapolate_params_coords
+    self.extrapolate_params_conc = encoder.extrapolate_params_conc
 
     if self.coords is not None:
       self.coords_dim = encoder.coords_dim
@@ -687,7 +692,11 @@ class SFC_CAE_Decoder_md(nn.Module):
             else:
                if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
             b = b[..., self.inv_second_sfc]
-            b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+            if not self.interpolation: b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+            else: 
+              # we separate coordinates and concentration in extrapolation, cuz concentration needs a optimal extrapol weight of a range-2 neighbourhood.
+              b[:, self.coords_dim:] = linear_interpolate_python(b[:, self.coords_dim:], *self.extrapolate_params_coords) # coords extrapolation
+              b[:, :self.components - self.coords_dim] = linear_interpolate_python(b[:, :self.components - self.coords_dim], *self.extrapolate_params_conc) # conc extrapolation           
             # print(b.shape)
             # b = b[..., :self.input_size] # simple truncate
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
