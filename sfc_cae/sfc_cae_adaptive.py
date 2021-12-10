@@ -100,7 +100,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
     else: self.collect_loss_inside = False
 
     if 'interpolate_num' in kwargs.keys():
-        self.interpolate_num = kwargs['interpolate']
+        self.interpolate_num = kwargs['interpolate_num']
     else: self.interpolate_num = None
 
     if self.interpolate_num is not None: self.input_size = self.interpolate_num
