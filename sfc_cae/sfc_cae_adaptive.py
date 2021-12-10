@@ -472,8 +472,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
     self.shape = encoder.shape
 
     self.collect_loss_inside = encoder.collect_loss_inside
-    self.interpol = encoder.interpol
-    self.interpol_multi = encoder.interpol_multi
+    self.interpolate_num = encoder.interpolate_num
 
     if encoder.coords is not None:
       self.coords = encoder.coords
