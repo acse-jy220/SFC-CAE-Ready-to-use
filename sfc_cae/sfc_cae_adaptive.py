@@ -99,15 +99,11 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
         self.collect_loss_inside = kwargs['collect_loss_inside']
     else: self.collect_loss_inside = False
 
-    if 'interpolate' in kwargs.keys():
-        self.interpol = kwargs['interpolate']
-    else: self.interpol = False
+    if 'interpolate_num' in kwargs.keys():
+        self.interpolate_num = kwargs['interpolate']
+    else: self.interpolate_num = None
 
-    if 'interpolate_multi' in kwargs.keys():
-        self.interpol_multi = kwargs['interpolate_multi']
-    else: self.interpol_multi = 2
-
-    if self.interpol: self.input_size *= self.interpol_multi
+    if self.interpolate_num is not None: self.input_size = self.interpolate_num
 
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
        self.coords = kwargs['coords']
@@ -353,13 +349,12 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             if coords is not None:
                    cds.append(coords[k].clone()[..., sfc[sfc_index]])            
             if fla is not None: 
-               if not self.interpol: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
+               if self.interpolate_num is None: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
+               else: a[k] = linear_interpolate_python(a[k], *fla[k][0])
                if coords is not None:                  
-                 if not self.interpol: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
+                 if self.interpolate_num is None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
                  else: 
-                    cd, conc = cds[k].detach().cpu().numpy(), a[k].detach().cpu().numpy()
-                    cd, conc = interpol.x_conv_fixed_length(cd, conc, self.input_size, fla[-2], self.coords_dim, self.components - self.coords_dim)
-                    cds[k], a[k] = torch.from_numpy(cd).to(self.device), torch.from_numpy(conc).to(self.device)
+                    cds[k] = linear_interpolate_python(cds[k], *fla[k][0])
         if coords is not None:
             cds = torch.stack(cds)
             if self.coords_option == 2: self.build_coarsened_coords(cds)
@@ -692,11 +687,9 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
             if fla is not None: 
-               if not self.interpol: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
+               if self.interpolate_num is None: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
                else: 
-                    cd, conc = (b[k].detach().cpu().numpy(),) * 2
-                    cd, conc = interpol.x_conv_fixed_length(cd, conc, fla[-2], self.input_size, self.coords_dim, self.components - self.coords_dim)
-                    b[k] = torch.from_numpy(conc).to(self.encoder.device)
+                  b[k] = linear_interpolate_python(b[k], *fla[k][-1])
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
             # if self.coords_dim is not None: 
             #    coords_b_list.append(b[k][-self.coords_dim:])
