@@ -491,15 +491,16 @@ class AdaptiveDataset(Dataset):
         bar=progressbar.ProgressBar(maxval=self.length)
         bar.start()    
         for i in range(self.length): 
-            if self.num_nodes[i] < self.maxnodes:
-                if self.interpolate_to_num is not None: 
-                    interpol_params = linear_interpolate_python_weights(int(self.num_nodes[i]), self.interpolate_to_num)
-                    extrapolate_params_coords = linear_interpolate_python_weights(self.interpolate_to_num, int(self.num_nodes[i]))
-                    extrapolate_params_conc = linear_interpolate_python_weights(self.interpolate_to_num, int(self.num_nodes[i]), map_back=True)                    
-                    self.filling_paras.append((interpol_params, extrapolate_params_coords, extrapolate_params_conc))
-                else: self.filling_paras.append(gen_filling_paras(int(self.num_nodes[i]), self.maxnodes))
+            if self.interpolate_to_num is not None: 
+                interpol_params = linear_interpolate_python_weights(int(self.num_nodes[i]), self.interpolate_to_num)
+                extrapolate_params_coords = linear_interpolate_python_weights(self.interpolate_to_num, int(self.num_nodes[i]))
+                extrapolate_params_conc = linear_interpolate_python_weights(self.interpolate_to_num, int(self.num_nodes[i]), map_back=True)                    
+                self.filling_paras.append((interpol_params, extrapolate_params_coords, extrapolate_params_conc))
             else:
-               self.filling_paras.append(None) 
+              if self.num_nodes[i] < self.maxnodes:
+                 self.filling_paras.append(gen_filling_paras(int(self.num_nodes[i]), self.maxnodes))
+              else:
+                 self.filling_paras.append(None) 
             cnt_progress += 1
             bar.update(cnt_progress)
         bar.finish()
