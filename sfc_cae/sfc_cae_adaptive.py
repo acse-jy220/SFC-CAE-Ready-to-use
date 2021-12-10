@@ -707,7 +707,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
     # if self.inv_second_sfc is not None: return z[..., :self.input_size]
     # else: 
     for i in range(len(data_z)): 
-        data_z[i] = data_z[i].sum(-1) 
+        data_z[i] = self.activate(data_z[i].sum(-1))
         # data_z[i] = self.activate(data_z[i])
     return data_z
 
