@@ -50,7 +50,8 @@ jobs:
       # download CG dataset for testing
       - name: Download FPC CG Dataset
         run: |
-          C:\msys64\usr\bin\wget.exe --no-check-certificate 'https://drive.google.com/uc?export=download&id=1BpItXH0Rvwf2NvTBLTIZwr7-LmSyLd9M' -O 'FPC_Re3900_CG_new'
+          gdown  https://drive.google.com/uc?id=1BpItXH0Rvwf2NvTBLTIZwr7-LmSyLd9M
+          7z x FPC_Re3900_CG_new.zip -oFPC_Re3900_CG_new
           C:\msys64\usr\bin\wget.exe --no-check-certificate 'https://drive.google.com/uc?export=download&id=1SmMWemkN2ykR3Hwa_IoU2ka49P69_G5j' -O 'Variational_False_Changelr_False_Latent_16_Nearest_neighbouring_False_SFC_nums_2_startlr_0.0001_n_epoches_2000_dict.pth'
           C:\msys64\usr\bin\wget.exe --no-check-certificate 'https://drive.google.com/uc?export=download&id=1Ki3i5wLsdVgx3YupQlLQIZf1A34y5RgN' -O 'Variational_True_Changelr_False_Latent_16_Nearest_neighbouring_False_SFC_nums_2_startlr_0.0001_n_epoches_2000_dict.pth'
 
