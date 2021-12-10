@@ -727,8 +727,9 @@ class SFC_CAE_Decoder_md(nn.Module):
             if not self.interpolation: b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
             else: 
               # we separate coordinates and concentration in extrapolation, cuz concentration needs a optimal extrapol weight of a range-2 neighbourhood.
-              b[:, self.coords_dim:] = linear_interpolate_python(b[:, self.coords_dim:], *self.extrapolate_params_coords) # coords extrapolation
-              b[:, :self.components - self.coords_dim] = linear_interpolate_python(b[:, :self.components - self.coords_dim], *self.extrapolate_params_conc) # conc extrapolation           
+              # b[:, self.coords_dim:] = linear_interpolate_python(b[:, self.coords_dim:], *self.extrapolate_params_coords) # coords extrapolation
+              # b[:, :self.components - self.coords_dim] = linear_interpolate_python(b[:, :self.components - self.coords_dim], *self.extrapolate_params_conc) # conc extrapolation           
+              b = linear_interpolate_python(b, *self.extrapolate_params_conc)
             # print(b.shape)
             # b = b[..., :self.input_size] # simple truncate
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).         
