@@ -3,7 +3,7 @@ scipy >= 1.4.1
 matplotlib ~= 3.2.2
 vtk >= 9.0
 livelossplot ~= 0.5.4
-meshio ~= 5.0.2
+meshio == 5.0.2
 timm
 cmocean ~= 2.0
 torch >= 1.8.0
