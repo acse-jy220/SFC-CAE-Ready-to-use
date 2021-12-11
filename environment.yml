@@ -15,7 +15,7 @@ dependencies:
   - pytest
   - pip:
     - vtk==9.1.0
-    - progressbar==3.38.0
+    - progressbar2
     - livelossplot==0.5.4
     - meshio == 5.0.2
     - cmocean==2.0
