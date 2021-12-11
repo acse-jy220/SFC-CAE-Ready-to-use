@@ -17,7 +17,7 @@ dependencies:
     - vtk
     - progressbar
     - livelossplot
-    - meshio[all]
+    - meshio ~= 5.0.2
     - cmocean
     - dash
     - torch
