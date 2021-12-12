@@ -1,7 +1,7 @@
 # SFC-CAE-Ready-to-use
 
 ## A self-adjusting Space-filling curve autoencoder
-[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/LICENSE)
 [![Testing workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/actions/workflows/test.yml/badge.svg)](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml)
 
 <br />
@@ -272,5 +272,5 @@ at the root of the repository, by running it, you will automatically download th
 
 ## Acknowledgements
 Great thanks to my supervisors:
-* Dr. Claire Heaney
-* Prof. Christopher Pain 
+* Dr. Claire Heaney [c.heaney@imperial.ac.uk](c.heaney@imperial.ac.uk)
+* Prof. Christopher Pain [c.pain@imperial.ac.uk](c.pain@imperial.ac.uk) 
