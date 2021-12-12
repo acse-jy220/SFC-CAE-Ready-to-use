@@ -17,10 +17,10 @@ dependencies:
     - vtk==9.1.0
     - progressbar2
     - livelossplot==0.5.4
-    - meshio == 5.0.2
+    - meshio==5.0.2
     - cmocean==2.0
-    - dash
-    - torch==1.10.0+cu111
+    # - dash
+    - torch==1.8.0
     - timm==0.4.12
     - gdown==3.6.4
     # - atari-py==0.2.6
