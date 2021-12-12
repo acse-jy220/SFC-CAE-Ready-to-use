@@ -272,5 +272,5 @@ at the root of the repository, by running it, you will automatically download th
 
 ## Acknowledgements
 Great thanks to my supervisors:
-* Dr. Claire Heaney [c.heaney@imperial.ac.uk](c.heaney@imperial.ac.uk)
-* Prof. Christopher Pain [c.pain@imperial.ac.uk](c.pain@imperial.ac.uk) 
+* Dr. Claire Heaney  [[mail](c.heaney@imperial.ac.uk)]
+* Prof. Christopher Pain  [[mail](c.pain@imperial.ac.uk)]
