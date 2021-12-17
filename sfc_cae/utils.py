@@ -455,7 +455,8 @@ class AdaptiveDataset(Dataset):
 
 
     '''
-    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False, interpolate_to_num = None, fill_nodes_for_standardlize=False):
+    def __init__(self, tensor_list, num_nodes, sfcs_list = None, inv_sfcs_list = None, coords_list = None, lower=-1, upper=1, tk = None, tb = None, coords_tk = None, coords_tb = None, indexes = None, send_to_gpu = False, interpolate_to_num = None, standardlize = True, fill_nodes_for_standardlize=False):
+        self.standardlize = standardlize
         if indexes is None: 
            self.dataset = tensor_list
            self.coords = coords_list
@@ -561,10 +562,14 @@ class AdaptiveDataset(Dataset):
            bar.finish()                    
 
     def __getitem__(self, index):
-        return_value = (self.dataset[index] * self.tk + self.tb,)
+        if self.standardlize: fluid_data =  self.dataset[index] * self.tk + self.tb
+        else: fluid_data = self.dataset[index]
+        return_value = (fluid_data, )
         if self.sfcs_list and self.inv_sfcs_list is not None: return_value += (self.sfcs_list[index], self.inv_sfcs_list[index])
-        if self.coords is not None: 
-           return_value += (self.coords[index] * self.coords_tk + self.coords_tb,)
+        if self.coords is not None:
+           if self.standardlize: coord = self.coords[index] * self.coords_tk + self.coords_tb
+           else: coord = self.coords[index]
+           return_value += (coord,)
         return list(return_value + (self.filling_paras[index],))
       
     def __len__(self):
