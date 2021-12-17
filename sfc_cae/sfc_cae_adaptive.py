@@ -103,6 +103,10 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
         self.interpolate_num = kwargs['interpolate_num']
     else: self.interpolate_num = None
 
+    if 'batch_normalisation' in kwargs.keys():
+        self.batch_normalisation = kwargs['batch_normalisation']
+    else: self.batch_normalisation = False
+
     if self.interpolate_num is not None: self.input_size = self.interpolate_num
 
     if 'coords' in kwargs.keys() and kwargs['coords'] is not None:
@@ -294,6 +298,9 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
        if self.init_param is not None: 
             self.fcs[i].weight.data.uniform_(self.init_param[0], self.init_param[1])
             self.fcs[i].bias.data.fill_(0.001)
+
+    if self.batch_normalisation:
+       self.batch_norm = torch.nn.BatchNorm1d(self.components)
     
     if self.variational:
        self.layerMu = nn.Linear(self.size_fc[-2], self.size_fc[-1])
@@ -361,6 +368,7 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
         a = torch.stack(a)
         if self.collect_loss_inside: self.a_s.append(a)
         if coords is not None: a = torch.cat((a, cds), 1)
+        if self.batch_normalisation: a = self.batch_norm(a)
         # print(a.shape)
         if self.self_concat > 1: 
            if a.ndim == 2: a = a.unsqueeze(1)
