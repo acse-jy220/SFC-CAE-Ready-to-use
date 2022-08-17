@@ -42,7 +42,6 @@ from torch.utils.data import DataLoader, Subset, SubsetRandomSampler, TensorData
 
 
 #################################################### Functions for data pre-processing / data loading ######################################################################
-
 def get_path_data(data_path, indexes=None, file_format='vtu'):
     '''
     This function would return a path list for data with a arbitary indice.
@@ -56,7 +55,7 @@ def get_path_data(data_path, indexes=None, file_format='vtu'):
     ---
     path_list: [list of strings] the path list of corresponding data, used for np.loadtxt()/ meshio.read()
     '''
-    data = glob.glob(data_path + "*." + file_format)
+    data = glob.glob(data_path + "/*." + file_format)
     num_data = len(data)
     file_prefix = data[0].split('.')[:-1]
     file_prefix = '.'.join(file_prefix)
