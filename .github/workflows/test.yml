@@ -23,6 +23,10 @@ jobs:
       - name: Pip install
         run: pip install -e .
 
+      # download dataset and trained-model
+      - name: Download FPC CG Dataset
+        run: sh get_FPC_data_CG.sh
+
       # run pytests      
       - name: Test with pytest
         run: python -m pytest tests/tests.py --doctest-modules -v 

@@ -481,6 +481,7 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
 
     self.collect_loss_inside = encoder.collect_loss_inside
     self.interpolate_num = encoder.interpolate_num
+    self.batch_normalisation = encoder.batch_normalisation
 
     if encoder.coords is not None:
       self.coords = encoder.coords
