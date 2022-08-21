@@ -1,5 +1,5 @@
 # get the FPC_CG dataset, in Zip format
-wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1BpItXH0Rvwf2NvTBLTIZwr7-LmSyLd9M' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*
+wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=1BpItXH0Rvwf2NvTBLTIZwr7-LmSyLd9M' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*
 /\1\n/p')&id=1BpItXH0Rvwf2NvTBLTIZwr7-LmSyLd9M" -O FPC_Re3900_CG_new.zip && rm -rf /tmp/cookies.txt
 unzip FPC_Re3900_CG_new.zip
 # get two pretrained model dict, one is 2-SFC-CAE, another is 2-SFC-VCAE, both compressed down to 16 latent variables.
