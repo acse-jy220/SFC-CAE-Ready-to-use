@@ -13,6 +13,7 @@ for ir in required:
     else:
         reqs += [ir]
 
+# compile fortran
 if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
    # on windows
    compile_commands = ['f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32']
@@ -21,6 +22,8 @@ elif sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'dar
    # on linux
    compile_commands = ['python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new']
    compile_commands.append('python3 -m numpy.f2py -c x_conv_fixed_length.f90 -m sfc_interpolate')  
+for compile_command in compile_commands: 
+    os.system(compile_command)
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
@@ -29,8 +32,5 @@ setup(name='SFC-CAE',
       author_email='jin.yu20@imperial.ac.uk',
       install_requires=reqs,
       test_suite='tests',
-      version='0.2.8',
+      version='v1.0-beta.2',
       packages=['sfc_cae'])
-
-# compile fortran
-for compile_command in compile_commands: os.system(compile_command)

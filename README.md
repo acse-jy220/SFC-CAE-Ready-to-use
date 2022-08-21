@@ -229,12 +229,12 @@ The creation of t-SNE plots in the Thesis are offered,
 
 After you get FPC-CG data as well as sfcs by
 ```sh
-$ bash get_FPC_data_CG.sh 
+bash get_FPC_data_CG.sh 
 ```
 
 run  
 ```sh
-$ python3 tSNE.py
+python3 tSNE.py
 ```
 at the root of this directory.
 <p align="center">
@@ -252,12 +252,12 @@ I have attached the compressing variables for the CO2 and Slugflow data in [deco
 ## Training on HPC
 I wroted a (not very smart) simple script to do training using command line, simply do:
 ```python
-$ python3 command_train.py
+python3 command_train.py
 ```
 will do training based on the configuration file `parameters.ini`, all parameters goes there for training on the College HPC.
 You could also write a custom configuration file, say `my_config.ini`, and training w.r.t that, by passing argument:
 ```python
-$ python3 command_train.py my_config.ini
+python3 command_train.py my_config.ini
 ```
 
 ## License
@@ -267,7 +267,7 @@ Distributed under the [Apache 2.0](https://github.com/acse-jy220/SFC-CAE-Ready-t
 ## Testing 
 Some basic tests for the module are avaliable in [tests/tests.py](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/tests/tests.py) , you could execute them locally by 
 ```sh
-$ python3 -m pytest tests/tests.py --doctest-modules -v
+python3 -m pytest tests/tests.py --doctest-modules -v
 ```
 at the root of the repository, by running it, you will automatically download the **FPC_CG** data and two pretrained model (one SFC-CAE, one SFC-VCAE) for that problem and the MSELoss() / KL_div will be evaluated. A [github workflow](https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/.github/workflows/test.yml) is also built to run those tests on github.
 
