@@ -91,11 +91,11 @@ Other codes in this repository are implemented by myself.
 ### Installation
 1. Clone the repository:
 ```sh
-$ git clone https://github.com/acse-jy220/SFC-CAE-Ready-to-use
+git clone https://github.com/acse-jy220/SFC-CAE-Ready-to-use
 ```
 2. cd to the repo:
 ```sh 
-$ cd SFC-CAE-Ready-to-use
+cd SFC-CAE-Ready-to-use
 ```
 3. Install the module:
 
@@ -117,7 +117,7 @@ conda activate sfc_cae
 but you need to compile the fortran code by yourself in this way. 
 On linux, type
 ```sh
-$ python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
+python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
 ```
 <br>
 On windows, install 
@@ -126,7 +126,7 @@ On windows, install
 (I use version 7.2.0) and compile fortran use
 
 ```sh
-$ f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
 ```
 
 4. For convenience, you could just simply import all functions in my module:
