@@ -101,14 +101,18 @@ $ cd SFC-CAE-Ready-to-use
 
 (1) For `pip` install, just use 
 ```sh
-$ pip install -e .
+pip install -e .
 ```
 It will compile the fortran library automatically, no matter you are on Windows or Linux.
 <br>
 
 (2) Create a `conda` environment via
 ```sh
-$ conda env create -f environment.yml
+conda env create -f environment.yml
+```
+activate the environment
+```sh
+conda activate sfc_cae
 ```
 but you need to compile the fortran code by yourself in this way. 
 On linux, type
