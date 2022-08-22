@@ -31,6 +31,29 @@ jobs:
       - name: Test with pytest
         run: python -m pytest tests/tests.py --doctest-modules -v 
 
+  pytest-macOS:
+    
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # setup python
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.5'
+
+      # pip install the module
+      - name: Pip install
+        run: pip install -e .
+
+      # download dataset and trained-model
+      - name: Download FPC CG Dataset
+        run: bash get_FPC_data_CG.sh
+
+      # run pytests      
+      - name: Test with pytest
+        run: python -m pytest tests/tests.py --doctest-modules -v
+
   pytest-windows:
     
     runs-on: windows-latest
