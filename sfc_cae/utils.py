@@ -297,16 +297,22 @@ def standardlize_tensor(tensor, lower = -1, upper = 1):
     where standardlized tensor is belong to [lower, upper] for each channel
 
     '''
+    if lower is None and upper is None:
+        return tensor, 1, 0
     if tensor.ndim > 2:
        tk = torch.zeros(tensor.shape[-1])
        tb = torch.zeros(tensor.shape[-1])
        for i in range(tensor.shape[-1]):
+          if lower is None: lower = tensor[..., i].min()
+          if upper is None: upper = tensor[..., i].max()
           tk[i] = (upper - lower) /(tensor[..., i].max() - tensor[..., i].min())
           tb[i] = (tensor[..., i].max() * lower - tensor[..., i].min() * upper) /(tensor[..., i].max() - tensor[..., i].min())
           tensor[...,i] *= tk[i]
           tensor[...,i] += tb[i]
        return tensor, tk, tb
     else:
+        if lower is None: lower = tensor.min()
+        if upper is None: upper = tensor.max()
         tk = (upper - lower) / (tensor.max() - tensor.min())
         tb = (tensor.max() * lower - tensor.min() * upper) / (tensor.max() - tensor.min())
         return tensor * tk + tb, tk, tb
