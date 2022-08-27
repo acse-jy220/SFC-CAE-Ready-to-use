@@ -19,6 +19,10 @@ jobs:
         with:
           python-version: '3.8.5'
 
+      # before setup, install numpy
+      - name: Numpy install
+        run: pip install numpy >= 1.18.0        
+
       # pip install the module
       - name: Pip install
         run: pip install -e .
@@ -41,6 +45,10 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8.5'
+      
+      # before setup, install numpy
+      - name: Numpy install
+        run: pip install numpy >= 1.18.0 
 
       # pip install the module
       - name: Pip install
@@ -65,6 +73,10 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8.5'
+
+      # before setup, install numpy
+      - name: Numpy install
+        run: pip install numpy >= 1.18.0
 
       # pip install the module
       - name: Pip install

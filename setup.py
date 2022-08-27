@@ -26,7 +26,6 @@ interpolate_lib = Extension('sfc_interpolate', sources=['x_conv_fixed_length.f90
 # build_ext subclass, define custom compiler
 class build_ext_subclass(build_ext):
     def build_extensions(self):
-        print(self.compiler.compiler_type)
         self.compiler.compiler_type = fortran_compiler_type
         build_ext.build_extensions(self)
 
