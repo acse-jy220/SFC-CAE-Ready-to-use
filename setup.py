@@ -14,27 +14,20 @@ for ir in required:
         reqs += [ir]
 
 # define fortran extension
-compiler_type = None
-fcompiler_type = None
 if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
    # on windows
-   compiler_type = 'mingw32'
-elif sys.platform == 'darwin':
-   # on macOS
-   fcompiler_type = 'gnu95' 
-elif sys.platform == 'linux' or sys.platform == 'linux2':
-   # on linix, just use default compiler
-   pass
+   fortran_compiler_type = 'mingw32'
+elif sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'darwin':
+   # on unix
+   fortran_compiler_type = None
 sfc_lib = Extension('space_filling_decomp_new', sources=['space_filling_decomp_new.f90'])
 interpolate_lib = Extension('sfc_interpolate', sources=['x_conv_fixed_length.f90'])
 
 # build_ext subclass, define custom compiler
 class build_ext_subclass(build_ext):
-    def initialize_options(self):
-        build_ext.initialize_options(self)
-        self.fcompiler = fcompiler_type
-    def run(self):
-        self.compiler = compiler_type
+    def build_extensions(self):
+        self.compiler.compiler_type = fortran_compiler_type
+        build_ext.build_extensions(self)
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
