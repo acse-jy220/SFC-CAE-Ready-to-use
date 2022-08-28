@@ -1,4 +1,6 @@
+from distutils.command.build import build
 import sys
+from distutils.ccompiler import new_compiler
 from numpy.distutils.core import setup, Extension
 from numpy.distutils.command.build_ext import build_ext
 
@@ -17,7 +19,10 @@ for ir in required:
 if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
    # on windows
    fortran_compiler_type = 'mingw32'
-elif sys.platform == 'linux' or sys.platform == 'linux2' or sys.platform == 'darwin':
+elif sys.platform == 'darwin':
+   # on macOS
+   fortran_compiler_type = 'bcpp'
+elif sys.platform == 'linux' or sys.platform == 'linux2':
    # on unix
    fortran_compiler_type = None
 sfc_lib = Extension('space_filling_decomp_new', sources=['space_filling_decomp_new.f90'])
@@ -25,9 +30,9 @@ interpolate_lib = Extension('sfc_interpolate', sources=['x_conv_fixed_length.f90
 
 # build_ext subclass, define custom compiler
 class build_ext_subclass(build_ext):
-    def build_extensions(self):
-        self.compiler.compiler_type = fortran_compiler_type
-        build_ext.build_extensions(self)
+    def initialize_options(self):
+        build_ext.initialize_options(self)
+        self.compiler = fortran_compiler_type
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
