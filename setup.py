@@ -30,6 +30,7 @@ interpolate_lib = Extension('sfc_interpolate', sources=['x_conv_fixed_length.f90
 class build_ext_subclass(build_ext):
     def initialize_options(self):
         build_ext.initialize_options(self)
+        self.compiler = compiler_type
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
