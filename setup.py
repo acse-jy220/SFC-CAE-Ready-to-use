@@ -13,15 +13,13 @@ for ir in required:
     else:
         reqs += [ir]
 
-fortran_compiler_type = None
 # define fortran extension
 if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
    # on windows
    compiler_type = 'mingw32'
 elif sys.platform == 'darwin':
    # on macOS
-   compiler_type = None
-   fortran_compiler_type = None
+   compiler_type = 'msvc'
 elif sys.platform == 'linux' or sys.platform == 'linux2':
    # on unix
    compiler_type = None
@@ -32,8 +30,6 @@ interpolate_lib = Extension('sfc_interpolate', sources=['x_conv_fixed_length.f90
 class build_ext_subclass(build_ext):
     def initialize_options(self):
         build_ext.initialize_options(self)
-        self.compiler = compiler_type
-        self.fcompiler = fortran_compiler_type
 
 setup(name='SFC-CAE',
       description="A self-adjusting Space-filling curve (variational) convolutional autoencoder for compressing data on unstructured mesh.",
