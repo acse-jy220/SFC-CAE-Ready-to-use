@@ -17,11 +17,11 @@ jobs:
       # setup python
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8.5'
+          python-version: '3.8.10'
 
       # before setup, install numpy
       - name: Numpy install
-        run: pip3 install numpy~=1.18.0    
+        run: pip3 install numpy~=1.22.0   
 
       # pip install the module
       - name: Pip install
@@ -44,11 +44,11 @@ jobs:
       # setup python
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8.5'
+          python-version: '3.8.10'
       
       # before setup, install numpy
       - name: Numpy install
-        run: pip3 install numpy~=1.18.0
+        run: pip3 install numpy~=1.22.0
 
       # pip install the module
       - name: Pip install
@@ -72,11 +72,11 @@ jobs:
       # setup python
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8.5'
+          python-version: '3.8.10'
 
       # before setup, install numpy
       - name: Numpy install
-        run: pip3 install numpy~=1.18.0
+        run: pip3 install numpy~=1.22.0
 
       # pip install the module
       - name: Pip install

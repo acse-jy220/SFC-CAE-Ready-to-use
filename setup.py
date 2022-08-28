@@ -21,7 +21,7 @@ if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys'
 elif sys.platform == 'darwin':
    # on macOS
    compiler_type = None
-   fortran_compiler_type = 'gnu95'
+   fortran_compiler_type = None
 elif sys.platform == 'linux' or sys.platform == 'linux2':
    # on unix
    compiler_type = None
