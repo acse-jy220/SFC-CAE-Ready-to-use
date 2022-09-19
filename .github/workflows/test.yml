@@ -41,18 +41,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # configure conda environment
+      - uses: conda-incubator/setup-miniconda@v2
       # setup python
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8.10'
-      
-      # before setup, install numpy
-      - name: Numpy install
-        run: pip3 install numpy~=1.22.0
+          environment-file: environment.yml
+          auto-activate-base: true
+          activate-environment: sfc_cae
 
-      # pip install the module
-      - name: Pip install
-        run: pip3 install -e .
+      # compile fortran code with MinGW
+      - name: Compile Fortran Library
+        run: |
+            python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
+            python3 -m numpy.f2py -c x_conv_fixed_length.f90 -m sfc_interpolate
 
       # download dataset and trained-model
       - name: Download FPC CG Dataset
@@ -66,21 +68,22 @@ jobs:
     
     runs-on: windows-latest
     steps:
-
       - uses: actions/checkout@v2
-      
+
+      # configure conda environment
+      - uses: conda-incubator/setup-miniconda@v2
       # setup python
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8.10'
+          environment-file: environment.yml
+          auto-activate-base: true
+          activate-environment: sfc_cae
 
-      # before setup, install numpy
-      - name: Numpy install
-        run: pip3 install numpy~=1.22.0
-
-      # pip install the module
-      - name: Pip install
-        run: pip3 install -e .
+      # compile fortran code with MinGW
+      - name: Compile Fortran Library
+        run: |
+             f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+             f2py -c x_conv_fixed_length.f90 -m sfc_interpolate --compiler=mingw32
 
       # download CG dataset for testing
       - name: Download FPC CG Dataset
