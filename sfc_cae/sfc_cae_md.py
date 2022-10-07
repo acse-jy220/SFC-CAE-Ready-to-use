@@ -574,9 +574,11 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.num_neigh_md = encoder.num_neigh_md   
         self.neigh_md = encoder.neigh_md   
         self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
+        self.extract_layers = []
         if not self.interpolation: 
           # self.expand_paras = encoder.expand_paras
-          self.extract_layer = BackwardForwardConnecting(self.structured_size_input, self.input_size)
+          for i in range(self.sfc_nums):
+              self.extract_layers.append(BackwardForwardConnecting(self.structured_size_input, self.input_size))
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
@@ -734,7 +736,7 @@ class SFC_CAE_Decoder_md(nn.Module):
             b = b[..., self.inv_second_sfc]
             if not self.interpolation: 
               # b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
-              b = self.extract_layer(b)
+              b = self.extract_layers[i](b)
             else: 
               # we separate coordinates and concentration in extrapolation, cuz concentration needs a optimal extrapol weight of a range-2 neighbourhood.
               # b[:, self.coords_dim:] = linear_interpolate_python(b[:, self.coords_dim:], *self.extrapolate_params_coords) # coords extrapolation
