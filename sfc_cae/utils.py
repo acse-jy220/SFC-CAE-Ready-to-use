@@ -1102,6 +1102,84 @@ class NearestNeighbouring_md(nn.Module):
         tensor_list *= self.weights
         return torch.sum(tensor_list, -1) + self.bias
 
+class BackwardForwardConnecting(nn.Module):
+    '''
+    This class defines the "BackwardForwardConnecting" Layer for the last dim: e.g. [1, 2, 3] -> [1, 2, 3, 2, 1, 2, 3, 2],
+    Also, when input_nodes > output_nodes, an inverse extraction is applied.
+    
+    __init__:
+      Input:
+      ---
+      input_nodes: [int] node num from 
+      output_nodes: [int] node num to
+      channels: [int] channels, default is 1
+
+    __forward__(tensor_list):
+      Input:
+      ---
+      x: [torch.FloatTensor] the tensor of our fluid data x, concatenate at the last dimension, 
+                   of shape [number of time steps, number of channels, number of Nodes]
+
+      Returns:
+      ---
+      concatenate tensor using BackwardForward approach, or the inverse extraction of it.
+    '''
+    def __init__(self, input_nodes, output_nodes, channels = 1):
+        super(BackwardForwardConnecting, self).__init__()
+        self.channels = channels
+        self.interpolate = input_nodes < output_nodes
+        self.input_nodes = min(input_nodes, output_nodes)
+        self.output_nodes = max(input_nodes, output_nodes)
+        nodes = 0
+        self.weights = []
+        self.bias = []
+        self.para_groups = []
+        self.occurence = np.zeros(self.input_nodes)
+        self.input_nodes -= 1
+        total_re_num = int(self.output_nodes / self.input_nodes)
+        even_re_num = int(total_re_num / 2)
+        odd_re_num = total_re_num - even_re_num
+        remain_num = self.output_nodes % self.input_nodes
+        self.occurence[:-1] += odd_re_num
+        self.occurence[1:] += even_re_num
+        if odd_re_num == even_re_num:
+            self.occurence[:remain_num] += 1
+        else:
+            self.occurence[-remain_num - 1:] += 1
+        forward = True  
+        while nodes < self.output_nodes:
+            layer_node_size = min(self.output_nodes - nodes,  self.input_nodes)
+            self.para_groups.append(layer_node_size)
+            nodes += layer_node_size
+            if self.interpolate: continue
+            layer_weights = torch.ones((self.channels, layer_node_size))
+            layer_weights /= self.occurence[:layer_node_size] if forward else self.occurence[-layer_node_size:]
+            self.weights.append(nn.Parameter(layer_weights))
+            self.bias.append(nn.Parameter(torch.zeros((self.channels, layer_node_size))))
+            forward = not forward
+
+    def forward(self, x):
+        if self.interpolate:
+           backward_x = torch.flip(x, (-1, ))
+           for i in range(len(self.para_groups)):
+                if i == 0: 
+                   xx = x[..., :self.para_groups[0]]
+                else:
+                   temp = x[..., :self.para_groups[i]] if i % 2 == 0 else backward_x[..., : self.para_groups[i]]
+                   xx = torch.cat((xx, temp), -1)
+        else:
+           xx = torch.zeros((*x.shape[:-1], self.input_nodes + 1))
+           cur_idx = 0
+           for i in range(len(self.para_groups)):
+                 temp = x[..., cur_idx : cur_idx + self.para_groups[i]] # * self.weights[i] + self.bias[i]
+                 if i % 2 == 1:
+                    temp = torch.flip(temp, (-1, ))
+                    xx[..., -self.para_groups[i]: ] += temp * self.weights[i] + self.bias[i]
+                 else:
+                    xx[..., :self.para_groups[i]] += temp * self.weights[i] + self.bias[i]
+                 cur_idx += self.para_groups[i]
+        return xx
+
 # def expand_snapshot_for_structured_backward(x, num_diff_nodes):
 #     '''
 #     fill the node number difference from unstructured and (virtual) structured grids.

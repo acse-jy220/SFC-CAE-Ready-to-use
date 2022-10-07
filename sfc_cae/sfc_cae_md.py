@@ -245,7 +245,9 @@ class SFC_CAE_Encoder_md(nn.Module):
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
 
          # parameters for expand snapshots
-         if not self.interpolation: self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
+         if not self.interpolation: 
+          # self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
+          self.filling_layer = BackwardForwardConnecting(self.input_size, self.structured_size_input)
          else: 
           self.interpol_params = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
           self.extrapolate_params_coords = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
@@ -399,7 +401,9 @@ class SFC_CAE_Encoder_md(nn.Module):
         if self.second_sfc is not None: 
             if self.interpolation: 
                a = linear_interpolate_python(a, *self.interpol_params)
-            else: a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
+            else: 
+              # a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
+               a = self.filling_layer(a)
             # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
@@ -568,7 +572,9 @@ class SFC_CAE_Decoder_md(nn.Module):
         self.num_neigh_md = encoder.num_neigh_md   
         self.neigh_md = encoder.neigh_md   
         self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
-        if not self.interpolation: self.expand_paras = encoder.expand_paras
+        if not self.interpolation: 
+          # self.expand_paras = encoder.expand_paras
+          self.extract_layer = BackwardForwardConnecting(self.structured_size_input, self.input_size)
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
@@ -724,7 +730,9 @@ class SFC_CAE_Decoder_md(nn.Module):
             else:
                if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
             b = b[..., self.inv_second_sfc]
-            if not self.interpolation: b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+            if not self.interpolation: 
+              # b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+              b = self.extract_layer(b)
             else: 
               # we separate coordinates and concentration in extrapolation, cuz concentration needs a optimal extrapol weight of a range-2 neighbourhood.
               # b[:, self.coords_dim:] = linear_interpolate_python(b[:, self.coords_dim:], *self.extrapolate_params_coords) # coords extrapolation
