@@ -534,11 +534,13 @@ class SFC_CAE_Decoder_md(nn.Module):
     self.coords_dim = encoder.coords_dim
     self.interpolation = encoder.interpolation
     
-    self.extrapolate_params_coords = encoder.extrapolate_params_coords
-    self.extrapolate_params_conc = encoder.extrapolate_params_conc
+    if self.interpolation:
+      self.extrapolate_params_coords = encoder.extrapolate_params_coords
+      self.extrapolate_params_conc = encoder.extrapolate_params_conc
 
     self.conv_smooth_layer = encoder.conv_smooth_layer
-    if self.conv_smooth_layer: self.conv_smooth_channels = encoder.conv_smooth_channels
+    if self.conv_smooth_layer: 
+      self.conv_smooth_channels = encoder.conv_smooth_channels
 
     if self.coords is not None:
       self.coords_option = encoder.coords_option
