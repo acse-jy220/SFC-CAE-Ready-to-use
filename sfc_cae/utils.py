@@ -1124,7 +1124,7 @@ class BackwardForwardConnecting(nn.Module):
       ---
       concatenate tensor using BackwardForward approach, or the inverse extraction of it.
     '''
-    def __init__(self, input_nodes, output_nodes, channels = 1):
+    def __init__(self, input_nodes, output_nodes, trainable=False, channels = 1):
         super(BackwardForwardConnecting, self).__init__()
         self.channels = channels
         self.interpolate = input_nodes < output_nodes
@@ -1154,8 +1154,12 @@ class BackwardForwardConnecting(nn.Module):
             if self.interpolate: continue
             layer_weights = torch.ones((self.channels, layer_node_size))
             layer_weights /= self.occurence[:layer_node_size] if forward else self.occurence[-layer_node_size:]
-            self.weights.append(nn.Parameter(layer_weights))
-            self.bias.append(nn.Parameter(torch.zeros((self.channels, layer_node_size))))
+            layer_bias = torch.zeros((self.channels, layer_node_size))
+            if trainable:
+               layer_weights = nn.Parameter(layer_weights)
+               layer_bias = nn.Parameter(layer_bias)
+            self.weights.append(layer_weights)
+            self.bias.append(layer_bias)
             forward = not forward
 
     def forward(self, x):
@@ -1366,7 +1370,7 @@ def optimal_back_interpolate(nonods, nonods_l, x_regular, x_l_regular, nod_prev_
 
     else: return None
 
-def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6, dtype=np.float32):
+def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6, trainable=False, dtype=np.float32):
     '''
     This function is a adapted from Fortran routine 'x_conv_fixed_length.f90', which generates an optimal interpolation for 
     the linear interpolation.
@@ -1377,6 +1381,7 @@ def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6
     nonods_l: [int] number of nodes to extrapolate to.
     map_back: [bool] whether return 4 weights for 4-point extrapolation.
     tol: [float] a tolerence number for the numerical scheme.
+    trainable: [bool] whether the weights are trainable.
     dtype: [datatype] datatype for computation.
 
     Output:
@@ -1407,11 +1412,29 @@ def linear_interpolate_python_weights(nonods, nonods_l, map_back=False, tol=1e-6
 
     weight_prev = dtype(1) - weight_interp
     weight_next = weight_interp
+    weight_prev = torch.from_numpy(weight_prev)
+    weight_next = torch.from_numpy(weight_next)
+    if trainable:
+        weight_prev = nn.Parameter(weight_prev)
+        weight_next = nn.Parameter(weight_next)
 
     back_mapping_params = \
         optimal_back_interpolate(nonods, nonods_l, x_regular, x_l_regular, nod_prev_list, nod_next_list, map_back, tol, dtype)
 
-    return nod_prev_list, nod_next_list, weight_prev, weight_next, back_mapping_params
+    if back_mapping_params is not None:
+        (w2, w1, weight_prev_p1, weight_next_p1) = back_mapping_params
+        w2 = torch.from_numpy(w2)
+        w1 = torch.from_numpy(w1)
+        weight_prev_p1 = torch.from_numpy(weight_prev_p1)
+        weight_next_p1 = torch.from_numpy(weight_next_p1)
+        if trainable:
+            w2 = nn.Parameter(w2)
+            w1 = nn.Parameter(w1)
+            weight_prev_p1 = nn.Parameter(weight_prev_p1)
+            weight_next_p1 = nn.Parameter(weight_next_p1)
+        return nod_prev_list, nod_next_list, weight_prev, weight_next, (w2, w1, weight_prev_p1, weight_next_p1)
+
+    return nod_prev_list, nod_next_list, weight_prev, weight_next, None
 
 def linear_interpolate_python(x, prev_nodes, next_nodes, weight_prev, weight_next, back_mapping_params, dtype=np.float32):
     '''
@@ -1432,9 +1455,6 @@ def linear_interpolate_python(x, prev_nodes, next_nodes, weight_prev, weight_nex
     x_out: [np.ndarray or torch.Tensor, same type of input x] the output after interpolation (extrapolation).
     '''
     if isinstance(x, torch.Tensor): 
-        # x = x.float()
-        weight_prev = torch.from_numpy(weight_prev)
-        weight_next = torch.from_numpy(weight_next)
         if x.is_cuda:
            weight_prev = weight_prev.to(x.device)
            weight_next = weight_next.to(x.device)
@@ -1443,12 +1463,8 @@ def linear_interpolate_python(x, prev_nodes, next_nodes, weight_prev, weight_nex
     x_out[..., -1] = x[..., -1]
     if back_mapping_params is not None:
        (w2, w1, weight_prev_p1, weight_next_p1) = back_mapping_params
-       if isinstance(x, torch.Tensor): 
-           w2 = torch.from_numpy(w2)
-           w1 = torch.from_numpy(w1)
-           weight_prev_p1 = torch.from_numpy(weight_prev_p1)
-           weight_next_p1 = torch.from_numpy(weight_next_p1)
-           if x.is_cuda:
+       if isinstance(x, torch.Tensor):
+            if x.is_cuda:
                w2 = w2.to(x.device)
                w1 = w1.to(x.device)
                weight_prev_p1 = weight_prev_p1.to(x.device)

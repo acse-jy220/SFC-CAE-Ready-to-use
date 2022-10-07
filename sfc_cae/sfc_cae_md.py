@@ -123,6 +123,11 @@ class SFC_CAE_Encoder_md(nn.Module):
         self.interpolation = kwargs['interpolation']
     else: self.interpolation = False
 
+    if 'trainable_interpol_param' in kwargs.keys():
+        self.trainable_interpol_param = kwargs['trainable_interpol_param']
+    else:
+        self.trainable_interpol_param = False
+
     if 'conv_smooth_layer' in kwargs.keys():
         self.conv_smooth_layer = kwargs['conv_smooth_layer']
     else: self.conv_smooth_layer = False
@@ -247,11 +252,11 @@ class SFC_CAE_Encoder_md(nn.Module):
          # parameters for expand snapshots
          if not self.interpolation: 
           # self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
-          self.filling_layer = BackwardForwardConnecting(self.input_size, self.structured_size_input)
+          self.filling_layer = BackwardForwardConnecting(self.input_size, self.structured_size_input, trainable=self.trainable_interpol_param)
          else: 
-          self.interpol_params = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
-          self.extrapolate_params_coords = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
-          self.extrapolate_params_conc = linear_interpolate_python_weights(self.input_size, self.structured_size_input)
+          self.interpol_params = linear_interpolate_python_weights(self.input_size, self.structured_size_input, trainable=self.trainable_interpol_param)
+          self.extrapolate_params_coords = linear_interpolate_python_weights(self.input_size, self.structured_size_input, trainable=self.trainable_interpol_param)
+          self.extrapolate_params_conc = linear_interpolate_python_weights(self.input_size, self.structured_size_input, map_back=True, trainable=self.trainable_interpol_param)
 
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
@@ -537,6 +542,7 @@ class SFC_CAE_Decoder_md(nn.Module):
     if self.interpolation:
       self.extrapolate_params_coords = encoder.extrapolate_params_coords
       self.extrapolate_params_conc = encoder.extrapolate_params_conc
+      self.trainable_interpol_param = encoder.trainable_interpol_param 
 
     self.conv_smooth_layer = encoder.conv_smooth_layer
     if self.conv_smooth_layer: 
@@ -578,7 +584,7 @@ class SFC_CAE_Decoder_md(nn.Module):
         if not self.interpolation: 
           # self.expand_paras = encoder.expand_paras
           for i in range(self.sfc_nums):
-              self.extract_layers.append(BackwardForwardConnecting(self.structured_size_input, self.input_size))
+              self.extract_layers.append(BackwardForwardConnecting(self.structured_size_input, self.input_size, trainable=self.trainable_interpol_param))
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
