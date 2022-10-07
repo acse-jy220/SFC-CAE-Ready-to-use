@@ -1171,12 +1171,12 @@ class BackwardForwardConnecting(nn.Module):
            xx = torch.zeros((*x.shape[:-1], self.input_nodes + 1)).to(x.device)
            cur_idx = 0
            for i in range(len(self.para_groups)):
-                 temp = x[..., cur_idx : cur_idx + self.para_groups[i]] # * self.weights[i] + self.bias[i]
+                 temp = x[..., cur_idx : cur_idx + self.para_groups[i]]
                  if i % 2 == 1:
                     temp = torch.flip(temp, (-1, ))
-                    xx[..., -self.para_groups[i]: ] += temp * self.weights[i] + self.bias[i]
+                    xx[..., -self.para_groups[i]: ] += temp * self.weights[i].to(x.device) + self.bias[i].to(x.device)
                  else:
-                    xx[..., :self.para_groups[i]] += temp * self.weights[i] + self.bias[i]
+                    xx[..., :self.para_groups[i]] += temp * self.weights[i].to(x.device) + self.bias[i].to(x.device)
                  cur_idx += self.para_groups[i]
         return xx
 
