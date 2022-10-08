@@ -542,7 +542,8 @@ class SFC_CAE_Decoder_md(nn.Module):
     if self.interpolation:
       self.extrapolate_params_coords = encoder.extrapolate_params_coords
       self.extrapolate_params_conc = encoder.extrapolate_params_conc
-      self.trainable_interpol_param = encoder.trainable_interpol_param 
+    
+    self.trainable_interpol_param = encoder.trainable_interpol_param 
 
     self.conv_smooth_layer = encoder.conv_smooth_layer
     if self.conv_smooth_layer: 
