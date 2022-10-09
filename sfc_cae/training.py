@@ -279,9 +279,12 @@ def train_adaptive(autoencoder, variational, optimizer, criterion, other_metric,
              inv_sfc = copy.deepcopy(batch[2][shuffle_index[i]])
              diff_nodes = sfc.shape[-1] - batch[1][i].shape[-1]
              if diff_nodes < 0:
-                paras = gen_filling_paras(sfc.shape[-1], batch[1][i].shape[-1])
-                sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False, return_clone = True))
-                inv_sfcs.append(expand_snapshot_backward_connect(inv_sfc, *paras, False, return_clone = True))
+                # paras = gen_filling_paras(sfc.shape[-1], batch[1][i].shape[-1])
+                # sfcs.append(expand_snapshot_backward_connect(sfc, *paras, False, return_clone = True))
+                # inv_sfcs.append(expand_snapshot_backward_connect(inv_sfc, *paras, False, return_clone = True))
+                filling_NN = BackwardForwardConnecting(sfc.shape[-1], batch[1][i].shape[-1])
+                sfcs.append(filling_NN(sfc))
+                inv_sfcs.append(filling_NN(inv_sfc))
              else: 
                 sfc = sfc[..., :batch[1][i].shape[-1]]
                 inv_sfc = inv_sfc[..., :batch[1][i].shape[-1]]

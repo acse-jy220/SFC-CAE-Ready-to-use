@@ -504,7 +504,7 @@ class AdaptiveDataset(Dataset):
                 self.filling_paras.append((interpol_params, extrapolate_params_coords, extrapolate_params_conc))
             else:
               if self.num_nodes[i] < self.maxnodes:
-                 self.filling_paras.append(gen_filling_paras(int(self.num_nodes[i]), self.maxnodes))
+                 self.filling_paras.append(BackwardForwardConnecting(int(self.num_nodes[i]), self.maxnodes), BackwardForwardConnecting(self.maxnodes, int(self.num_nodes[i])))
               else:
                  self.filling_paras.append(None) 
             cnt_progress += 1
@@ -520,9 +520,11 @@ class AdaptiveDataset(Dataset):
             for i in range(1, self.length):
               data = self.dataset[i]
               if self.coords is not None: coords = self.coords[i]
-              if fill_nodes_for_standardlize and self.filling_paras[i] is not None: 
-                 data = expand_snapshot_backward_connect(data[..., self.sfcs_list[i][0]], *self.filling_paras[i], False)
-                 coords = expand_snapshot_backward_connect(coords[..., self.sfcs_list[i][0]], *self.filling_paras[i], False)
+              if fill_nodes_for_standardlize and self.filling_paras[i] is not None:
+                #  data = expand_snapshot_backward_connect(data[..., self.sfcs_list[i][0]], *self.filling_paras[i], False)
+                #  coords = expand_snapshot_backward_connect(coords[..., self.sfcs_list[i][0]], *self.filling_paras[i], False)
+                 data = self.filling_paras[i][0](data)
+                 coords = self.filling_paras[i][0](coords)
               t_max = torch.cat((t_max, data.max(-1).values.unsqueeze(0)), 0)
               coords_max = torch.cat((coords_max, coords.max(-1).values.unsqueeze(0)), 0)
               t_min = torch.cat((t_min, data.min(-1).values.unsqueeze(0)), 0)
@@ -1184,144 +1186,140 @@ class BackwardForwardConnecting(nn.Module):
                  cur_idx += self.para_groups[i]
         return xx
 
-# def expand_snapshot_for_structured_backward(x, num_diff_nodes):
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ (old way of backward-forward connecting, deprecated.) @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# def gen_filling_paras(unstructured_size, structured_size):
 #     '''
-#     fill the node number difference from unstructured and (virtual) structured grids.
+#     Return filling indexes for a unstructured grid -> structured grid, with
+#     backward-forward approach.
+
+#     Input:
+#     ---
+#     unstructured_size: [int] the number of Nodes in the actual unstructured grid
+#     structured_size: [int] the number of Nodes in our artifical structured grid
+
+#     Output:
+#     ---
+#     n_fold: [int] the folds of x
+#     flip_time: [int] the times for filpping (copying/reversing).
+#     end_backward: [int] does this expand sfc ending in a inverse order?
+#     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
 #     '''
-#     filled = torch.flip(x, (-1,))[..., 1:num_diff_nodes + 1]
-#     return torch.cat((x, filled), -1)
+#     unstructured_size = int(unstructured_size)
+#     structured_size = int(structured_size)
+#     assert structured_size >= unstructured_size, 'Make sure the virtual structured grid you are constructing have more nodes than the original unstructured mesh!'
+#     n_fold = structured_size // (unstructured_size - 1)
+#     remainder = structured_size % (unstructured_size - 1)
+#     flip_time = n_fold // 2
+#     end_backward = bool(n_fold % 2)
+#     return n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size
 
-def gen_filling_paras(unstructured_size, structured_size):
-    '''
-    Return filling indexes for a unstructured grid -> structured grid, with
-    backward-forward approach.
+# def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, return_clone = False):
+#     '''
+#     Fill the node number difference from unstructured and (virtual) structured grids.
 
-    Input:
-    ---
-    unstructured_size: [int] the number of Nodes in the actual unstructured grid
-    structured_size: [int] the number of Nodes in our artifical structured grid
+#     Input:
+#     ---
+#     x: [Torch.Tensor] the fluid snapshots, in batch.
 
-    Output:
-    ---
-    n_fold: [int] the folds of x
-    flip_time: [int] the times for filpping (copying/reversing).
-    end_backward: [int] does this expand sfc ending in a inverse order?
-    remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
-    '''
-    unstructured_size = int(unstructured_size)
-    structured_size = int(structured_size)
-    assert structured_size >= unstructured_size, 'Make sure the virtual structured grid you are constructing have more nodes than the original unstructured mesh!'
-    n_fold = structured_size // (unstructured_size - 1)
-    remainder = structured_size % (unstructured_size - 1)
-    flip_time = n_fold // 2
-    end_backward = bool(n_fold % 2)
-    return n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size
+#     ## Next three parameters see function 'gen_filling_paras()' ##
+#     n_fold: [int] the folds of x
+#     flip_time: [int] the times for filpping (copying/reversing).
+#     end_backward: [int] does this expand sfc ending in a inverse order?
+#     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
+#     place_center: [bool] whether to place the unstructured mesh in the middle of the expanded structured mesh.
+#     return_clone: [bool] to return clone of tensor, for issue: 'CUDA error: device-side assert triggered'.
 
-def expand_snapshot_backward_connect(x, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, return_clone = False):
-    '''
-    Fill the node number difference from unstructured and (virtual) structured grids.
+#     Output:
+#     ---  
+#     xx: [Torch.Tensor] expand snapshot on structured grid.
+#     '''
 
-    Input:
-    ---
-    x: [Torch.Tensor] the fluid snapshots, in batch.
+#     if place_center:
+#        flip_x = torch.flip(x, (-1,))
+#        front_x_total = np.floor((structured_size - unstructured_size) / 2).astype('int')
+#        if front_x_total < unstructured_size + 1: front_x = torch.flip(x[..., 1:front_x_total + 1], (-1,))
+#        else: front_x = torch.flip(expand_snapshot_backward_connect(x, *gen_filling_paras(unstructured_size, front_x_total + 1), False)[..., 1:], (-1,))
+#        back_x_total = structured_size - unstructured_size - front_x_total
+#        if back_x_total < unstructured_size + 1: back_x = flip_x[..., 1:back_x_total + 1]
+#        else: back_x = expand_snapshot_backward_connect(flip_x, *gen_filling_paras(unstructured_size, back_x_total + 1), False)[..., 1:]   
+#        return torch.cat((front_x, x, back_x), -1)
+#     else:
+#       num_nodes = x.shape[-1] - 1
+#       forward_x = x[..., :num_nodes]
+#       backward_x = torch.flip(x, (-1,))[..., :num_nodes]
+#       if flip_time > 0:
+#          flipped = torch.cat((forward_x, backward_x), -1)
+#          if flip_time > 1:
+#             if return_clone: flipped = torch.cat([flipped] * flip_time, -1)
+#             else: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
+#       else: flipped = None
+#       if end_backward:
+#          remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
+#       else:
+#          remain = forward_x[..., :remainder]
+#       if flipped is not None: return torch.cat((flipped, remain), -1)
+#       else: return remain
 
-    ## Next three parameters see function 'gen_filling_paras()' ##
-    n_fold: [int] the folds of x
-    flip_time: [int] the times for filpping (copying/reversing).
-    end_backward: [int] does this expand sfc ending in a inverse order?
-    remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
-    place_center: [bool] whether to place the unstructured mesh in the middle of the expanded structured mesh.
-    return_clone: [bool] to return clone of tensor, for issue: 'CUDA error: device-side assert triggered'.
+# def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, scheme='truncate'):
+#     '''
+#     Collect the results from the expanded structured grid.
 
-    Output:
-    ---  
-    xx: [Torch.Tensor] expand snapshot on structured grid.
-    '''
+#     Input:
+#     ---
+#     xx: [Torch.Tensor] the expanded fluid snapshots by 'expand_snapshot_backward_connect()', in batch.
 
-    if place_center:
-       flip_x = torch.flip(x, (-1,))
-       front_x_total = np.floor((structured_size - unstructured_size) / 2).astype('int')
-       if front_x_total < unstructured_size + 1: front_x = torch.flip(x[..., 1:front_x_total + 1], (-1,))
-       else: front_x = torch.flip(expand_snapshot_backward_connect(x, *gen_filling_paras(unstructured_size, front_x_total + 1), False)[..., 1:], (-1,))
-       back_x_total = structured_size - unstructured_size - front_x_total
-       if back_x_total < unstructured_size + 1: back_x = flip_x[..., 1:back_x_total + 1]
-       else: back_x = expand_snapshot_backward_connect(flip_x, *gen_filling_paras(unstructured_size, back_x_total + 1), False)[..., 1:]   
-       return torch.cat((front_x, x, back_x), -1)
-    else:
-      num_nodes = x.shape[-1] - 1
-      forward_x = x[..., :num_nodes]
-      backward_x = torch.flip(x, (-1,))[..., :num_nodes]
-      if flip_time > 0:
-         flipped = torch.cat((forward_x, backward_x), -1)
-         if flip_time > 1:
-            if return_clone: flipped = torch.cat([flipped] * flip_time, -1)
-            else: flipped = flipped.repeat((1,) * (x.ndim - 1) + (flip_time,))
-      else: flipped = None
-      if end_backward:
-         remain =  torch.cat((forward_x, backward_x[..., :remainder]), -1)
-      else:
-         remain = forward_x[..., :remainder]
-      if flipped is not None: return torch.cat((flipped, remain), -1)
-      else: return remain
+#     ## Next three parameters see function 'gen_filling_paras()' ##
+#     flip_time: [int] the times for filpping (copying/reversing).
+#     end_backward: [int] does this expand sfc ending in a inverse order?
+#     remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
+#     scheme: [string] the reduce scheme, default is 'mean' (taking average), 'truncate' is also avaliable.
 
-def reduce_expanded_snapshot(xx, n_fold, flip_time, end_backward, remainder, unstructured_size, structured_size, place_center, scheme='truncate'):
-    '''
-    Collect the results from the expanded structured grid.
+#     Output:
+#     ---  
+#     reduced_x: [Torch.Tensor] reduced snapshot on unstructured grid.
+#     '''
+#     if scheme=='mean':
+#       xx = xx.float()
+#       remain = xx[..., -remainder:]
+#       folded = xx[..., :xx.shape[-1] - remainder]
 
-    Input:
-    ---
-    xx: [Torch.Tensor] the expanded fluid snapshots by 'expand_snapshot_backward_connect()', in batch.
+#       if end_backward: 
+#          remain = torch.flip(remain, (-1,)) 
 
-    ## Next three parameters see function 'gen_filling_paras()' ##
-    flip_time: [int] the times for filpping (copying/reversing).
-    end_backward: [int] does this expand sfc ending in a inverse order?
-    remainder: [int] the remaining nodes, if flip_time = 0, this is simply {structured_size - unstructured_size}.
-    scheme: [string] the reduce scheme, default is 'mean' (taking average), 'truncate' is also avaliable.
+#       folded = folded.reshape(folded.shape[:-1] + (n_fold, unstructured_size - 1))
 
-    Output:
-    ---  
-    reduced_x: [Torch.Tensor] reduced snapshot on unstructured grid.
-    '''
-    if scheme=='mean':
-      xx = xx.float()
-      remain = xx[..., -remainder:]
-      folded = xx[..., :xx.shape[-1] - remainder]
-
-      if end_backward: 
-         remain = torch.flip(remain, (-1,)) 
-
-      folded = folded.reshape(folded.shape[:-1] + (n_fold, unstructured_size - 1))
-
-      forward_part = folded[..., ::2, :]
-      forward_duplicates = forward_part.shape[-2]
-      backward_part = folded[..., 1::2, :]
-      backward_duplicates = backward_part.shape[-2]
+#       forward_part = folded[..., ::2, :]
+#       forward_duplicates = forward_part.shape[-2]
+#       backward_part = folded[..., 1::2, :]
+#       backward_duplicates = backward_part.shape[-2]
       
-      forward_part = forward_part.sum(-2)
-      backward_part = backward_part.sum(-2)
-      backward_part = torch.flip(backward_part, (-1,))
+#       forward_part = forward_part.sum(-2)
+#       backward_part = backward_part.sum(-2)
+#       backward_part = torch.flip(backward_part, (-1,))
 
-      reduced_x  = torch.cat((forward_part[..., 0].unsqueeze(-1), forward_part[..., 1:] + backward_part[..., :-1], backward_part[..., -1].unsqueeze(-1)), -1)
-      if end_backward: 
-         reduced_x[..., -remainder:] += remain
-         reduced_x[..., -remainder:-1] /= n_fold + 1
-         reduced_x[..., -1] /= backward_duplicates + 1
-         reduced_x[..., 1:remainder] /= n_fold
-         reduced_x[..., 0] /= forward_duplicates
-      else:
-         reduced_x[..., :remainder] += remain
-         reduced_x[..., 1:remainder] /= n_fold + 1
-         reduced_x[..., 0] /= forward_duplicates + 1
-         reduced_x[..., -remainder:-1] /= n_fold
-         reduced_x[..., -1] /= backward_duplicates  
+#       reduced_x  = torch.cat((forward_part[..., 0].unsqueeze(-1), forward_part[..., 1:] + backward_part[..., :-1], backward_part[..., -1].unsqueeze(-1)), -1)
+#       if end_backward: 
+#          reduced_x[..., -remainder:] += remain
+#          reduced_x[..., -remainder:-1] /= n_fold + 1
+#          reduced_x[..., -1] /= backward_duplicates + 1
+#          reduced_x[..., 1:remainder] /= n_fold
+#          reduced_x[..., 0] /= forward_duplicates
+#       else:
+#          reduced_x[..., :remainder] += remain
+#          reduced_x[..., 1:remainder] /= n_fold + 1
+#          reduced_x[..., 0] /= forward_duplicates + 1
+#          reduced_x[..., -remainder:-1] /= n_fold
+#          reduced_x[..., -1] /= backward_duplicates  
 
-      return reduced_x
+#       return reduced_x
 
-    elif scheme=='truncate': 
-        if place_center: 
-            start = (structured_size - unstructured_size) // 2
-            return xx[..., start:start + unstructured_size]
-        else: return xx[..., :unstructured_size]
+#     elif scheme=='truncate': 
+#         if place_center: 
+#             start = (structured_size - unstructured_size) // 2
+#             return xx[..., start:start + unstructured_size]
+#         else: return xx[..., :unstructured_size]
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 def optimal_back_interpolate(nonods, nonods_l, x_regular, x_l_regular, nod_prev_list, nod_next_list, map_back, tol=1e-6, dtype=np.float32):
     '''
@@ -1543,7 +1541,7 @@ def expend_SFC_NUM(sfc_ordering, partitions):
 
 def find_size_conv_layers_and_fc_layers(size, kernel_size, padding, stride, dims_latent, sfc_nums, input_channel, increase_multi, num_final_channels, first_sp_channel=None, ndim=1):
     '''
-    This function contains the algorithm for finding 1D convolutional layers and fully-connected layers depend on the input, see thesis
+    This function contains the algorithm for finding 1D convolutional layers and fully-connected layers depend on the input, see thesis https://github.com/acse-jy220/SFC-CAE-Ready-to-use/blob/main/JinYu_ACSE9_FinalReport.pdf (Page. 10).
 
     Input:
     ---
@@ -1636,6 +1634,7 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
         bar=progressbar.ProgressBar(maxval=len(path_data))
         bar.start()
         data = []
+        filling_layers = []
         if adaptive: 
             coords = []
             cells = []
@@ -1682,9 +1681,12 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
                bar.update(cnt_progress)
 #                num_nodes = coords[i].shape[-1]
                if num_nodes[i] != most_nodes:
-                  filling_paras = gen_filling_paras(num_nodes[i], most_nodes)
-                  data[i] = expand_snapshot_backward_connect(data[i], *filling_paras, place_center = True)
-                  coords[i] = expand_snapshot_backward_connect(coords[i], *filling_paras, place_center = True)
+                #   filling_paras = gen_filling_paras(num_nodes[i], most_nodes)
+                #   data[i] = expand_snapshot_backward_connect(data[i], *filling_paras, place_center = True)
+                #   coords[i] = expand_snapshot_backward_connect(coords[i], *filling_paras, place_center = True)
+                    filling_layers[i] = BackwardForwardConnecting(num_nodes[i], most_nodes)
+                    data[i] = filling_layers[i](data[i])
+                    coords[i] = filling_layers[i](coords[i])
            coords = torch.stack(coords)
            whole_data = torch.stack(data)
         else: whole_data = data
@@ -1711,7 +1713,7 @@ def read_in_files_md(data_path, vtu_fields=None, file_format='vtu', adaptive=Fal
                bar.update(cnt)
            bar.finish()
         
-        return whole_data, torch.from_numpy(num_nodes), coords, cells 
+        return whole_data, torch.from_numpy(num_nodes), coords, cells
 
 def vtu_compress(data_path, save_path, vtu_fields, autoencoder, tk, tb, start_index = None, end_index = None, model_device = torch.device('cpu')):
     '''

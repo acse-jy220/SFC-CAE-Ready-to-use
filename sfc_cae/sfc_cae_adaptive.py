@@ -226,7 +226,8 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
          self.neigh_md = get_neighbourhood_md((torch.arange(self.structured_size_input).long()).reshape(self.shape), self.Ax, ordering = True)
 
          # parameters for expand snapshots
-         self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
+         self.filling_layer = BackwardForwardConnecting(self.input_size, self.structured_size_input)
+         # self.expand_paras = gen_filling_paras(self.input_size, self.structured_size_input)
 
     # set up convolutional layers, fully-connected layers and sparse layers
     self.fcs = []
@@ -356,10 +357,14 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
             if coords is not None:
                    cds.append(coords[k].clone()[..., sfc[sfc_index]])            
             if fla is not None: 
-               if self.interpolate_num is None: a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
+               if self.interpolate_num is None: 
+                  # a[k] = expand_snapshot_backward_connect(a[k], *fla, self.place_center)
+                  a[k] = fla[0](a[k])
                else: a[k] = linear_interpolate_python(a[k], *fla[0])
                if coords is not None:                  
-                 if self.interpolate_num is None: cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
+                 if self.interpolate_num is None: 
+                  # cds[k] = expand_snapshot_backward_connect(cds[k], *fla, self.place_center)
+                    cds[k] = fla[0](cds[k])
                  else: 
                     cds[k] = linear_interpolate_python(cds[k], *fla[0])
         if coords is not None:
@@ -375,7 +380,8 @@ class SFC_CAE_Encoder_Adaptive(nn.Module):
            a = torch.cat([a] * self.self_concat, 1)  
         # print(a.shape)      
         if self.second_sfc is not None: 
-            a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
+            # a = expand_snapshot_backward_connect(a, *self.expand_paras, place_center = self.place_center)
+            a = self.filling_layer(a)
             # print(a.shape)
             a = a[..., self.second_sfc]
             if self.NN:
@@ -521,7 +527,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
         self.num_neigh_md = encoder.num_neigh_md   
         self.neigh_md = encoder.neigh_md   
         self.init_convTrans_shape = (encoder.num_final_channels, ) + (encoder.conv_size[-1], ) * self.dimension
-        self.expand_paras = encoder.expand_paras
+        # self.expand_paras = encoder.expand_paras
+        self.expand_extract_layer = BackwardForwardConnecting(self.structured_size_input, self.input_size)
     self.fcs = []
     # set up fully-connected layers
     for k in range(1, len(encoder.size_fc)):
@@ -664,7 +671,8 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             else:
                if self.self_concat > 1: b = sum(torch.chunk(b, chunks=self.self_concat, dim=1))
             b = b[..., self.inv_second_sfc]
-            b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+            # b = reduce_expanded_snapshot(b, *self.expand_paras, self.place_center, self.reduce) # truncate or mean
+            b = self.expand_extract_layer(b)
             # print(b.shape)       
         else: 
             # b = b[..., self.orderings[i]] # backward order refer to first sfc(s).
@@ -695,7 +703,9 @@ class SFC_CAE_Decoder_Adaptive(nn.Module):
             if sfc_shuffle_index is not None: sfc_index = sfc_shuffle_index[i]
             else: sfc_index = i
             if fla is not None: 
-               if self.interpolate_num is None: b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
+               if self.interpolate_num is None: 
+                  # b[k] = reduce_expanded_snapshot(b[k], *fla, self.place_center, self.reduce)
+                  b[k] = fla[1](b[k])
                else: 
                   b[k] = linear_interpolate_python(b[k], *fla[-1])
             b[k] = b[k][..., inv_sfc[sfc_index]].squeeze(0)
