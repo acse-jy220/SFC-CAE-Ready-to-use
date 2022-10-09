@@ -504,7 +504,7 @@ class AdaptiveDataset(Dataset):
                 self.filling_paras.append((interpol_params, extrapolate_params_coords, extrapolate_params_conc))
             else:
               if self.num_nodes[i] < self.maxnodes:
-                 self.filling_paras.append(BackwardForwardConnecting(int(self.num_nodes[i]), self.maxnodes), BackwardForwardConnecting(self.maxnodes, int(self.num_nodes[i])))
+                 self.filling_paras.append((BackwardForwardConnecting(int(self.num_nodes[i]), self.maxnodes), BackwardForwardConnecting(self.maxnodes, int(self.num_nodes[i]))))
               else:
                  self.filling_paras.append(None) 
             cnt_progress += 1
