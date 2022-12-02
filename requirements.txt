@@ -1,7 +1,7 @@
 numpy >= 1.18.0
 scipy >= 1.4.1
 matplotlib ~= 3.2.2
-vtk == 9.0.1
+vtk == 9.0.2
 livelossplot == 0.5.4
 meshio == 5.0.2
 timm==0.4.12
