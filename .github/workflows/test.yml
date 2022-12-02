@@ -48,11 +48,15 @@ jobs:
           auto-activate-base: true
           activate-environment: sfc_cae
 
+      # before setup, install numpy
+      - name: Numpy install
+        run: pip3 install numpy~=1.22.0   
+
       # compile fortran code with MinGW
       - name: Compile Fortran Library
         run: |
-            python -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
-            python -m numpy.f2py -c x_conv_fixed_length.f90 -m sfc_interpolate
+            python3 -m numpy.f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new
+            python3 -m numpy.f2py -c x_conv_fixed_length.f90 -m sfc_interpolate
 
       # download dataset and trained-model
       - name: Download FPC CG Dataset
@@ -60,26 +64,30 @@ jobs:
 
       # run pytests      
       - name: Test with pytest
-        run: python -m pytest tests/tests.py --doctest-modules -v
+        run: python3 -m pytest tests/tests.py --doctest-modules -v
 
   pytest-windows:
     
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+      
+      # pip install the module
+      - name: Pip install
+        run: pip3 install -e .
 
       # configure conda environment
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          environment-file: environment.yml
-          auto-activate-base: true
-          activate-environment: sfc_cae
+      # - uses: conda-incubator/setup-miniconda@v2
+      #   with:
+      #     environment-file: environment.yml
+      #     auto-activate-base: true
+      #     activate-environment: sfc_cae
 
       # compile fortran code with MinGW
-      - name: Compile Fortran Library
-        run: |
-            f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
-            f2py -c x_conv_fixed_length.f90 -m sfc_interpolate --compiler=mingw32
+      # - name: Compile Fortran Library
+      #   run: |
+      #       f2py -c space_filling_decomp_new.f90 -m space_filling_decomp_new --compiler=mingw32
+      #       f2py -c x_conv_fixed_length.f90 -m sfc_interpolate --compiler=mingw32
 
       # download CG dataset for testing
       - name: Download FPC CG Dataset
@@ -91,4 +99,4 @@ jobs:
 
       # run pytests      
       - name: Test with pytest
-        run: python -m pytest tests/tests.py --doctest-modules -v
+        run: python3 -m pytest tests/tests.py --doctest-modules -v
